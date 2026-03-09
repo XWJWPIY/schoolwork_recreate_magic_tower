@@ -1,29 +1,39 @@
 #ifndef APP_HPP
 #define APP_HPP
 
+#include "AppUtil.hpp"
+#include "Background.hpp"
+#include "Util/Renderer.hpp"
+#include "Util/Text.hpp"
 #include "pch.hpp" // IWYU pragma: export
+#include <memory>
 
 class App {
+
 public:
-    enum class State {
-        START,
-        UPDATE,
-        END,
-    };
+  enum class State {
+    START,
+    UPDATE,
+    END,
+  };
 
-    State GetCurrentState() const { return m_CurrentState; }
+  State GetCurrentState() const { return m_CurrentState; }
 
-    void Start();
+  void Start();
 
-    void Update();
+  void Update();
 
-    void End(); // NOLINT(readability-convert-member-functions-to-static)
-
-private:
-    void ValidTask();
+  void End(); // NOLINT(readability-convert-member-functions-to-static)
 
 private:
-    State m_CurrentState = State::START;
+  void ValidTask();
+
+private:
+  State m_CurrentState = State::START;
+  AppUtil::GameState m_GameState = AppUtil::GameState::MainMenu;
+
+  Util::Renderer m_Root;
+  std::shared_ptr<Background> m_Background;
 };
 
 #endif
