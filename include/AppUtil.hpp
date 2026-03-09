@@ -2,6 +2,8 @@
 #define APPUTIL_HPP
 
 #include "pch.hpp"
+#include <string>
+#include <vector>
 
 namespace AppUtil {
 
@@ -13,6 +15,18 @@ const int WINDOW_HEIGHT = 800;
 enum class GameState {
   MainMenu = 0, // 0: 主頁
   Playing = 1   // 1: 正在遊戲
+};
+
+struct MapCell {
+  int id = 0;
+};
+
+class MapParser {
+public:
+  static std::vector<std::vector<MapCell>>
+  ParseCSV(const std::string &filepath);
+  static std::vector<std::vector<int>>
+  ParseCSVToRawIDs(const std::string &filepath);
 };
 
 } // namespace AppUtil

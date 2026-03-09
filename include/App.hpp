@@ -3,6 +3,7 @@
 
 #include "AppUtil.hpp"
 #include "Background.hpp"
+#include "FloorMap.hpp"
 #include "Util/Renderer.hpp"
 #include "Util/Text.hpp"
 #include "pch.hpp" // IWYU pragma: export
@@ -34,6 +35,7 @@ private:
 
   Util::Renderer m_Root;
   std::shared_ptr<Background> m_Background;
+  std::shared_ptr<FloorMap> m_FloorMap;
 };
 
 #endif

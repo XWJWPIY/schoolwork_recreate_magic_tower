@@ -11,22 +11,29 @@ void App::Start() {
 
   m_Background = std::make_shared<Background>();
   m_Root.AddChild(m_Background);
+
+  // Initialize FloorMap and parse data
+  m_FloorMap = std::make_shared<FloorMap>(141.0f, 0.0f, 0.735f, 0.735f);
+  auto mapData = AppUtil::MapParser::ParseCSV(MAGIC_TOWER_RESOURCE_DIR
+                                              "/Data/RoadMap0.csv");
+  m_FloorMap->LoadFloorData(mapData);
+  m_FloorMap->SetAllBlocksVisible(false);
+
+  m_Root.AddChild(m_FloorMap);
 }
 
 void App::Update() {
 
   switch (m_GameState) {
   case AppUtil::GameState::MainMenu:
-    // TODO: 實作主頁邏輯 (例如：按 Enter 開始遊戲)
     if (Util::Input::IsKeyDown(Util::Keycode::RETURN)) {
       m_GameState = AppUtil::GameState::Playing;
-      // 按下 Enter 後，切換到第二張背景 (phase 1)
       m_Background->NextPhase(1);
+      m_FloorMap->SetAllBlocksVisible(true);
     }
     break;
 
   case AppUtil::GameState::Playing:
-    // TODO: 實作遊戲進行中的邏輯 (角色移動、戰鬥等)
     break;
   }
 

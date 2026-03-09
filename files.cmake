@@ -9,6 +9,8 @@ set(SRC_FILES
     EventTile.cpp
     CollectableTile.cpp
     Background.cpp
+    MapBlock.cpp
+    FloorMap.cpp
 )
 
 set(INCLUDE_FILES
@@ -22,6 +24,8 @@ set(INCLUDE_FILES
     EventTile.hpp
     CollectableTile.hpp
     Background.hpp
+    MapBlock.hpp
+    FloorMap.hpp
 )
 
 set(TEST_FILES
