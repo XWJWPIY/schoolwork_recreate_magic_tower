@@ -4,14 +4,19 @@
 #include "AllObjects.hpp"
 #include "pch.hpp"
 #include <memory>
+#include <string>
 #include <vector>
 
 // #include "Util/Image.hpp" // Placeholder for PTSD Image
 
 class Actor : public AllObjects {
 public:
-  Actor();
+  Actor(int initialId = 0);
   ~Actor() override = default;
+
+  void SetObjectId(int newId) override;
+  void UpdateProperties(int id);
+  std::string GetImagePath(int id) const;
 
   virtual bool canMove(int delta_x, int delta_y);
 

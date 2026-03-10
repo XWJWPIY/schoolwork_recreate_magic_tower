@@ -14,8 +14,11 @@ public:
   using BlockFactory = std::function<std::shared_ptr<AllObjects>(int id)>;
 
   FloorMap(BlockFactory factory, float centerX = 0.0f, float centerY = 0.0f,
-           float scaleX = 1.0f, float scaleY = 1.0f, float zIndex = -5.0f);
+           float scaleX = 1.0f, float scaleY = 1.0f, float zIndex = -5.0f,
+           const glm::vec2 &baseSize = {0.0f, 0.0f});
   ~FloorMap() = default;
+
+  glm::vec2 GetBaseBlockSize() const { return m_BlockSize; }
 
   void
   LoadFloorData(const std::vector<std::vector<AppUtil::MapCell>> &floorData);
@@ -28,7 +31,13 @@ public:
     for (auto &row : m_Blocks) {
       for (auto &block : row) {
         if (block) {
-          block->SetVisible(visible);
+          // If we are setting to visible, only show non-zero objects.
+          // Otherwise hide everything.
+          if (visible && block->GetObjectId() == 0) {
+            block->SetVisible(false);
+          } else {
+            block->SetVisible(visible);
+          }
         }
       }
     }

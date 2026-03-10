@@ -5,6 +5,7 @@
 #include "Util/Keycode.hpp"
 #include "Util/Logger.hpp"
 
+#include "Actor.hpp"
 #include "MapBlock.hpp"
 
 void App::Start() {
@@ -20,14 +21,10 @@ void App::Start() {
     return std::make_shared<MapBlock>(id);
   };
 
-  // Factory for ThingsMap (for now also creates MapBlocks as placeholders,
-  // until actual Items/Monsters/Player are fully integrated to factory)
+  // Factory for ThingsMap (Always create Actor, even for ID 0)
   FloorMap::BlockFactory thingsFactory =
       [](int id) -> std::shared_ptr<AllObjects> {
-    if (id == 0)
-      return nullptr; // 0 means empty space in ThingsMap
-    return std::make_shared<MapBlock>(
-        id); // Temporarily using MapBlock to render something
+    return std::make_shared<Actor>(id);
   };
 
   m_RoadMap = std::make_shared<FloorMap>(roadFactory, 141.0f, 0.0f, 0.735f,
@@ -40,17 +37,16 @@ void App::Start() {
   m_RoadMap->LoadFloorData(roadData);
   m_RoadMap->SetAllVisible(false);
 
-  // m_ThingsMap = std::make_shared<FloorMap>(thingsFactory, 141.0f, 0.0f,
-  // 0.735f,
-  //                                          0.735f, -4.0f); // Render OVER
-  //                                          RoadMap (Z=-4)
-  // m_ThingsMap->SetRenderer(&m_Root);
-  // m_ThingsMap->AddToRenderer(); // Add default blocks to root
+  m_ThingsMap = std::make_shared<FloorMap>(
+      thingsFactory, 141.0f, 0.0f, 0.735f, 0.735f, -4.0f,
+      m_RoadMap->GetBaseBlockSize()); // Use RoadMap spacing
+  m_ThingsMap->SetRenderer(&m_Root);
+  m_ThingsMap->AddToRenderer(); // Add default blocks to root
 
-  // auto thingsData = AppUtil::MapParser::ParseCSV(MAGIC_TOWER_RESOURCE_DIR
-  //                                                "/Data/ThingsMap0.csv");
-  // m_ThingsMap->LoadFloorData(thingsData);
-  // m_ThingsMap->SetAllVisible(false);
+  auto thingsData = AppUtil::MapParser::ParseCSV(MAGIC_TOWER_RESOURCE_DIR
+                                                 "/Data/ThingsMap0.csv");
+  m_ThingsMap->LoadFloorData(thingsData);
+  m_ThingsMap->SetAllVisible(false);
 }
 
 void App::Update() {
@@ -61,7 +57,7 @@ void App::Update() {
       m_GameState = AppUtil::GameState::Playing;
       m_Background->NextPhase(1);
       m_RoadMap->SetAllVisible(true);
-      // m_ThingsMap->SetAllVisible(true);
+      m_ThingsMap->SetAllVisible(true);
     }
     break;
 

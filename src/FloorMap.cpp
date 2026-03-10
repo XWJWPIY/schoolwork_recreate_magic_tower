@@ -2,24 +2,24 @@
 #include "Util/Logger.hpp"
 
 FloorMap::FloorMap(BlockFactory factory, float centerX, float centerY,
-                   float scaleX, float scaleY, float zIndex)
+                   float scaleX, float scaleY, float zIndex,
+                   const glm::vec2 &baseSize)
     : m_Factory(factory), m_CenterX(centerX), m_CenterY(centerY),
       m_ScaleX(scaleX), m_ScaleY(scaleY), m_ZIndex(zIndex) {
 
-  auto sampleBlock = m_Factory(0);
-  glm::vec2 blockSize = {BLOCK_SIZE, BLOCK_SIZE};
-  if (sampleBlock) {
-    blockSize = sampleBlock->GetScaledSize() /
-                sampleBlock->m_Transform
-                    .scale; // get base size since scale is applied later
-    // Alternatively, if GetScaledSize() applies m_Transform.scale which is
-    // (1,1) by default, GetScaledSize() is the pure image size. In
-    // GameObject.hpp: GetScaledSize() returns m_Drawable->GetSize() *
-    // m_Transform.scale. We can just use m_Drawable size if we had access, but
-    // GetScaledSize() with scale {1,1} works.
-    if (blockSize.x <= 0 || blockSize.y <= 0) {
-      blockSize = {BLOCK_SIZE, BLOCK_SIZE};
+  glm::vec2 blockSize = baseSize;
+
+  // If baseSize was not provided (is 0,0), try to sample from factory
+  if (blockSize.x <= 0 || blockSize.y <= 0) {
+    auto sampleBlock = m_Factory(0);
+    if (sampleBlock) {
+      blockSize = sampleBlock->GetScaledSize() / sampleBlock->m_Transform.scale;
     }
+  }
+
+  // Fallback if still 0
+  if (blockSize.x <= 0 || blockSize.y <= 0) {
+    blockSize = {BLOCK_SIZE, BLOCK_SIZE};
   }
 
   // Fallback if somehow still 0
@@ -87,24 +87,13 @@ void FloorMap::LoadFloorData(
           if (m_Root)
             m_Root->RemoveChild(oldBlock);
         } else {
-          // If there was no old block, calculate its transform based on grid
-          // position Assuming centerX=141.0f, centerY=0.0f, scale=(0.735,
-          // 0.735) for ThingsMap but we don't have those parameters saved!
-          // However, we know m_Blocks[0][0]->m_Transform from RoadMap? We can't
-          // query RoadMap. BUT we can just find any non-null block in m_Blocks
-          // to infer the mapping, OR save centerX, centerY, scaleX, scaleY in
-          // FloorMap constructor. Since it's simpler, let's just let the
-          // constructor do it by never passing null oldBlocks in m_Blocks
-          // array! Ah wait, our constructor ACTUALLY populates m_Blocks with
-          // whatever factory(0) returns. In ThingsMap, factory(0) returns
-          // nullptr. So we don't have them. We should save centerX, centerY,
-          // scaleX, scaleY in FloorMap to compute this. For now, I will use a
-          // simple workaround: if oldBlock is nullptr, we can look at RoadMap's
-          // block, but we don't have access to RoadMap here. Wait, the user's
-          // manual change just got rid of the oldBlock else branch. I'll just
-          // restore the user's version where it doesn't compute it and leaves
-          // spacingX alone, or better, calculate it properly later if they
-          // want. Let's just restore the user's code for that block.
+          // Calculate transform based on grid position
+          newBlock->m_Transform.scale = {m_ScaleX, m_ScaleY};
+          float spacingX = m_BlockSize.x * m_ScaleX;
+          float spacingY = m_BlockSize.y * m_ScaleY;
+          float absX = m_CenterX + (x - 5) * spacingX;
+          float absY = m_CenterY + (5 - y) * spacingY;
+          newBlock->m_Transform.translation = {absX, absY};
         }
         if (m_Root)
           m_Root->AddChild(newBlock);
