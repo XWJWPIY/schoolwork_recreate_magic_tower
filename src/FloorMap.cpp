@@ -2,9 +2,9 @@
 #include "Util/Logger.hpp"
 
 FloorMap::FloorMap(BlockFactory factory, float centerX, float centerY,
-                   float scaleX, float scaleY)
+                   float scaleX, float scaleY, float zIndex)
     : m_Factory(factory), m_CenterX(centerX), m_CenterY(centerY),
-      m_ScaleX(scaleX), m_ScaleY(scaleY) {
+      m_ScaleX(scaleX), m_ScaleY(scaleY), m_ZIndex(zIndex) {
 
   auto sampleBlock = m_Factory(0);
   glm::vec2 blockSize = {BLOCK_SIZE, BLOCK_SIZE};
@@ -39,6 +39,7 @@ FloorMap::FloorMap(BlockFactory factory, float centerX, float centerY,
 
       if (block) {
         block->m_Transform.scale = {scaleX, scaleY};
+        block->SetZIndex(m_ZIndex);
         float absX = centerX + (x - 5) * spacingX;
         float absY = centerY + (5 - y) * spacingY;
 
@@ -79,6 +80,7 @@ void FloorMap::LoadFloorData(
 
       // If we are placing a valid block
       if (newBlock) {
+        newBlock->SetZIndex(m_ZIndex);
         // Inherit transform from the old block if it existed
         if (oldBlock) {
           newBlock->m_Transform = oldBlock->m_Transform;
@@ -136,6 +138,7 @@ void FloorMap::LoadFloorData(const std::vector<std::vector<int>> &floorData) {
       auto newBlock = m_Factory(newId);
 
       if (newBlock) {
+        newBlock->SetZIndex(m_ZIndex);
         if (oldBlock) {
           newBlock->m_Transform = oldBlock->m_Transform;
           if (m_Root)

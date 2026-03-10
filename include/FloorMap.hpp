@@ -14,7 +14,7 @@ public:
   using BlockFactory = std::function<std::shared_ptr<AllObjects>(int id)>;
 
   FloorMap(BlockFactory factory, float centerX = 0.0f, float centerY = 0.0f,
-           float scaleX = 1.0f, float scaleY = 1.0f);
+           float scaleX = 1.0f, float scaleY = 1.0f, float zIndex = -5.0f);
   ~FloorMap() = default;
 
   void
@@ -24,7 +24,7 @@ public:
 
   std::shared_ptr<AllObjects> GetBlock(int x, int y);
 
-  void SetAllBlocksVisible(bool visible) {
+  void SetAllVisible(bool visible) {
     for (auto &row : m_Blocks) {
       for (auto &block : row) {
         if (block) {
@@ -49,6 +49,7 @@ private:
   float m_CenterY = 0.0f;
   float m_ScaleX = 1.0f;
   float m_ScaleY = 1.0f;
+  float m_ZIndex = -5.0f;
 };
 
 #endif // FLOOR_MAP_HPP
