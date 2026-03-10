@@ -5,17 +5,16 @@
 #include <functional>
 #include <string>
 
-
-class Player;
+class Actor;
 
 // For interactive environments like stairs, teleports or invisible walls
 class EventTile : public Tile {
 public:
   EventTile();
-  ~EventTile() override = default;
+  ~EventTile() = default;
 
   // Trigger action when Player steps on or interacts with it
-  virtual void onTrigger(Player *player);
+  virtual void onTrigger(Actor *player);
 
   std::string getEventType() const { return event_type; }
   void setEventType(const std::string &type) { event_type = type; }

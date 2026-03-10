@@ -4,17 +4,17 @@
 #include "Tile.hpp"
 #include <string>
 
-class Player;
+class Actor;
 
 // For items that the player can pick up, e.g., Keys, Potions, Gems
 class CollectableTile : public Tile {
 public:
   CollectableTile();
-  ~CollectableTile() override = default;
+  ~CollectableTile() = default;
 
   // Return true if collection was successful, false if inventory full or unmet
   // condition
-  virtual bool onCollect(Player *player);
+  virtual bool onCollect(Actor *player);
 
   std::string getItemType() const { return object_type; }
   void setItemType(const std::string &type) { object_type = type; }

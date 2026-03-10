@@ -35,7 +35,8 @@ private:
 
   Util::Renderer m_Root;
   std::shared_ptr<Background> m_Background;
-  std::shared_ptr<FloorMap> m_FloorMap;
+  std::shared_ptr<FloorMap> m_RoadMap;
+  // std::shared_ptr<FloorMap> m_ThingsMap;
 };
 
 #endif

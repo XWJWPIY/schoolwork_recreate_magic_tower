@@ -1,8 +1,6 @@
 #ifndef TILE_HPP
 #define TILE_HPP
 
-#include "pch.hpp"
-
 class Tile {
 public:
   Tile();

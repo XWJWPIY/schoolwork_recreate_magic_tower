@@ -1,16 +1,17 @@
 #ifndef ACTOR_HPP
 #define ACTOR_HPP
 
+#include "AllObjects.hpp"
 #include "pch.hpp"
 #include <memory>
 #include <vector>
 
 // #include "Util/Image.hpp" // Placeholder for PTSD Image
 
-class Actor {
+class Actor : public AllObjects {
 public:
   Actor();
-  virtual ~Actor() = default;
+  ~Actor() override = default;
 
   virtual bool canMove(int delta_x, int delta_y);
 

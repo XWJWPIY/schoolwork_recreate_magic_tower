@@ -2,8 +2,7 @@ set(SRC_FILES
     App.cpp
     AppUtil.cpp
     Actor.cpp
-    Player.cpp
-    Monster.cpp
+    AllObjects.cpp
     Tile.cpp
     StaticTile.cpp
     EventTile.cpp
@@ -17,8 +16,7 @@ set(INCLUDE_FILES
     App.hpp
     AppUtil.hpp
     Actor.hpp
-    Player.hpp
-    Monster.hpp
+    AllObjects.hpp
     Tile.hpp
     StaticTile.hpp
     EventTile.hpp

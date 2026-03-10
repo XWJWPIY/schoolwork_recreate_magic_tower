@@ -2,21 +2,33 @@
 #include "AppUtil.hpp"
 #include "Util/Image.hpp"
 #include <memory>
+#include <string>
 
 MapBlock::MapBlock(int initialId)
-    // Initialize GameObject with default image and deep Z-Index.
-    : GameObject(std::make_unique<Util::Image>(GetImagePath(initialId)), -5) {
-  SetBlockId(initialId);
+    // Initialize AllObjects with default image and deep Z-Index.
+    : AllObjects(std::make_unique<Util::Image>(GetImagePath(initialId)), -5,
+                 initialId) {
+  UpdateProperties(initialId);
 }
 
-void MapBlock::SetBlockId(int newId) {
-  if (m_CurrentId == newId)
+void MapBlock::SetObjectId(int newId) {
+  if (m_ObjectId == newId)
     return;
 
-  m_CurrentId = newId;
+  m_ObjectId = newId;
   auto temp = std::dynamic_pointer_cast<Util::Image>(m_Drawable);
   if (temp) {
-    temp->SetImage(GetImagePath(m_CurrentId));
+    temp->SetImage(GetImagePath(m_ObjectId));
+  }
+  UpdateProperties(m_ObjectId);
+}
+
+void MapBlock::UpdateProperties(int id) {
+  // Simple table for passability based on ID (can be moved to CSV later)
+  if (id == 0 || id == 1) { // 0: road, 1: lava_road
+    m_IsPassable = true;
+  } else {
+    m_IsPassable = false; // 2, 3, 4, 5 are walls, 6 is lava
   }
 }
 

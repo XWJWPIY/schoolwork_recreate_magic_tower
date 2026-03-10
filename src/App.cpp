@@ -5,6 +5,8 @@
 #include "Util/Keycode.hpp"
 #include "Util/Logger.hpp"
 
+#include "MapBlock.hpp"
+
 void App::Start() {
   LOG_TRACE("Start");
   m_CurrentState = State::UPDATE;
@@ -12,14 +14,42 @@ void App::Start() {
   m_Background = std::make_shared<Background>();
   m_Root.AddChild(m_Background);
 
-  // Initialize FloorMap and parse data
-  m_FloorMap = std::make_shared<FloorMap>(141.0f, 0.0f, 0.735f, 0.735f);
-  auto mapData = AppUtil::MapParser::ParseCSV(MAGIC_TOWER_RESOURCE_DIR
-                                              "/Data/RoadMap0.csv");
-  m_FloorMap->LoadFloorData(mapData);
-  m_FloorMap->SetAllBlocksVisible(false);
+  // Factory for RoadMap (creates MapBlocks)
+  FloorMap::BlockFactory roadFactory =
+      [](int id) -> std::shared_ptr<AllObjects> {
+    return std::make_shared<MapBlock>(id);
+  };
 
-  m_Root.AddChild(m_FloorMap);
+  // Factory for ThingsMap (for now also creates MapBlocks as placeholders,
+  // until actual Items/Monsters/Player are fully integrated to factory)
+  FloorMap::BlockFactory thingsFactory =
+      [](int id) -> std::shared_ptr<AllObjects> {
+    if (id == 0)
+      return nullptr; // 0 means empty space in ThingsMap
+    return std::make_shared<MapBlock>(
+        id); // Temporarily using MapBlock to render something
+  };
+
+  m_RoadMap =
+      std::make_shared<FloorMap>(roadFactory, 141.0f, 0.0f, 0.735f, 0.735f);
+  m_RoadMap->SetRenderer(&m_Root);
+  m_RoadMap->AddToRenderer(); // Add default blocks to root
+
+  auto roadData = AppUtil::MapParser::ParseCSV(MAGIC_TOWER_RESOURCE_DIR
+                                               "/Data/RoadMap0.csv");
+  m_RoadMap->LoadFloorData(roadData);
+  m_RoadMap->SetAllBlocksVisible(false);
+
+  // m_ThingsMap =
+  //     std::make_shared<FloorMap>(thingsFactory, 141.0f, 0.0f, 0.735f,
+  //     0.735f);
+  // m_ThingsMap->SetRenderer(&m_Root);
+  // m_ThingsMap->AddToRenderer(); // Add default blocks to root
+
+  // auto thingsData = AppUtil::MapParser::ParseCSV(MAGIC_TOWER_RESOURCE_DIR
+  //                                                "/Data/ThingsMap0.csv");
+  // m_ThingsMap->LoadFloorData(thingsData);
+  // m_ThingsMap->SetAllBlocksVisible(false);
 }
 
 void App::Update() {
@@ -29,7 +59,8 @@ void App::Update() {
     if (Util::Input::IsKeyDown(Util::Keycode::SPACE)) {
       m_GameState = AppUtil::GameState::Playing;
       m_Background->NextPhase(1);
-      m_FloorMap->SetAllBlocksVisible(true);
+      m_RoadMap->SetAllBlocksVisible(true);
+      // m_ThingsMap->SetAllBlocksVisible(true);
     }
     break;
 
