@@ -30,26 +30,27 @@ void App::Start() {
         id); // Temporarily using MapBlock to render something
   };
 
-  m_RoadMap =
-      std::make_shared<FloorMap>(roadFactory, 141.0f, 0.0f, 0.735f, 0.735f);
+  m_RoadMap = std::make_shared<FloorMap>(roadFactory, 141.0f, 0.0f, 0.735f,
+                                         0.735f, -5.0f); // Render at Z=-5
   m_RoadMap->SetRenderer(&m_Root);
   m_RoadMap->AddToRenderer(); // Add default blocks to root
 
   auto roadData = AppUtil::MapParser::ParseCSV(MAGIC_TOWER_RESOURCE_DIR
                                                "/Data/RoadMap0.csv");
   m_RoadMap->LoadFloorData(roadData);
-  m_RoadMap->SetAllBlocksVisible(false);
+  m_RoadMap->SetAllVisible(false);
 
-  // m_ThingsMap =
-  //     std::make_shared<FloorMap>(thingsFactory, 141.0f, 0.0f, 0.735f,
-  //     0.735f);
+  // m_ThingsMap = std::make_shared<FloorMap>(thingsFactory, 141.0f, 0.0f,
+  // 0.735f,
+  //                                          0.735f, -4.0f); // Render OVER
+  //                                          RoadMap (Z=-4)
   // m_ThingsMap->SetRenderer(&m_Root);
   // m_ThingsMap->AddToRenderer(); // Add default blocks to root
 
   // auto thingsData = AppUtil::MapParser::ParseCSV(MAGIC_TOWER_RESOURCE_DIR
   //                                                "/Data/ThingsMap0.csv");
   // m_ThingsMap->LoadFloorData(thingsData);
-  // m_ThingsMap->SetAllBlocksVisible(false);
+  // m_ThingsMap->SetAllVisible(false);
 }
 
 void App::Update() {
@@ -59,8 +60,8 @@ void App::Update() {
     if (Util::Input::IsKeyDown(Util::Keycode::SPACE)) {
       m_GameState = AppUtil::GameState::Playing;
       m_Background->NextPhase(1);
-      m_RoadMap->SetAllBlocksVisible(true);
-      // m_ThingsMap->SetAllBlocksVisible(true);
+      m_RoadMap->SetAllVisible(true);
+      // m_ThingsMap->SetAllVisible(true);
     }
     break;
 
