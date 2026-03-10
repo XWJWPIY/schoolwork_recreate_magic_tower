@@ -26,7 +26,7 @@ void App::Update() {
 
   switch (m_GameState) {
   case AppUtil::GameState::MainMenu:
-    if (Util::Input::IsKeyDown(Util::Keycode::RETURN)) {
+    if (Util::Input::IsKeyDown(Util::Keycode::SPACE)) {
       m_GameState = AppUtil::GameState::Playing;
       m_Background->NextPhase(1);
       m_FloorMap->SetAllBlocksVisible(true);
