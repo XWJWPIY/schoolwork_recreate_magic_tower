@@ -32,9 +32,13 @@ void App::Start() {
   m_RoadMap->SetRenderer(&m_Root);
   m_RoadMap->AddToRenderer(); // Add default blocks to root
 
-  auto roadData = AppUtil::MapParser::ParseCSV(MAGIC_TOWER_RESOURCE_DIR
-                                               "/Data/RoadMap0.csv");
-  m_RoadMap->LoadFloorData(roadData);
+  for (int i = 0; i < AppUtil::TOTAL_STORY; ++i) {
+    auto roadData = AppUtil::MapParser::ParseCSV(
+        MAGIC_TOWER_RESOURCE_DIR "/Data/RoadMap" + std::to_string(i) + ".csv");
+    if (!roadData.empty()) {
+      m_RoadMap->LoadFloorData(roadData, i);
+    }
+  }
   m_RoadMap->SetAllVisible(false);
 
   m_ThingsMap = std::make_shared<FloorMap>(
@@ -43,9 +47,14 @@ void App::Start() {
   m_ThingsMap->SetRenderer(&m_Root);
   m_ThingsMap->AddToRenderer(); // Add default blocks to root
 
-  auto thingsData = AppUtil::MapParser::ParseCSV(MAGIC_TOWER_RESOURCE_DIR
-                                                 "/Data/ThingsMap0.csv");
-  m_ThingsMap->LoadFloorData(thingsData);
+  for (int i = 0; i < AppUtil::TOTAL_STORY; ++i) {
+    auto thingsData = AppUtil::MapParser::ParseCSV(MAGIC_TOWER_RESOURCE_DIR
+                                                   "/Data/ThingsMap" +
+                                                   std::to_string(i) + ".csv");
+    if (!thingsData.empty()) {
+      m_ThingsMap->LoadFloorData(thingsData, i);
+    }
+  }
   m_ThingsMap->SetAllVisible(false);
 }
 
@@ -62,6 +71,24 @@ void App::Update() {
     break;
 
   case AppUtil::GameState::Playing:
+    if (Util::Input::IsKeyDown(Util::Keycode::NUM_8) ||
+        Util::Input::IsKeyDown(Util::Keycode::KP_8)) {
+      int nextStory = m_RoadMap->GetCurrentStory() + 1;
+      if (nextStory < AppUtil::TOTAL_STORY) {
+        m_RoadMap->SwitchStory(nextStory);
+        m_ThingsMap->SwitchStory(nextStory);
+        LOG_INFO("Switched to story {}", nextStory);
+      }
+    }
+    if (Util::Input::IsKeyDown(Util::Keycode::NUM_2) ||
+        Util::Input::IsKeyDown(Util::Keycode::KP_2)) {
+      int prevStory = m_RoadMap->GetCurrentStory() - 1;
+      if (prevStory >= 0) {
+        m_RoadMap->SwitchStory(prevStory);
+        m_ThingsMap->SwitchStory(prevStory);
+        LOG_INFO("Switched to story {}", prevStory);
+      }
+    }
     break;
   }
 

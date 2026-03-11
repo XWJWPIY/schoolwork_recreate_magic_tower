@@ -10,6 +10,7 @@ namespace AppUtil {
 // 全域或共用的工具函式與常數定義
 const int WINDOW_WIDTH = 1200;
 const int WINDOW_HEIGHT = 800;
+constexpr int TOTAL_STORY = 4;
 
 // 遊戲狀態機
 enum class GameState {

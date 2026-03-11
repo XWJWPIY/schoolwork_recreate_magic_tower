@@ -21,22 +21,30 @@ public:
   glm::vec2 GetBaseBlockSize() const { return m_BlockSize; }
 
   void
-  LoadFloorData(const std::vector<std::vector<AppUtil::MapCell>> &floorData);
+  LoadFloorData(const std::vector<std::vector<AppUtil::MapCell>> &floorData,
+                int story = -1);
 
-  void LoadFloorData(const std::vector<std::vector<int>> &floorData);
+  void LoadFloorData(const std::vector<std::vector<int>> &floorData,
+                     int story = -1);
 
-  std::shared_ptr<AllObjects> GetBlock(int x, int y);
+  std::shared_ptr<AllObjects> GetBlock(int x, int y, int story = -1);
+
+  void SwitchStory(int story);
+
+  int GetCurrentStory() const { return m_CurrentStory; }
 
   void SetAllVisible(bool visible) {
-    for (auto &row : m_Blocks) {
-      for (auto &block : row) {
-        if (block) {
-          // If we are setting to visible, only show non-zero objects.
-          // Otherwise hide everything.
-          if (visible && block->GetObjectId() == 0) {
-            block->SetVisible(false);
-          } else {
-            block->SetVisible(visible);
+    for (int s = 0; s < AppUtil::TOTAL_STORY; ++s) {
+      for (auto &row : m_Blocks[s]) {
+        for (auto &block : row) {
+          if (block) {
+            if (visible && s == m_CurrentStory && block->GetObjectId() == 0) {
+              block->SetVisible(false);
+            } else if (visible && s == m_CurrentStory) {
+              block->SetVisible(true);
+            } else {
+              block->SetVisible(false);
+            }
           }
         }
       }
@@ -50,7 +58,8 @@ public:
 private:
   Util::Renderer *m_Root = nullptr;
   BlockFactory m_Factory;
-  std::vector<std::vector<std::shared_ptr<AllObjects>>> m_Blocks;
+  std::vector<std::vector<std::vector<std::shared_ptr<AllObjects>>>> m_Blocks;
+  int m_CurrentStory = 0;
   const float BLOCK_SIZE = 48.0f;         // 圖片路徑錯誤時使用
   glm::vec2 m_BlockSize = {48.0f, 48.0f}; // stored dynamic base image size
 

@@ -1,70 +1,49 @@
-架構構想：
+架構設計方案：
 
-類別設計
+類別架構 (Entity 系統)
 
-一、文字顯示系統
-繼承 GameObject
-    text 物件 {
-        public:
-        可存建構、設定欲輸出內容
-    }
-    數字 紀錄物件 {
-        public:
-        可存建構、設定欲輸出內容
-        提供 記數、內部四則運算、歸零等功能
-    }
+一、基底物件 (`AllObjects`)
+- 繼承 `Util::GameObject`
+- 提供所有地圖物件的基礎：`ObjectId`、座標 (`Transform`)、顯隱控制。
+- 虛擬函數：`ObjectUpdate()`。
 
-二、通用物件系統 (AllObjects 架構)
-設計抽象類別 `AllObjects` ，此類別繼承 `Util::GameObject`。
-此為所有能在地圖上被互動或顯示的實體統一代稱，包含 ID 存取。
-裡面包含設計 {
-    virtual void SetObjectId(int id)
-    virtual int GetObjectId() const
-    virtual void ObjectUpdate() // 提供子類別自定義的邏輯更新介面 (避開 GameObject 無法 override 的問題)
-}
+二、實體系統 (`Entity` 系統)
+- 繼承 `AllObjects`。
+- **虛擬基類**：新增 `virtual void reaction() = 0;` 作為所有互動的出發點。
+- 包含基本數值：`HP`, `ATK`, `DEF`, `Level`。
+- **多型衍生**：
+    1. **`Player` (主角)**：
+        - 獨立於地圖網格管理，由 `App` 持有。
+        - 負責處理 `Util::Input`、背包系統、升級邏輯。
+        - **Z-Index 設定為 -3** (確保顯示在所有物件上方)。
+    2. **`Character` (角色/怪物)**：
+        - 包含 `NPC`, `Bat` (怪物) 等具備戰鬥或對話能力的實體。
+        - `reaction()`：觸發戰鬥、開啟對話盒。
+    3. **`Item` (道具)**：
+        - 包含 `Key`, `Potion` 等。
+        - `reaction()`：被主角撿起，從地圖移除並加入主角背包。
 
-三、角色與實體系統 (Entity 資料驅動系統)
-放棄傳統的 Player / Monster 繼承樹，改用「資料驅動 (Data-Driven)」的單一 `Entity` 類別，繼承自 `AllObjects`。
-所有的英雄、怪物、甚至是 NPC，在程式碼上都是 `Entity` 類別的實例。
-裡面包含設計 {
-    處理基本顯示與座標
-    int 角色血量 (HP)
-    int 角色攻擊力 (ATK)
-    int 角色防禦力 (DEF)
-    int 動畫展示圖編號 / 資源路徑 (ImagePath)
-    enum EntityType (用來區分 Player, Enemy, NPC 等不同邏輯處理階段)
-    State 狀態機 (行為模式)
+三、層級控制 (Z-Index 渲染順序)
+- **Z = -5 (地板層)**：`RoadMap` (牆壁、地板)。
+- **Z = -4 (物件層)**：`ThingsMap` (怪物、道具、NPC、樓梯)。
+- **Z = -3 (主角層)**：單一 `Player` 實例。
 
-    public:
-    動態換皮與屬性載入 (讀取外部表單決定此 Entity 是誰)
-    角色移動許可權設定與碰撞處理
-}
+地圖系統 (FloorMap 3D 結構)
 
-四、地圖圖塊系統 (MapBlock 資料驅動系統)
-由於已經導入了 `AllObjects` 與工廠模式，地圖圖塊系統也將 be 整合進去：
-放棄傳統 Tile 繼承結構，基礎的牆壁、地板皆透過單一的 `MapBlock` 類別 (繼承自 `AllObjects`)。
-如同 Entity 一樣，依靠讀表替換 ID 改變外觀與屬性。
+一、多樓層存儲
+- 將 `m_Blocks` 改為 **3D 陣列 `[story][y][x]`**，預計支援 25 層。
+- 變數 `m_CurrentStory` (now) 紀錄目前活動樓層。
 
-裡面包含設計 {
-    處理基本顯示與座標
-    bool isPassable (是否能穿越)
+二、物件管理
+- `FloorMap` 透過 `BlockFactory` 根據 ID 動態生成對應的衍生類別 (`Item`, `Character`)。
+- 常駐記憶體設計：切換樓層時僅變更顯示與更新指標，不銷毀物件，確保樓層狀態（如怪物死亡）持續保存。
 
-    public:
-    動態換皮與屬性載入 (呼叫 UpdateProperties)
-}
+三、交互觸發流程
+1. `Player` 嘗試移動。
+2. 檢查 `RoadMap` 是否可通行。
+3. 如果目標位置在 `ThingsMap` 有物件，呼叫該物件的 `reaction()`。
+4. 根據 `reaction()` 結果決定移動是否成功或觸發特殊事件。
 
-備註：對於具有特殊互動邏輯的方塊 (如觸發事件、撿拾道具)，未來將透過在 `Entity` 加入對應標籤 (ComponentType::Event 或 ComponentType::Item) 來處理，逐步取代現存的 EventTile 與 CollectableTile 概念。
-
-五、UI 系統 (目標呈現戰鬥雙方數值、以及右側角色資訊)
-繼承 GameObject
-    UI 物件 {
-        public:
-        
-    }
-
-
-六、讀檔紀錄系統
-以 csv 格式儲存方便管理
-除了地圖以外
-橫排會對應到角色的圖檔、數值名稱等
-縱排會對應到角色檔案、數值等
+UI 與存檔系統 (待擴充)
+- UI 層將繼承 `GameObject`。
+- 存檔將以 CSV 格式紀錄主角數值與 25 層樓的 `m_Blocks` ID 變動。
