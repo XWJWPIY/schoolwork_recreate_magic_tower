@@ -5,7 +5,7 @@
 #include "Util/Keycode.hpp"
 #include "Util/Logger.hpp"
 
-#include "Actor.hpp"
+#include "Entity.hpp"
 #include "MapBlock.hpp"
 
 void App::Start() {
@@ -21,10 +21,10 @@ void App::Start() {
     return std::make_shared<MapBlock>(id);
   };
 
-  // Factory for ThingsMap (Always create Actor, even for ID 0)
+  // Factory for ThingsMap (Always create Entity, even for ID 0)
   FloorMap::BlockFactory thingsFactory =
       [](int id) -> std::shared_ptr<AllObjects> {
-    return std::make_shared<Actor>(id);
+    return std::make_shared<Entity>(id);
   };
 
   m_RoadMap = std::make_shared<FloorMap>(roadFactory, 141.0f, 0.0f, 0.735f,

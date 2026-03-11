@@ -1,12 +1,12 @@
 #include "CollectableTile.hpp"
-#include "Actor.hpp"
+#include "Entity.hpp"
 #include "Util/Logger.hpp"
 
 CollectableTile::CollectableTile() {
   is_passable = true; // Collectables must be stepped on to be collected
 }
 
-bool CollectableTile::onCollect(Actor *player) {
+bool CollectableTile::onCollect(Entity *player) {
   if (!player)
     return false;
 

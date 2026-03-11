@@ -1,12 +1,12 @@
 #include "EventTile.hpp"
-#include "Actor.hpp"
+#include "Entity.hpp"
 #include "Util/Logger.hpp"
 
 EventTile::EventTile() {
   is_passable = true; // Events are normally passable to trigger them
 }
 
-void EventTile::onTrigger(Actor *player) {
+void EventTile::onTrigger(Entity *player) {
   if (!player)
     return;
 

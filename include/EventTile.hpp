@@ -5,7 +5,7 @@
 #include <functional>
 #include <string>
 
-class Actor;
+class Entity;
 
 // For interactive environments like stairs, teleports or invisible walls
 class EventTile : public Tile {
@@ -14,7 +14,7 @@ public:
   ~EventTile() = default;
 
   // Trigger action when Player steps on or interacts with it
-  virtual void onTrigger(Actor *player);
+  virtual void onTrigger(Entity *player);
 
   std::string getEventType() const { return event_type; }
   void setEventType(const std::string &type) { event_type = type; }

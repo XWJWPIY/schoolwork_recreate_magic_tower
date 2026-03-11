@@ -1,5 +1,5 @@
-#ifndef ACTOR_HPP
-#define ACTOR_HPP
+#ifndef ENTITY_HPP
+#define ENTITY_HPP
 
 #include "AllObjects.hpp"
 #include "pch.hpp"
@@ -9,10 +9,10 @@
 
 // #include "Util/Image.hpp" // Placeholder for PTSD Image
 
-class Actor : public AllObjects {
+class Entity : public AllObjects {
 public:
-  Actor(int initialId = 0);
-  ~Actor() override = default;
+  Entity(int initialId = 0);
+  ~Entity() override = default;
 
   void SetObjectId(int newId) override;
   void UpdateProperties(int id);
@@ -50,4 +50,4 @@ protected:
   // std::vector<std::shared_ptr<Util::Image>> animation_frames;
 };
 
-#endif // ACTOR_HPP
+#endif // ENTITY_HPP

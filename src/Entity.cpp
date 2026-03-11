@@ -1,15 +1,15 @@
-#include "Actor.hpp"
+#include "Entity.hpp"
 
 #include "Util/Image.hpp"
 
-Actor::Actor(int initialId)
+Entity::Entity(int initialId)
     : AllObjects(std::make_unique<Util::Image>(GetImagePath(initialId)), -2,
                  initialId),
       x(0), y(0) {
   UpdateProperties(initialId);
 }
 
-void Actor::SetObjectId(int newId) {
+void Entity::SetObjectId(int newId) {
   if (m_ObjectId == newId)
     return;
 
@@ -21,7 +21,7 @@ void Actor::SetObjectId(int newId) {
   UpdateProperties(m_ObjectId);
 }
 
-void Actor::UpdateProperties(int id) {
+void Entity::UpdateProperties(int id) {
   // If id is 0, we don't want to show anything, but the object exists.
   if (id == 0) {
     SetVisible(false);
@@ -39,7 +39,7 @@ void Actor::UpdateProperties(int id) {
   }
 }
 
-std::string Actor::GetImagePath(int id) const {
+std::string Entity::GetImagePath(int id) const {
   switch (id) {
   case 303:
     return MAGIC_TOWER_RESOURCE_DIR "/bmp/Player/player_backward.png";
@@ -50,7 +50,7 @@ std::string Actor::GetImagePath(int id) const {
   }
 }
 
-bool Actor::canMove(int delta_x, int delta_y) {
+bool Entity::canMove(int delta_x, int delta_y) {
   if (!is_movable)
     return false;
 

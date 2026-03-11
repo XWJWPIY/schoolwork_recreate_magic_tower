@@ -1,7 +1,7 @@
 set(SRC_FILES
     App.cpp
     AppUtil.cpp
-    Actor.cpp
+    Entity.cpp
     AllObjects.cpp
     Tile.cpp
     StaticTile.cpp
@@ -15,7 +15,7 @@ set(SRC_FILES
 set(INCLUDE_FILES
     App.hpp
     AppUtil.hpp
-    Actor.hpp
+    Entity.hpp
     AllObjects.hpp
     Tile.hpp
     StaticTile.hpp
