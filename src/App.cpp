@@ -56,6 +56,17 @@ void App::Start() {
     }
   }
   m_ThingsMap->SetAllVisible(false);
+
+  // Test Text
+  m_TestText = std::make_shared<NumericDisplayText>(
+      MAGIC_TOWER_RESOURCE_DIR "/Font/Cubic_11.ttf", 32);
+  m_TestText->SetPrefix("");
+  m_TestText->SetNumber(0);
+  m_TestText->SetSuffix(" F");
+  m_TestText->m_Transform.translation = {150.0f, 335.0f};
+  m_TestText->SetZIndex(-3.0f);
+  m_TestText->SetVisible(false);
+  m_Root.AddChild(m_TestText);
 }
 
 void App::Update() {
@@ -67,10 +78,12 @@ void App::Update() {
       m_Background->NextPhase(1);
       m_RoadMap->SetAllVisible(true);
       m_ThingsMap->SetAllVisible(true);
+      m_TestText->SetVisible(true);
     }
     break;
 
   case AppUtil::GameState::Playing:
+    m_TestText->SetNumber(m_RoadMap->GetCurrentStory());
     if (Util::Input::IsKeyDown(Util::Keycode::NUM_8) ||
         Util::Input::IsKeyDown(Util::Keycode::KP_8)) {
       int nextStory = m_RoadMap->GetCurrentStory() + 1;
@@ -92,6 +105,7 @@ void App::Update() {
     break;
   }
 
+  m_TestText->UpdateDisplayText();
   m_Root.Update();
 
   /*

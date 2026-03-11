@@ -10,6 +10,7 @@ set(SRC_FILES
     Background.cpp
     MapBlock.cpp
     FloorMap.cpp
+    NumericDisplayText.cpp
 )
 
 set(INCLUDE_FILES
@@ -24,6 +25,7 @@ set(INCLUDE_FILES
     Background.hpp
     MapBlock.hpp
     FloorMap.hpp
+    NumericDisplayText.hpp
 )
 
 set(TEST_FILES

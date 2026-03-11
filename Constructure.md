@@ -44,6 +44,13 @@
 3. 如果目標位置在 `ThingsMap` 有物件，呼叫該物件的 `reaction()`。
 4. 根據 `reaction()` 結果決定移動是否成功或觸發特殊事件。
 
+四、UI 系統 (文字與數值顯示)
+- **`NumericDisplayText`**：
+    - 繼承自 `Util::GameObject`。
+    - **格式**：`Prefix` + `Number` + `Suffix` (例如：`m_Number` + `" F"` 顯示樓層)。
+    - **控制旗標**：`m_ShowNumber`, `m_ShowText` 可獨立切換顯示。
+    - **更新機制**：手動呼叫 `UpdateDisplayText()` 或在數值變動時更新，避免每影格重複渲染以節省效能。
+
 UI 與存檔系統 (待擴充)
-- UI 層將繼承 `GameObject`。
+- UI 疊層將優先生於 z-index 更靠前的位置。
 - 存檔將以 CSV 格式紀錄主角數值與 25 層樓的 `m_Blocks` ID 變動。
