@@ -7,6 +7,7 @@
 
 #include "Entity.hpp"
 #include "MapBlock.hpp"
+#include "Player.hpp"
 
 void App::Start() {
   LOG_TRACE("Start");
@@ -67,6 +68,11 @@ void App::Start() {
   m_TestText->SetZIndex(-3.0f);
   m_TestText->SetVisible(false);
   m_Root.AddChild(m_TestText);
+
+  // Player Initialization
+  m_Player = std::make_shared<Player>();
+  m_Player->SyncPosition(m_RoadMap);
+  m_Root.AddChild(m_Player);
 }
 
 void App::Update() {
@@ -84,6 +90,24 @@ void App::Update() {
 
   case AppUtil::GameState::Playing:
     m_TestText->SetNumber(m_RoadMap->GetCurrentStory());
+
+    if (Util::Input::IsKeyDown(Util::Keycode::W) ||
+        Util::Input::IsKeyDown(Util::Keycode::UP)) {
+      m_Player->Move(0, -1, m_RoadMap);
+    }
+    if (Util::Input::IsKeyDown(Util::Keycode::S) ||
+        Util::Input::IsKeyDown(Util::Keycode::DOWN)) {
+      m_Player->Move(0, 1, m_RoadMap);
+    }
+    if (Util::Input::IsKeyDown(Util::Keycode::A) ||
+        Util::Input::IsKeyDown(Util::Keycode::LEFT)) {
+      m_Player->Move(-1, 0, m_RoadMap);
+    }
+    if (Util::Input::IsKeyDown(Util::Keycode::D) ||
+        Util::Input::IsKeyDown(Util::Keycode::RIGHT)) {
+      m_Player->Move(1, 0, m_RoadMap);
+    }
+
     if (Util::Input::IsKeyDown(Util::Keycode::NUM_8) ||
         Util::Input::IsKeyDown(Util::Keycode::KP_8)) {
       int nextStory = m_RoadMap->GetCurrentStory() + 1;

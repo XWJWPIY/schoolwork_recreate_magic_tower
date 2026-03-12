@@ -42,7 +42,7 @@ void Entity::UpdateProperties(int id) {
 std::string Entity::GetImagePath(int id) const {
   switch (id) {
   case 303:
-    return MAGIC_TOWER_RESOURCE_DIR "/bmp/Player/player_backward.png";
+    return MAGIC_TOWER_RESOURCE_DIR "/bmp/Door/blue_door.BMP";
   case 0:
   default:
     // For ID 0, use a default but it will be hidden by UpdateProperties

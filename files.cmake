@@ -11,6 +11,7 @@ set(SRC_FILES
     MapBlock.cpp
     FloorMap.cpp
     NumericDisplayText.cpp
+    Player.cpp
 )
 
 set(INCLUDE_FILES
@@ -26,6 +27,7 @@ set(INCLUDE_FILES
     MapBlock.hpp
     FloorMap.hpp
     NumericDisplayText.hpp
+    Player.hpp
 )
 
 set(TEST_FILES

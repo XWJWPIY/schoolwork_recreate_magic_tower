@@ -5,6 +5,7 @@
 #include "Background.hpp"
 #include "FloorMap.hpp"
 #include "NumericDisplayText.hpp"
+#include "Player.hpp"
 #include "Util/Renderer.hpp"
 #include "Util/Text.hpp"
 #include "pch.hpp" // IWYU pragma: export
@@ -39,6 +40,7 @@ private:
   std::shared_ptr<FloorMap> m_RoadMap;
   std::shared_ptr<FloorMap> m_ThingsMap;
   std::shared_ptr<NumericDisplayText> m_TestText;
+  std::shared_ptr<Player> m_Player;
 };
 
 #endif
