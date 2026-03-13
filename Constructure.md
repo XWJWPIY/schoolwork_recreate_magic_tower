@@ -2,10 +2,11 @@
 
 ```mermaid
 classDiagram
+    FloorMap
+
     GameObject --> AllObjects
     GameObject --> Background
     GameObject --> NumericDisplayText
-    GameObject --> Background
     
     AllObjects --> MapBlock
     AllObjects --> Entity
