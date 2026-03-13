@@ -8,53 +8,43 @@ Door::Door(int id)
     : Entity(id,
              MAGIC_TOWER_RESOURCE_DIR "/bmp/Door/" +
                  AppUtil::GetIdString(id) + "1.BMP",
-             true) {}
+             true) {
+  std::string doorName = AppUtil::GetIdString(id);
+  std::vector<std::string> paths;
+  for (int i = 1; i <= MAX_ANIMATION_FRAMES; i++) {
+    std::string path = MAGIC_TOWER_RESOURCE_DIR "/bmp/Door/" + doorName +
+                       std::to_string(i);
+    // Handle the inconsistent extension case (some are .BMP, some .bmp)
+    if (doorName == "iron_fence" && i == 2) {
+      path += ".bmp";
+    } else {
+      path += ".BMP";
+    }
+    paths.push_back(path);
+  }
+
+  // Create Animation: paths, play, interval(ms), looping, cooldown
+  m_Animation = std::make_shared<Util::Animation>(paths, false, 100, false);
+  SetDrawable(m_Animation);
+}
 
 void Door::reaction() {
-  if (m_IsOpening) return;
+  if (m_Animation->GetState() == Util::Animation::State::PLAY) return;
 
   LOG_INFO("Opening Door! ID: {} ({})", m_ObjectId,
            AppUtil::GetIdString(m_ObjectId));
-  
-  m_IsOpening = true;
+
+  m_Animation->Play();
   m_CanReact = false; // Prevent multiple reactions during animation
-  m_AnimationFrame = 1;
-  m_FrameTimer = 0.0f;
 }
 
 void Door::ObjectUpdate() {
-  if (!m_IsOpening) return;
-
-  m_FrameTimer += static_cast<float>(Util::Time::GetDeltaTime());
-
-  if (m_FrameTimer >= FRAME_DELAY) {
-    m_FrameTimer = 0.0f;
-    m_AnimationFrame++;
-
-    if (m_AnimationFrame <= MAX_ANIMATION_FRAMES) {
-      // Update image frame
-      std::string doorName = AppUtil::GetIdString(m_ObjectId);
-      std::string imagePath = MAGIC_TOWER_RESOURCE_DIR "/bmp/Door/" + doorName + std::to_string(m_AnimationFrame);
-      
-      // Handle the inconsistent extension case (some are .BMP, some .bmp based on list_dir)
-      if (doorName == "iron_fence" && m_AnimationFrame == 2) {
-          imagePath += ".bmp";
-      } else {
-          imagePath += ".BMP";
-      }
-
-      auto image = std::dynamic_pointer_cast<Util::Image>(m_Drawable);
-      if (image) {
-        image->SetImage(imagePath);
-      }
+  // If animation has ended
+  if (m_Animation->GetState() == Util::Animation::State::ENDED) {
+    if (m_ReplacementComp) {
+      m_ReplacementComp->ReplaceWith(m_GridX, m_GridY, 0);
     } else {
-      // Animation finished
-      m_IsOpening = false;
-      if (m_ReplacementComp) {
-        m_ReplacementComp->ReplaceWith(m_GridX, m_GridY, 0);
-      } else {
-        SetVisible(false);
-      }
+      SetVisible(false);
     }
   }
 }

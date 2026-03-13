@@ -1,11 +1,8 @@
 #ifndef DOOR_HPP
 #define DOOR_HPP
-
 #include "Entity.hpp"
-#include "Util/Logger.hpp"
-#include "pch.hpp"
-
-#include <string>
+#include "Util/Animation.hpp"
+#include <vector>
 
 class Door : public Entity {
 public:
@@ -18,10 +15,7 @@ public:
 
 private:
   static constexpr int MAX_ANIMATION_FRAMES = 5;
-  bool m_IsOpening = false;
-  int m_AnimationFrame = 1;
-  float m_FrameTimer = 0.0f;
-  const float FRAME_DELAY = 0.1f; // 100ms per frame
+  std::shared_ptr<Util::Animation> m_Animation;
 };
 
 #endif // DOOR_HPP
