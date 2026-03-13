@@ -1,6 +1,7 @@
 #ifndef APPUTIL_HPP
 #define APPUTIL_HPP
 
+#include "Util/Time.hpp"
 #include "pch.hpp"
 #include <string>
 #include <unordered_map>
@@ -26,6 +27,18 @@ enum class GameState {
 
 struct MapCell {
   int id = 0;
+};
+
+struct TileAnimationManager {
+  /**
+   * @brief Get the current frame for 2-frame animations based on global time.
+   * @param intervalMs How long each frame lasts in milliseconds.
+   * @return 1 or 2
+   */
+  static int GetGlobalFrame2(int intervalMs = 500) {
+    auto ms = static_cast<long long>(Util::Time::GetElapsedTimeMs());
+    return static_cast<int>((ms / intervalMs) % 2) + 1;
+  }
 };
 
 class MapParser {

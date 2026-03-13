@@ -1,3 +1,22 @@
+# 魔塔專案架構概覽
+
+```mermaid
+classDiagram
+    GameObject --> AllObjects
+    GameObject --> Background
+    GameObject --> NumericDisplayText
+    GameObject --> Background
+    
+    AllObjects --> MapBlock
+    AllObjects --> Entity
+    
+    Entity --> Door
+    Entity --> Enemy
+    Entity --> NPC
+    Entity --> Item
+    Entity --> Stair
+```
+
 架構設計方案：
 
 類別架構 (Entity 系統)

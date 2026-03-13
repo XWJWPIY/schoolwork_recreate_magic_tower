@@ -12,7 +12,7 @@ public:
   int GetObjectId() const { return m_ObjectId; }
 
   virtual void ObjectUpdate() {}
-  bool GetVisible() const { return m_Visible; }
+  bool GetVisible() const { return this->m_Visible; }
 
 protected:
   // Using protected constructor so it can't be instantiated directly
