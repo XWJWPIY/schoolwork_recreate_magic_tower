@@ -73,6 +73,7 @@ void App::Start() {
   m_Player = std::make_shared<Player>();
   m_Player->SyncPosition(m_RoadMap);
   m_Root.AddChild(m_Player);
+  m_Player->SetVisible(false);
 }
 
 void App::Update() {
@@ -85,6 +86,7 @@ void App::Update() {
       m_RoadMap->SetAllVisible(true);
       m_ThingsMap->SetAllVisible(true);
       m_TestText->SetVisible(true);
+      m_Player->SetVisible(true);
     }
     break;
 

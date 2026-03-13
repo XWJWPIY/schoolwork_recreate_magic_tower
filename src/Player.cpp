@@ -27,8 +27,13 @@ void Player::Move(int dx, int dy, std::shared_ptr<FloorMap> roadmap) {
     return;
   }
 
-  // TODO: Add collision checking with roadmap blocks here
-  // For now, just move
+  // Check collision with roadmap
+  if (roadmap && !roadmap->IsPassable(nextX, nextY)) {
+    return;
+  }
+
+  // TODO: Check collision with thingsMap (interactions)
+
   m_GridX = nextX;
   m_GridY = nextY;
 

@@ -1,4 +1,6 @@
 #include "FloorMap.hpp"
+#include "Entity.hpp"
+#include "MapBlock.hpp"
 #include "Util/Logger.hpp"
 
 FloorMap::FloorMap(BlockFactory factory, float centerX, float centerY,
@@ -186,6 +188,28 @@ std::shared_ptr<AllObjects> FloorMap::GetBlock(int x, int y, int story) {
     return m_Blocks[targetStory][y][x];
   }
   return nullptr;
+}
+
+bool FloorMap::IsPassable(int x, int y, int story) {
+  auto block = GetBlock(x, y, story);
+  if (!block) {
+    return true; // Empty space is passable by default
+  }
+
+  auto mapBlock = std::dynamic_pointer_cast<MapBlock>(block);
+  if (mapBlock) {
+    return mapBlock->IsPassable();
+  }
+
+  auto entity = std::dynamic_pointer_cast<Entity>(block);
+  if (entity) {
+    // Entities like doors or monsters might have different passability logic.
+    // For now, if it's an entity, we assume it's NOT passable if it's visible.
+    // In the future, we can add a reaction system.
+    //return !entity->GetVisible();
+  }
+
+  return true;
 }
 
 void FloorMap::SwitchStory(int story) {

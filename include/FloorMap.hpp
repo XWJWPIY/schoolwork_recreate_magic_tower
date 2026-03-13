@@ -28,6 +28,7 @@ public:
                      int story = -1);
 
   std::shared_ptr<AllObjects> GetBlock(int x, int y, int story = -1);
+  bool IsPassable(int x, int y, int story = -1);
 
   void SwitchStory(int story);
 
