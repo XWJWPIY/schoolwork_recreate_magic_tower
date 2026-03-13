@@ -34,12 +34,13 @@ void Player::Move(int dx, int dy, std::shared_ptr<FloorMap> roadmap,
   if (thingsmap) {
     auto target = thingsmap->GetBlock(nextX, nextY);
     auto entity = std::dynamic_pointer_cast<Entity>(target);
-    // Execute reaction() only if entity is visible, allows reaction, and exists
-    if (entity && entity->GetVisible() && entity->CanReact()) {
-      entity->reaction();
+    if (entity && entity->GetVisible()) {
+      // Trigger reaction if possible
+      if (entity->CanReact()) {
+        entity->reaction();
+      }
 
-      // If entity remains visible after reaction AND is not passable,
-      // block movement
+      // Block movement if the entity is still visible and not passable
       if (entity->GetVisible() && !entity->IsPassable()) {
         return;
       }

@@ -29,34 +29,43 @@ void App::Start() {
   };
 
   // Factory for ThingsMap (Create specialized Entities based on ID)
-  FloorMap::BlockFactory thingsFactory =
-      [this](int id) -> std::shared_ptr<AllObjects> {
-    if (id >= 200 && id < 300)
-      return std::make_shared<Item>(id);
-    if (id >= 300 && id < 400)
-      return std::make_shared<Door>(id);
-    if (id >= 400 && id < 500)
-      return std::make_shared<Enemy>(id);
-    if (id >= 500 && id < 600)
-      return std::make_shared<NPC>(id);
-    if (id >= 600 && id < 700)
-      return std::make_shared<Shop>(id);
-    if (id >= 700 && id < 800)
-      return std::make_shared<Stair>(
-          id, [this](int delta) { this->ChangeFloor(delta); });
+  auto replacementComp = std::make_shared<DynamicReplacementComponent>(
+      [this](int x, int y, int id) { this->m_ThingsMap->SetBlock(x, y, id); });
 
-    // Fallback or ID 0 (Entity itself handles SetVisible(false) in constructor
-    // if needed, but here we must return a concrete instance)
-    class UnknownEntity : public Entity {
-    public:
-      UnknownEntity(int i)
-          : Entity(i, MAGIC_TOWER_RESOURCE_DIR "/bmp/Door/no_door.png", false) {
-        if (i == 0)
-          SetVisible(false);
-      }
-      void reaction() override { LOG_DEBUG("Unknown entity reaction"); }
-    };
-    return std::make_shared<UnknownEntity>(id);
+  FloorMap::BlockFactory thingsFactory =
+      [this, replacementComp](int id) -> std::shared_ptr<AllObjects> {
+    std::shared_ptr<Entity> entity;
+    if (id >= 200 && id < 300)
+      entity = std::make_shared<Item>(id);
+    else if (id >= 300 && id < 400)
+      entity = std::make_shared<Door>(id);
+    else if (id >= 400 && id < 500)
+      entity = std::make_shared<Enemy>(id);
+    else if (id >= 500 && id < 600)
+      entity = std::make_shared<NPC>(id);
+    else if (id >= 600 && id < 700)
+      entity = std::make_shared<Shop>(id);
+    else if (id >= 700 && id < 800)
+      entity = std::make_shared<Stair>(
+          id, [this](int delta) { this->ChangeFloor(delta); });
+    else {
+      // Fallback or ID 0
+      class UnknownEntity : public Entity {
+      public:
+        UnknownEntity(int i)
+            : Entity(i, MAGIC_TOWER_RESOURCE_DIR "/bmp/Door/no_door.png", false) {
+          if (i == 0)
+            SetVisible(false);
+        }
+        void reaction() override { LOG_DEBUG("Unknown entity reaction"); }
+      };
+      entity = std::make_shared<UnknownEntity>(id);
+    }
+
+    if (entity) {
+      entity->SetReplacementComponent(replacementComp);
+    }
+    return entity;
   };
 
   m_RoadMap = std::make_shared<FloorMap>(roadFactory, 141.0f, 0.0f, 0.735f,
@@ -164,6 +173,9 @@ void App::Update() {
     }
     break;
   }
+
+  m_RoadMap->Update();
+  m_ThingsMap->Update();
 
   m_TestText->UpdateDisplayText();
   m_Root.Update();

@@ -12,5 +12,10 @@ void Item::reaction() {
   LOG_INFO("Item collected! ID: {} ({})", m_ObjectId,
            AppUtil::GetIdString(m_ObjectId));
   // TODO: Update player stats or inventory
-  SetVisible(false);
+
+  if (m_ReplacementComp) {
+    m_ReplacementComp->ReplaceWith(m_GridX, m_GridY, 0); // Replace with empty floor
+  } else {
+    SetVisible(false);
+  }
 }

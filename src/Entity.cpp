@@ -9,7 +9,7 @@ Entity::Entity(int initialId, const std::string &imagePath, bool canReact)
                          ? imagePath
                          : MAGIC_TOWER_RESOURCE_DIR "/bmp/Door/no_door.png"),
                  -2, initialId),
-      x(0), y(0), m_CanReact(canReact) {
+      m_GridX(0), m_GridY(0), m_CanReact(canReact) {
   // Update properties after members are initialized
   UpdateProperties(initialId);
 }

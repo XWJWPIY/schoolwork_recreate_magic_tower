@@ -12,5 +12,10 @@ void Enemy::reaction() {
   LOG_INFO("Entering battle! Enemy ID: {} ({})", m_ObjectId,
            AppUtil::GetIdString(m_ObjectId));
   // TODO: Battle logic and damage calculation
-  SetVisible(false);
+
+  if (m_ReplacementComp) {
+    m_ReplacementComp->ReplaceWith(m_GridX, m_GridY, 0); // Replace with empty floor
+  } else {
+    SetVisible(false);
+  }
 }

@@ -32,7 +32,10 @@ public:
 
   void SwitchStory(int story);
 
+  void Update();
+
   int GetCurrentStory() const { return m_CurrentStory; }
+  void SetBlock(int x, int y, int id, int story = -1);
 
   void SetAllVisible(bool visible) {
     for (int s = 0; s < AppUtil::TOTAL_STORY; ++s) {

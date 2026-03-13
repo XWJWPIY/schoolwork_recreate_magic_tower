@@ -11,6 +11,9 @@ public:
   virtual void SetObjectId(int newId) { m_ObjectId = newId; }
   int GetObjectId() const { return m_ObjectId; }
 
+  virtual void ObjectUpdate() {}
+  bool GetVisible() const { return m_Visible; }
+
 protected:
   // Using protected constructor so it can't be instantiated directly
   AllObjects(int initialId = 0);

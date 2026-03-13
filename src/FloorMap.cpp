@@ -1,4 +1,5 @@
 #include "FloorMap.hpp"
+#include "AllObjects.hpp"
 #include "Entity.hpp"
 #include "MapBlock.hpp"
 #include "Util/Logger.hpp"
@@ -54,6 +55,11 @@ FloorMap::FloorMap(BlockFactory factory, float centerX, float centerY,
 
           if (m_Root)
             m_Root->AddChild(block);
+
+          auto entity = std::dynamic_pointer_cast<Entity>(block);
+          if (entity) {
+            entity->SetGridPosition(x, y);
+          }
         }
         row.push_back(block);
       }
@@ -123,6 +129,11 @@ void FloorMap::LoadFloorData(
       }
 
       m_Blocks[targetStory][y][x] = newBlock;
+
+      auto entity = std::dynamic_pointer_cast<Entity>(newBlock);
+      if (entity) {
+        entity->SetGridPosition(x, y);
+      }
     }
   }
 }
@@ -175,8 +186,60 @@ void FloorMap::LoadFloorData(const std::vector<std::vector<int>> &floorData,
           m_Root->RemoveChild(oldBlock);
       }
       m_Blocks[targetStory][y][x] = newBlock;
+
+      auto entity = std::dynamic_pointer_cast<Entity>(newBlock);
+      if (entity) {
+        entity->SetGridPosition(x, y);
+      }
     }
   }
+}
+
+void FloorMap::SetBlock(int x, int y, int id, int story) {
+  int targetStory = (story == -1) ? m_CurrentStory : story;
+  if (targetStory < 0 || targetStory >= AppUtil::TOTAL_STORY)
+    return;
+
+  if (x < 0 || x >= 11 || y < 0 || y >= 11)
+    return;
+
+  auto oldBlock = m_Blocks[targetStory][y][x];
+  if (oldBlock && oldBlock->GetObjectId() == id) {
+    return;
+  }
+
+  auto newBlock = m_Factory(id);
+  if (newBlock) {
+    newBlock->SetZIndex(m_ZIndex);
+    if (oldBlock) {
+      newBlock->m_Transform = oldBlock->m_Transform;
+      if (m_Root)
+        m_Root->RemoveChild(oldBlock);
+    } else {
+      newBlock->m_Transform.scale = {m_ScaleX, m_ScaleY};
+      float spacingX = m_BlockSize.x * m_ScaleX;
+      float spacingY = m_BlockSize.y * m_ScaleY;
+      float absX = m_CenterX + (x - 5) * spacingX;
+      float absY = m_CenterY + (5 - y) * spacingY;
+      newBlock->m_Transform.translation = {absX, absY};
+    }
+
+    // Set grid position for entities
+    auto entity = std::dynamic_pointer_cast<Entity>(newBlock);
+    if (entity) {
+      entity->SetGridPosition(x, y);
+    }
+
+    // Visibility logic
+    newBlock->SetVisible(targetStory == m_CurrentStory && id != 0);
+
+    if (m_Root)
+      m_Root->AddChild(newBlock);
+  } else if (oldBlock) {
+    if (m_Root)
+      m_Root->RemoveChild(oldBlock);
+  }
+  m_Blocks[targetStory][y][x] = newBlock;
 }
 
 std::shared_ptr<AllObjects> FloorMap::GetBlock(int x, int y, int story) {
@@ -231,6 +294,16 @@ void FloorMap::SwitchStory(int story) {
     for (auto &block : row) {
       if (block && block->GetObjectId() != 0) {
         block->SetVisible(true);
+      }
+    }
+  }
+}
+
+void FloorMap::Update() {
+  for (auto &row : m_Blocks[m_CurrentStory]) {
+    for (auto &block : row) {
+      if (block && block->GetVisible()) {
+        block->ObjectUpdate();
       }
     }
   }

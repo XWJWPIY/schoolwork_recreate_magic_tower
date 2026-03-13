@@ -11,8 +11,10 @@ namespace AppUtil {
 
 // Resource ID to name/path mapping
 const std::unordered_map<int, std::string> IdStringMap = {
-    {0, "Empty"},      {201, "Yellow_Key"}, {202, "Blue_Key"}, {203, "Red_Key"},
-    {301, "Door"},     {401, "Slime"},      {501, "NPC"},      {701, "Upstair"},
+    {0, "Empty"}, 
+    {201, "Yellow_Key"}, {202, "Blue_Key"}, {203, "Red_Key"},
+    {301, "iron_fence"}, {302, "yellow_door"}, {303, "blue_door"}, {304, "red_door"}, {305, "green_door"},
+    {401, "Slime"},      {501, "NPC"},      {701, "Upstair"},
     {702, "Downstair"}
     // TODO: Add more mappings as needed
 };

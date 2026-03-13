@@ -3,6 +3,7 @@
 
 #include "AllObjects.hpp"
 #include "pch.hpp"
+#include "DynamicReplacementComponent.hpp"
 #include <memory>
 #include <string>
 #include <vector>
@@ -14,7 +15,6 @@ public:
   Entity(int initialId, const std::string &imagePath, bool canReact = true);
   ~Entity() override = default;
 
-  bool GetVisible() const { return m_Visible; }
   bool CanReact() const { return m_CanReact; }
   void SetCanReact(bool value) { m_CanReact = value; }
 
@@ -22,7 +22,19 @@ public:
   void UpdateProperties(int id);
 
   virtual void reaction() = 0;
+  virtual void ObjectUpdate() override {}
   virtual bool IsPassable() const { return false; }
+
+  void SetReplacementComponent(std::shared_ptr<DynamicReplacementComponent> comp) {
+    m_ReplacementComp = comp;
+  }
+
+  void SetGridPosition(int x, int y) {
+    m_GridX = x;
+    m_GridY = y;
+  }
+  int GetGridX() const { return m_GridX; }
+  int GetGridY() const { return m_GridY; }
 
   // Getters and Setters
   int getHp() const { return hp; }
@@ -41,8 +53,8 @@ public:
   bool getMovable() const { return is_movable; }
 
 protected:
-  int x;
-  int y;
+  int m_GridX = 0;
+  int m_GridY = 0;
 
   bool m_CanReact = true;
   bool is_movable = false;
@@ -52,6 +64,8 @@ protected:
   int level = 1;
 
   int current_frame = 0;
+
+  std::shared_ptr<DynamicReplacementComponent> m_ReplacementComp;
 };
 
 #endif // ENTITY_HPP

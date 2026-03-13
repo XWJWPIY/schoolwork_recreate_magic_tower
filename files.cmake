@@ -18,6 +18,7 @@ set(SRC_FILES
     Door.cpp
     Enemy.cpp
     NPC.cpp
+    DynamicReplacementComponent.cpp
 )
 
 set(INCLUDE_FILES
@@ -40,6 +41,7 @@ set(INCLUDE_FILES
     Door.hpp
     Enemy.hpp
     NPC.hpp
+    DynamicReplacementComponent.hpp
 )
 
 set(TEST_FILES
