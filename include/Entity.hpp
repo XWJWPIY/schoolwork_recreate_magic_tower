@@ -11,14 +11,18 @@
 
 class Entity : public AllObjects {
 public:
-  Entity(int initialId = 0);
+  Entity(int initialId, const std::string &imagePath, bool canReact = true);
   ~Entity() override = default;
+
+  bool GetVisible() const { return m_Visible; }
+  bool CanReact() const { return m_CanReact; }
+  void SetCanReact(bool value) { m_CanReact = value; }
 
   void SetObjectId(int newId) override;
   void UpdateProperties(int id);
-  std::string GetImagePath(int id) const;
 
-  virtual bool canMove(int delta_x, int delta_y);
+  virtual void reaction() = 0;
+  virtual bool IsPassable() const { return false; }
 
   // Getters and Setters
   int getHp() const { return hp; }
@@ -40,6 +44,7 @@ protected:
   int x;
   int y;
 
+  bool m_CanReact = true;
   bool is_movable = false;
   int hp = 0;
   int attack = 0;
@@ -47,7 +52,6 @@ protected:
   int level = 1;
 
   int current_frame = 0;
-  // std::vector<std::shared_ptr<Util::Image>> animation_frames;
 };
 
 #endif // ENTITY_HPP

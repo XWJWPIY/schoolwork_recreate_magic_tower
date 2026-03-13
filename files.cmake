@@ -12,6 +12,12 @@ set(SRC_FILES
     FloorMap.cpp
     NumericDisplayText.cpp
     Player.cpp
+    Stair.cpp
+    Shop.cpp
+    Item.cpp
+    Door.cpp
+    Enemy.cpp
+    NPC.cpp
 )
 
 set(INCLUDE_FILES
@@ -28,6 +34,12 @@ set(INCLUDE_FILES
     FloorMap.hpp
     NumericDisplayText.hpp
     Player.hpp
+    Stair.hpp
+    Shop.hpp
+    Item.hpp
+    Door.hpp
+    Enemy.hpp
+    NPC.hpp
 )
 
 set(TEST_FILES

@@ -1,14 +1,11 @@
 #include "Player.hpp"
+#include "FloorMap.hpp" // Required to get target entities for interaction
 #include "Util/Image.hpp"
 #include "Util/Logger.hpp"
 
-Player::Player() : Entity(0) {
-  // Set Player specific image
-  auto temp = std::dynamic_pointer_cast<Util::Image>(m_Drawable);
-  if (temp) {
-    temp->SetImage(MAGIC_TOWER_RESOURCE_DIR "/bmp/Player/player_backward.png");
-  }
-
+Player::Player()
+    : Entity(0, MAGIC_TOWER_RESOURCE_DIR "/bmp/Player/player_backward.png",
+             false) { // Player defaults to not reacting (reaction() disabled)
   // Player layer is -3 based on Constructure.md
   SetZIndex(-3.0f);
   SetVisible(true);
@@ -18,7 +15,8 @@ Player::Player() : Entity(0) {
   m_GridY = 9;
 }
 
-void Player::Move(int dx, int dy, std::shared_ptr<FloorMap> roadmap) {
+void Player::Move(int dx, int dy, std::shared_ptr<FloorMap> roadmap,
+                  std::shared_ptr<FloorMap> thingsmap) {
   int nextX = m_GridX + dx;
   int nextY = m_GridY + dy;
 
@@ -32,12 +30,30 @@ void Player::Move(int dx, int dy, std::shared_ptr<FloorMap> roadmap) {
     return;
   }
 
-  // TODO: Check collision with thingsMap (interactions)
+  // Check collision with thingsMap (interactions)
+  if (thingsmap) {
+    auto target = thingsmap->GetBlock(nextX, nextY);
+    auto entity = std::dynamic_pointer_cast<Entity>(target);
+    // Execute reaction() only if entity is visible, allows reaction, and exists
+    if (entity && entity->GetVisible() && entity->CanReact()) {
+      entity->reaction();
+
+      // If entity remains visible after reaction AND is not passable,
+      // block movement
+      if (entity->GetVisible() && !entity->IsPassable()) {
+        return;
+      }
+    }
+  }
 
   m_GridX = nextX;
   m_GridY = nextY;
 
   SyncPosition(roadmap);
+}
+
+void Player::reaction() {
+  LOG_INFO("Player triggered reaction()! Possible mirror stage.");
 }
 
 void Player::SyncPosition(std::shared_ptr<FloorMap> roadmap) {

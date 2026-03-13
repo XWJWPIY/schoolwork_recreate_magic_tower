@@ -3,19 +3,25 @@
 
 #include "pch.hpp"
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace AppUtil {
 
-// 全域或共用的工具函式與常數定義
+// Global or shared utility functions and constant definitions
 const int WINDOW_WIDTH = 1200;
 const int WINDOW_HEIGHT = 800;
 constexpr int TOTAL_STORY = 4;
 
-// 遊戲狀態機
+extern const std::unordered_map<int, std::string> IdStringMap;
+
+std::string GetIdString(int id);
+std::string GetIdResourcePath(int id);
+
+// Game state machine
 enum class GameState {
-  MainMenu = 0, // 0: 主頁
-  Playing = 1   // 1: 正在遊戲
+  MainMenu = 0, // 0: Main menu
+  Playing = 1   // 1: Playing session
 };
 
 struct MapCell {

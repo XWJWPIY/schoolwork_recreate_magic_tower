@@ -5,9 +5,15 @@
 #include "Util/Keycode.hpp"
 #include "Util/Logger.hpp"
 
+#include "Door.hpp"
+#include "Enemy.hpp"
 #include "Entity.hpp"
+#include "Item.hpp"
 #include "MapBlock.hpp"
+#include "NPC.hpp"
 #include "Player.hpp"
+#include "Shop.hpp"
+#include "Stair.hpp"
 
 void App::Start() {
   LOG_TRACE("Start");
@@ -22,10 +28,35 @@ void App::Start() {
     return std::make_shared<MapBlock>(id);
   };
 
-  // Factory for ThingsMap (Always create Entity, even for ID 0)
+  // Factory for ThingsMap (Create specialized Entities based on ID)
   FloorMap::BlockFactory thingsFactory =
-      [](int id) -> std::shared_ptr<AllObjects> {
-    return std::make_shared<Entity>(id);
+      [this](int id) -> std::shared_ptr<AllObjects> {
+    if (id >= 200 && id < 300)
+      return std::make_shared<Item>(id);
+    if (id >= 300 && id < 400)
+      return std::make_shared<Door>(id);
+    if (id >= 400 && id < 500)
+      return std::make_shared<Enemy>(id);
+    if (id >= 500 && id < 600)
+      return std::make_shared<NPC>(id);
+    if (id >= 600 && id < 700)
+      return std::make_shared<Shop>(id);
+    if (id >= 700 && id < 800)
+      return std::make_shared<Stair>(
+          id, [this](int delta) { this->ChangeFloor(delta); });
+
+    // Fallback or ID 0 (Entity itself handles SetVisible(false) in constructor
+    // if needed, but here we must return a concrete instance)
+    class UnknownEntity : public Entity {
+    public:
+      UnknownEntity(int i)
+          : Entity(i, MAGIC_TOWER_RESOURCE_DIR "/bmp/Door/no_door.png", false) {
+        if (i == 0)
+          SetVisible(false);
+      }
+      void reaction() override { LOG_DEBUG("Unknown entity reaction"); }
+    };
+    return std::make_shared<UnknownEntity>(id);
   };
 
   m_RoadMap = std::make_shared<FloorMap>(roadFactory, 141.0f, 0.0f, 0.735f,
@@ -95,38 +126,41 @@ void App::Update() {
 
     if (Util::Input::IsKeyDown(Util::Keycode::W) ||
         Util::Input::IsKeyDown(Util::Keycode::UP)) {
-      m_Player->Move(0, -1, m_RoadMap);
+      m_Player->Move(0, -1, m_RoadMap, m_ThingsMap);
     }
     if (Util::Input::IsKeyDown(Util::Keycode::S) ||
         Util::Input::IsKeyDown(Util::Keycode::DOWN)) {
-      m_Player->Move(0, 1, m_RoadMap);
+      m_Player->Move(0, 1, m_RoadMap, m_ThingsMap);
     }
     if (Util::Input::IsKeyDown(Util::Keycode::A) ||
         Util::Input::IsKeyDown(Util::Keycode::LEFT)) {
-      m_Player->Move(-1, 0, m_RoadMap);
+      m_Player->Move(-1, 0, m_RoadMap, m_ThingsMap);
     }
     if (Util::Input::IsKeyDown(Util::Keycode::D) ||
         Util::Input::IsKeyDown(Util::Keycode::RIGHT)) {
-      m_Player->Move(1, 0, m_RoadMap);
+      m_Player->Move(1, 0, m_RoadMap, m_ThingsMap);
+    }
+
+    if (Util::Input::IsKeyDown(Util::Keycode::W) ||
+        Util::Input::IsKeyDown(Util::Keycode::UP) ||
+        Util::Input::IsKeyDown(Util::Keycode::S) ||
+        Util::Input::IsKeyDown(Util::Keycode::DOWN) ||
+        Util::Input::IsKeyDown(Util::Keycode::A) ||
+        Util::Input::IsKeyDown(Util::Keycode::LEFT) ||
+        Util::Input::IsKeyDown(Util::Keycode::D) ||
+        Util::Input::IsKeyDown(Util::Keycode::RIGHT)) {
+      LOG_INFO("Player Position: Floor {}, Grid({}, {})",
+               m_RoadMap->GetCurrentStory(), m_Player->GetGridX(),
+               m_Player->GetGridY());
     }
 
     if (Util::Input::IsKeyDown(Util::Keycode::NUM_8) ||
         Util::Input::IsKeyDown(Util::Keycode::KP_8)) {
-      int nextStory = m_RoadMap->GetCurrentStory() + 1;
-      if (nextStory < AppUtil::TOTAL_STORY) {
-        m_RoadMap->SwitchStory(nextStory);
-        m_ThingsMap->SwitchStory(nextStory);
-        LOG_INFO("Switched to story {}", nextStory);
-      }
+      ChangeFloor(1);
     }
     if (Util::Input::IsKeyDown(Util::Keycode::NUM_2) ||
         Util::Input::IsKeyDown(Util::Keycode::KP_2)) {
-      int prevStory = m_RoadMap->GetCurrentStory() - 1;
-      if (prevStory >= 0) {
-        m_RoadMap->SwitchStory(prevStory);
-        m_ThingsMap->SwitchStory(prevStory);
-        LOG_INFO("Switched to story {}", prevStory);
-      }
+      ChangeFloor(-1);
     }
     break;
   }
@@ -145,4 +179,19 @@ void App::Update() {
 
 void App::End() { // NOLINT(this method will mutate members in the future)
   LOG_TRACE("End");
+}
+
+void App::ChangeFloor(int delta) {
+  int nextStory = m_RoadMap->GetCurrentStory() + delta;
+  if (nextStory >= 0 && nextStory < AppUtil::TOTAL_STORY) {
+    m_RoadMap->SwitchStory(nextStory);
+    m_ThingsMap->SwitchStory(nextStory);
+    LOG_INFO("Switched to story {}", nextStory);
+    if (m_Player) {
+      m_Player->SyncPosition(m_RoadMap);
+    }
+    LOG_INFO("Player Position (Floor Switch): Floor {}, Grid({}, {})",
+             m_RoadMap->GetCurrentStory(), m_Player->GetGridX(),
+             m_Player->GetGridY());
+  }
 }

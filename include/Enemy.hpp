@@ -1,0 +1,18 @@
+#ifndef ENEMY_HPP
+#define ENEMY_HPP
+
+#include "Entity.hpp"
+#include "Util/Logger.hpp"
+#include "pch.hpp"
+
+#include <string>
+
+class Enemy : public Entity {
+public:
+  Enemy(int id);
+  ~Enemy() override = default;
+
+  void reaction() override;
+};
+
+#endif // ENEMY_HPP

@@ -1,11 +1,40 @@
 #include "AppUtil.hpp"
 #include "Util/Logger.hpp"
+#include <cctype>
 #include <fstream>
 #include <sstream>
+#include <unordered_map>
+#include <vector>
+
 
 namespace AppUtil {
 
-// TODO: Implement utility functions here
+// Resource ID to name/path mapping
+const std::unordered_map<int, std::string> IdStringMap = {
+    {0, "Empty"},      {201, "Yellow_Key"}, {202, "Blue_Key"}, {203, "Red_Key"},
+    {301, "Door"},     {401, "Slime"},      {501, "NPC"},      {701, "Upstair"},
+    {702, "Downstair"}
+    // TODO: Add more mappings as needed
+};
+
+std::string GetIdString(int id) {
+  auto it = IdStringMap.find(id);
+  if (it != IdStringMap.end()) {
+    return it->second;
+  }
+  return "Unknown";
+}
+
+std::string GetIdResourcePath(int id) {
+  std::string name = GetIdString(id);
+  for (auto &c : name) {
+    if (c == ' ')
+      c = '_';
+    else
+      c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  }
+  return name + ".bmp";
+}
 std::vector<std::vector<MapCell>>
 MapParser::ParseCSV(const std::string &filepath) {
   std::vector<std::vector<MapCell>> mapData;

@@ -61,7 +61,8 @@ private:
   BlockFactory m_Factory;
   std::vector<std::vector<std::vector<std::shared_ptr<AllObjects>>>> m_Blocks;
   int m_CurrentStory = 0;
-  const float BLOCK_SIZE = 48.0f;         // 圖片路徑錯誤時使用
+  const float BLOCK_SIZE =
+      48.0f; // Default size used when image path is missing
   glm::vec2 m_BlockSize = {48.0f, 48.0f}; // stored dynamic base image size
 
   float m_CenterX = 0.0f;

@@ -9,19 +9,19 @@
 
 二、實體系統 (`Entity` 系統)
 - 繼承 `AllObjects`。
-- **虛擬基類**：新增 `virtual void reaction() = 0;` 作為所有互動的出發點。
-- 包含基本數值：`HP`, `ATK`, `DEF`, `Level`。
+- **虛擬基類**：新增 `virtual void reaction() = 0;` 與 `virtual bool IsPassable();` (預設為 `false`)。
+- **實作分離**：所有衍生實體 (`Stair`, `Shop`, `Item` 等) 一律採用 `.hpp` 聲明與 `.cpp` 實作分離模式。
+- **動態資源機制**：
+    - 透過 `AppUtil::IdStringMap` 管理 ID 與名稱對映。
+    - 使用 `AppUtil::GetIdResourcePath(id)` 自動根據名稱產出小寫底線格式之資源路徑 (例如 `"Yellow Key"` -> `"yellow_key.bmp"`)。
 - **多型衍生**：
     1. **`Player` (主角)**：
         - 獨立於地圖網格管理，由 `App` 持有。
         - 負責處理 `Util::Input`、背包系統、升級邏輯。
-        - **Z-Index 設定為 -3** (確保顯示在所有物件上方)。
-    2. **`Character` (角色/怪物)**：
-        - 包含 `NPC`, `Bat` (怪物) 等具備戰鬥或對話能力的實體。
-        - `reaction()`：觸發戰鬥、開啟對話盒。
-    3. **`Item` (道具)**：
-        - 包含 `Key`, `Potion` 等。
-        - `reaction()`：被主角撿起，從地圖移除並加入主角背包。
+        - **Z-Index 設定為 -3**。
+    2. **`Character` (角色/怪物/NPC)**：包含 `NPC`, `Enemy` 等。
+    3. **`Item` (道具)**：包含鍵、藥水等。
+    4. **`Stair` (樓梯)**：具備 `m_OnTrigger` 回調函式，觸發時呼叫 `App::ChangeFloor`。
 
 三、層級控制 (Z-Index 渲染順序)
 - **Z = -5 (地板層)**：`RoadMap` (牆壁、地板)。
@@ -30,18 +30,21 @@
 
 地圖系統 (FloorMap 3D 結構)
 
-一、多樓層存儲
-- 將 `m_Blocks` 改為 **3D 陣列 `[story][y][x]`**，預計支援 25 層。
-- 變數 `m_CurrentStory` (now) 紀錄目前活動樓層。
+一、多樓層存儲與切換
+- 使用 **3D 陣列 `[story][y][x]`** 支援多樓層。
+- **`App::ChangeFloor(int delta)`**：中心化切換邏輯，同步更新 `RoadMap`, `ThingsMap` 的樓層指標，並觸發 `Player->SyncPosition`。
 
 二、物件管理
-- `FloorMap` 透過 `BlockFactory` 根據 ID 動態生成對應的衍生類別 (`Item`, `Character`)。
-- 常駐記憶體設計：切換樓層時僅變更顯示與更新指標，不銷毀物件，確保樓層狀態（如怪物死亡）持續保存。
+- `FloorMap` 透過 `BlockFactory` 根據 ID 動態生成對應的衍生類別。
+- `Stair` 在建立時會被注入 lambda 閉包，使其能安全觸發 `App` 的樓層切換方法。
 
 三、交互觸發流程
 1. `Player` 嘗試移動。
-2. 檢查 `RoadMap` 是否可通行。
+2. 檢查 `RoadMap` 是否可通行 (`IsPassable`)。
 3. 如果目標位置在 `ThingsMap` 有物件，呼叫該物件的 `reaction()`。
+4. **穿透與阻擋條件**：
+    - 若物件為不可通行且 reaction 後仍為 `Visible`，則阻擋移動。
+    - 若物件 `IsPassable()` 為 `true` (如樓梯)，則允許重疊並觸發 reaction。
 4. 根據 `reaction()` 結果決定移動是否成功或觸發特殊事件。
 
 四、UI 系統 (文字與數值顯示)

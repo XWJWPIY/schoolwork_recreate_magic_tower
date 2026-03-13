@@ -10,10 +10,13 @@ public:
   Player();
 
   // Movement using grid coordinates
-  void Move(int dx, int dy, std::shared_ptr<FloorMap> roadmap);
+  void Move(int dx, int dy, std::shared_ptr<FloorMap> roadmap,
+            std::shared_ptr<FloorMap> thingsmap);
 
   // Sync screen position by borrowing from FloorMap
   void SyncPosition(std::shared_ptr<FloorMap> roadmap);
+
+  void reaction() override;
 
   // Getters for grid position
   int GetGridX() const { return m_GridX; }

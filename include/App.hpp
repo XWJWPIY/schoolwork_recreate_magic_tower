@@ -28,6 +28,8 @@ public:
 
   void End(); // NOLINT(readability-convert-member-functions-to-static)
 
+  void ChangeFloor(int delta);
+
 private:
   void ValidTask();
 
