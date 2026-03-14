@@ -114,22 +114,21 @@ void App::Start() {
   // Key Displays
   auto initKeyText = [&](std::shared_ptr<NumericDisplayText> &text,
                          const std::string &prefix, const Util::Color &color,
-                         float yOffset) {
+                         float x, float y) {
     text = std::make_shared<NumericDisplayText>(
-        MAGIC_TOWER_RESOURCE_DIR "/Font/Cubic_11.ttf", 24);
+        MAGIC_TOWER_RESOURCE_DIR "/Font/Cubic_11.ttf", 36);
     text->SetPrefix(prefix);
     text->SetNumber(0);
     text->SetColor(color);
-    text->m_Transform.translation = {450.0f, 335.0f - yOffset};
+    text->m_Transform.translation = {x, y};
     text->SetZIndex(-3.0f);
     text->SetVisible(false);
     m_Root.AddChild(text);
   };
 
-  initKeyText(m_YellowKeyText, "Yellow: ", Util::Color::FromRGB(255, 255, 0),
-              0.0f);
-  initKeyText(m_BlueKeyText, "Blue: ", Util::Color::FromRGB(0, 0, 255), 35.0f);
-  initKeyText(m_RedKeyText, "Red: ", Util::Color::FromRGB(255, 0, 0), 70.0f);
+  initKeyText(m_YellowKeyText, "", Util::Color::FromRGB(255, 255, 255), -290.0f, -115.0f);
+  initKeyText(m_BlueKeyText, "", Util::Color::FromRGB(255, 255, 255), -290.0f, -172.0f);
+  initKeyText(m_RedKeyText, "", Util::Color::FromRGB(255, 255, 255), -290.0f, -228.0f);
 
   // Player Initialization
   m_Player = std::make_shared<Player>();
