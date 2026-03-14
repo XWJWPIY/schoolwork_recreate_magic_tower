@@ -1,5 +1,6 @@
 #include "Stair.hpp"
 #include "AppUtil.hpp"
+#include "Player.hpp"
 #include "Util/Logger.hpp"
 
 Stair::Stair(int id, TriggerCallback callback)
@@ -11,7 +12,7 @@ Stair::Stair(int id, TriggerCallback callback)
 
 bool Stair::IsPassable() const { return true; }
 
-void Stair::reaction() {
+void Stair::reaction(std::shared_ptr<Player> player) {
   LOG_INFO("Using stairs... ID: {} ({})", m_ObjectId,
            AppUtil::GetIdString(m_ObjectId));
   if (m_OnTrigger) {

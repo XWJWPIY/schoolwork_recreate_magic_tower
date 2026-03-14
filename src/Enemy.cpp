@@ -1,5 +1,6 @@
 #include "Enemy.hpp"
 #include "AppUtil.hpp"
+#include "Player.hpp"
 #include "Util/Logger.hpp"
 
 Enemy::Enemy(int id)
@@ -8,7 +9,7 @@ Enemy::Enemy(int id)
                  AppUtil::GetIdResourcePath(id),
              true) {}
 
-void Enemy::reaction() {
+void Enemy::reaction(std::shared_ptr<Player> player) {
   LOG_INFO("Entering battle! Enemy ID: {} ({})", m_ObjectId,
            AppUtil::GetIdString(m_ObjectId));
   // TODO: Battle logic and damage calculation

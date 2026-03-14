@@ -12,7 +12,7 @@ public:
   Item(int id);
   ~Item() override = default;
 
-  void reaction() override;
+  void reaction(std::shared_ptr<Player> player) override;
 };
 
 #endif // ITEM_HPP

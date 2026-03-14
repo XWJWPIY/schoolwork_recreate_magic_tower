@@ -42,6 +42,9 @@ private:
   std::shared_ptr<FloorMap> m_RoadMap;
   std::shared_ptr<FloorMap> m_ThingsMap;
   std::shared_ptr<NumericDisplayText> m_TestText;
+  std::shared_ptr<NumericDisplayText> m_YellowKeyText;
+  std::shared_ptr<NumericDisplayText> m_BlueKeyText;
+  std::shared_ptr<NumericDisplayText> m_RedKeyText;
   std::shared_ptr<Player> m_Player;
 };
 

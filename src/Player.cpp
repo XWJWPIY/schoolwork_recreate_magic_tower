@@ -13,6 +13,11 @@ Player::Player()
   // Initial grid position
   m_GridX = 5;
   m_GridY = 9;
+
+  // Initial keys (default)
+  m_YellowKeys = 0;
+  m_BlueKeys = 0;
+  m_RedKeys = 0;
 }
 
 void Player::Move(int dx, int dy, std::shared_ptr<FloorMap> roadmap,
@@ -35,9 +40,9 @@ void Player::Move(int dx, int dy, std::shared_ptr<FloorMap> roadmap,
     auto target = thingsmap->GetBlock(nextX, nextY);
     auto entity = std::dynamic_pointer_cast<Entity>(target);
     if (entity && entity->GetVisible()) {
-      // Trigger reaction if possible
+      // Trigger reaction if possible - passing player pointer
       if (entity->CanReact()) {
-        entity->reaction();
+        entity->reaction(shared_from_this());
       }
 
       // Block movement if the entity is still visible and not passable
@@ -53,8 +58,52 @@ void Player::Move(int dx, int dy, std::shared_ptr<FloorMap> roadmap,
   SyncPosition(roadmap);
 }
 
-void Player::reaction() {
+void Player::reaction(std::shared_ptr<Player> player) {
   LOG_INFO("Player triggered reaction()! Possible mirror stage.");
+}
+
+void Player::AddKey(int id) {
+  switch (id) {
+  case 201:
+    m_YellowKeys++;
+    break;
+  case 202:
+    m_BlueKeys++;
+    break;
+  case 203:
+    m_RedKeys++;
+    break;
+  default:
+    LOG_WARN("Player::AddKey: Unknown key ID {}", id);
+    break;
+  }
+}
+
+bool Player::UseKey(int doorId) {
+  switch (doorId) {
+  case 302: // Yellow Door
+    if (m_YellowKeys > 0) {
+      m_YellowKeys--;
+      return true;
+    }
+    break;
+  case 303: // Blue Door
+    if (m_BlueKeys > 0) {
+      m_BlueKeys--;
+      return true;
+    }
+    break;
+  case 304: // Red Door
+    if (m_RedKeys > 0) {
+      m_RedKeys--;
+      return true;
+    }
+    break;
+  default:
+    LOG_WARN("Player::UseKey: Unknown door ID {}", doorId);
+    break;
+  }
+  return false;
 }
 
 void Player::SyncPosition(std::shared_ptr<FloorMap> roadmap) {

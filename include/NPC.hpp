@@ -12,7 +12,7 @@ public:
   NPC(int id);
   ~NPC() override = default;
 
-  void reaction() override;
+  void reaction(std::shared_ptr<Player> player) override;
 };
 
 #endif // NPC_HPP

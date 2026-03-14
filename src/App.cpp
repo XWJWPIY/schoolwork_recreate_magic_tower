@@ -57,7 +57,9 @@ void App::Start() {
           if (i == 0)
             SetVisible(false);
         }
-        void reaction() override { LOG_DEBUG("Unknown entity reaction"); }
+        void reaction(std::shared_ptr<Player> player) override {
+          LOG_DEBUG("Unknown entity reaction");
+        }
       };
       entity = std::make_shared<UnknownEntity>(id);
     }
@@ -109,6 +111,26 @@ void App::Start() {
   m_TestText->SetVisible(false);
   m_Root.AddChild(m_TestText);
 
+  // Key Displays
+  auto initKeyText = [&](std::shared_ptr<NumericDisplayText> &text,
+                         const std::string &prefix, const Util::Color &color,
+                         float yOffset) {
+    text = std::make_shared<NumericDisplayText>(
+        MAGIC_TOWER_RESOURCE_DIR "/Font/Cubic_11.ttf", 24);
+    text->SetPrefix(prefix);
+    text->SetNumber(0);
+    text->SetColor(color);
+    text->m_Transform.translation = {450.0f, 335.0f - yOffset};
+    text->SetZIndex(-3.0f);
+    text->SetVisible(false);
+    m_Root.AddChild(text);
+  };
+
+  initKeyText(m_YellowKeyText, "Yellow: ", Util::Color::FromRGB(255, 255, 0),
+              0.0f);
+  initKeyText(m_BlueKeyText, "Blue: ", Util::Color::FromRGB(0, 0, 255), 35.0f);
+  initKeyText(m_RedKeyText, "Red: ", Util::Color::FromRGB(255, 0, 0), 70.0f);
+
   // Player Initialization
   m_Player = std::make_shared<Player>();
   m_Player->SyncPosition(m_RoadMap);
@@ -126,12 +148,20 @@ void App::Update() {
       m_RoadMap->SetAllVisible(true);
       m_ThingsMap->SetAllVisible(true);
       m_TestText->SetVisible(true);
+      m_YellowKeyText->SetVisible(true);
+      m_BlueKeyText->SetVisible(true);
+      m_RedKeyText->SetVisible(true);
       m_Player->SetVisible(true);
     }
     break;
 
   case AppUtil::GameState::Playing:
     m_TestText->SetNumber(m_RoadMap->GetCurrentStory());
+    if (m_Player) {
+      m_YellowKeyText->SetNumber(m_Player->GetYellowKeys());
+      m_BlueKeyText->SetNumber(m_Player->GetBlueKeys());
+      m_RedKeyText->SetNumber(m_Player->GetRedKeys());
+    }
 
     if (Util::Input::IsKeyDown(Util::Keycode::W) ||
         Util::Input::IsKeyDown(Util::Keycode::UP)) {
@@ -178,6 +208,9 @@ void App::Update() {
   m_ThingsMap->Update();
 
   m_TestText->UpdateDisplayText();
+  m_YellowKeyText->UpdateDisplayText();
+  m_BlueKeyText->UpdateDisplayText();
+  m_RedKeyText->UpdateDisplayText();
   m_Root.Update();
 
   /*

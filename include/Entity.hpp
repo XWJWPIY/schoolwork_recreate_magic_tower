@@ -10,6 +10,8 @@
 
 // #include "Util/Image.hpp" // Placeholder for PTSD Image
 
+class Player;
+
 class Entity : public AllObjects {
 public:
   Entity(int initialId, const std::string &imagePath, bool canReact = true);
@@ -21,7 +23,7 @@ public:
   void SetObjectId(int newId) override;
   void UpdateProperties(int id);
 
-  virtual void reaction() = 0;
+  virtual void reaction(std::shared_ptr<Player> player) = 0;
   virtual void ObjectUpdate() override {}
   virtual bool IsPassable() const { return false; }
 

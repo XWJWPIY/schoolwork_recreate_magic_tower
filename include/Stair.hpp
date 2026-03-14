@@ -16,7 +16,7 @@ public:
   ~Stair() override = default;
 
   bool IsPassable() const override;
-  void reaction() override;
+  void reaction(std::shared_ptr<Player> player) override;
 
 private:
   TriggerCallback m_OnTrigger;

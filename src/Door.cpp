@@ -3,6 +3,7 @@
 #include "Util/Logger.hpp"
 #include "Util/Time.hpp"
 #include "Util/Image.hpp"
+#include "Player.hpp"
 
 Door::Door(int id)
     : Entity(id,
@@ -28,14 +29,29 @@ Door::Door(int id)
   SetDrawable(m_Animation);
 }
 
-void Door::reaction() {
-  if (m_Animation->GetState() == Util::Animation::State::PLAY) return;
+void Door::reaction(std::shared_ptr<Player> player) {
+  if (m_Animation->GetState() == Util::Animation::State::PLAY)
+    return;
 
-  LOG_INFO("Opening Door! ID: {} ({})", m_ObjectId,
-           AppUtil::GetIdString(m_ObjectId));
+  if (m_ObjectId == 301) { // Iron Fence
+    LOG_INFO("Opening Iron Fence!");
+    m_Animation->Play();
+    m_CanReact = false;
+    return;
+  }
 
-  m_Animation->Play();
-  m_CanReact = false; // Prevent multiple reactions during animation
+  if (player && player->UseKey(m_ObjectId)) {
+    LOG_INFO("Opening Door! ID: {} ({})", m_ObjectId,
+             AppUtil::GetIdString(m_ObjectId));
+    m_Animation->Play();
+    m_CanReact = false;
+  } else if (m_ObjectId == 305) {
+    LOG_INFO("Green door {} requires special condition.", AppUtil::GetIdString(m_ObjectId));
+    // TODO: Implement special condition for Green Door
+  } else {
+    LOG_INFO("No key for door {} ({})", m_ObjectId,
+             AppUtil::GetIdString(m_ObjectId));
+  }
 }
 
 void Door::ObjectUpdate() {
