@@ -4,13 +4,8 @@
 #include "Util/Logger.hpp"
 
 Stair::Stair(int id, TriggerCallback callback)
-    : Entity(id,
-             MAGIC_TOWER_RESOURCE_DIR "/bmp/Stair/" +
-                 AppUtil::GetIdResourcePath(id),
-             true),
-      m_OnTrigger(std::move(callback)) {
-  m_IsPassable = true;
-}
+    : Entity(id, "", true),
+      m_OnTrigger(std::move(callback)) {}
 
 void Stair::reaction(std::shared_ptr<Player> player) {
   LOG_INFO("Using stairs... ID: {} ({})", m_ObjectId,

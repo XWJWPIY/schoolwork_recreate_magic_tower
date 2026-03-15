@@ -9,33 +9,62 @@
 
 namespace AppUtil {
 
-// Resource ID to name/path mapping
-const std::unordered_map<int, std::string> IdStringMap = {
-    {0, "Empty"}, 
-    {201, "Yellow_Key"}, {202, "Blue_Key"}, {203, "Red_Key"},
-    {301, "iron_fence"}, {302, "yellow_door"}, {303, "blue_door"}, {304, "red_door"}, {305, "green_door"},
-    {401, "Slime"},      {501, "NPC"},      {701, "Upstair"},
-    {702, "Downstair"}
-    // TODO: Add more mappings as needed
+// 全域物件註冊表
+// 格式：{ ID, {名稱, 資源資料夾, 是否可通行, 是否為動畫, [動畫幀數]} }
+const std::unordered_map<int, ObjectMetadata> GlobalObjectRegistry = {
+    // Road/Blocks (ID 0-99)
+    {0, {"road", "Road", true, false}}, // 0 is nothing, but use road1.bmp as default to avoid error
+    {1, {"road", "Road", true, false}},
+    {2, {"lava_road", "Road", true, true}},
+    {3, {"wall", "Road", false, false}},
+    {4, {"wall_b", "Road", false, false}},
+    {5, {"wall_shine", "Road", false, true}},
+    {6, {"wall_special", "Road", false, false}},
+    {7, {"lava", "Road", false, true}},
+
+    // Items (ID 200-299)
+    {201, {"yellow_key", "Item", true, false}},
+    {202, {"blue_key", "Item", true, false}},
+    {203, {"red_key", "Item", true, false}},
+
+    // Doors/Fences (ID 300-399)
+    {301, {"iron_fence", "Door", false, true, 5}},
+    {302, {"yellow_door", "Door", false, true, 5}},
+    {303, {"blue_door", "Door", false, true, 5}},
+    {304, {"red_door", "Door", false, true, 5}},
+    {305, {"green_door", "Door", false, true, 5}},
+
+    // Combatants (ID 400-499)
+    {401, {"slime", "Enemy", false, false}},
+
+    // NPCs/Shops (ID 500-699)
+    {501, {"npc", "NPC", false, false}},
+    {601, {"shop", "Things", false, false}},
+
+    // Stairs/Transitions (ID 700-799)
+    {701, {"upstair", "Stair", true, false}},
+    {702, {"downstair", "Stair", true, false}}
 };
 
 std::string GetIdString(int id) {
-  auto it = IdStringMap.find(id);
-  if (it != IdStringMap.end()) {
-    return it->second;
+  auto it = GlobalObjectRegistry.find(id);
+  if (it != GlobalObjectRegistry.end()) {
+    return it->second.name;
   }
-  return "Unknown";
+  return "unknown";
 }
 
 std::string GetIdResourcePath(int id) {
-  std::string name = GetIdString(id);
-  for (auto &c : name) {
-    if (c == ' ')
-      c = '_';
-    else
-      c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  auto it = GlobalObjectRegistry.find(id);
+  if (it != GlobalObjectRegistry.end()) {
+    const auto& meta = it->second;
+    if (meta.folder == "Road") {
+        // Special case for roads which often have "1" suffix or are animated
+        return "/bmp/Road/" + meta.name + "1.bmp";
+    }
+    return "/bmp/" + meta.folder + "/" + meta.name + ".bmp";
   }
-  return name + ".bmp";
+  return "";
 }
 std::vector<std::vector<MapCell>>
 MapParser::ParseCSV(const std::string &filepath) {

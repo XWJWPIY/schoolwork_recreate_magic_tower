@@ -4,10 +4,7 @@
 #include "Util/Logger.hpp"
 
 NPC::NPC(int id)
-    : Entity(id,
-             MAGIC_TOWER_RESOURCE_DIR "/bmp/NPC/" +
-                 AppUtil::GetIdResourcePath(id),
-             true) {}
+    : Entity(id, "", true) {}
 
 void NPC::reaction(std::shared_ptr<Player> player) {
   LOG_INFO("Talking to NPC... ID: {} ({})", m_ObjectId,

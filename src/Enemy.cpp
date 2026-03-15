@@ -4,10 +4,7 @@
 #include "Util/Logger.hpp"
 
 Enemy::Enemy(int id)
-    : Entity(id,
-             MAGIC_TOWER_RESOURCE_DIR "/bmp/Enemy/" +
-                 AppUtil::GetIdResourcePath(id),
-             true) {}
+    : Entity(id, "", true) {}
 
 void Enemy::reaction(std::shared_ptr<Player> player) {
   LOG_INFO("Entering battle! Enemy ID: {} ({})", m_ObjectId,

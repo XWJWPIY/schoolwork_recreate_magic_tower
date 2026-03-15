@@ -2,7 +2,9 @@
 
 ```mermaid
 classDiagram
-    FloorMap
+    FloorMap ..> AppUtil : Uses Registry
+    MapBlock ..> AppUtil : Uses Registry
+    Entity ..> AppUtil : Uses Registry
 
     GameObject --> AllObjects
     GameObject --> Background
@@ -37,9 +39,10 @@ classDiagram
 - **互動基類**：繼承並實作 `virtual void reaction(Player*) = 0;`。
 - **通行性**：繼承自 `AllObjects`，預設為 `false` (阻擋)。
 - **實作分離**：所有衍生實體 (`Stair`, `Shop`, `Item` 等) 一律採用 `.hpp` 聲明與 `.cpp` 實作分離模式。
-- **動態資源機制**：
-    - 透過 `AppUtil::IdStringMap` 管理 ID 與名稱對映。
-    - 使用 `AppUtil::GetIdResourcePath(id)` 自動根據名稱產出小寫底線格式之資源路徑 (例如 `"Yellow Key"` -> `"yellow_key.bmp"`)。
+- **數據驅動資源機制**：
+    - 核心：`AppUtil::GlobalObjectRegistry` 管理所有物件的元數據 (`ObjectMetadata`)。
+    - **資源定位**：透過 `AppUtil::GetIdResourcePath(id)` 自動從註冊表獲取屬性並動態合成路徑 (例如：`{401, "slime", "Enemy"}` -> `"/bmp/Enemy/slime.bmp"`)。
+    - **屬性自動化**：建構子不再寫死目錄名稱，一律由註冊表驅動，大幅降低代碼重複。
 - **多型衍生**：
     1. **`Player` (主角)**：
         - 繼承自 `Entity`，由 `App` 持有。
@@ -63,6 +66,7 @@ classDiagram
 
 二、物件管理
 - `FloorMap` 透過 `BlockFactory` 根據 ID 動態生成對應的衍生類別。
+- **排版校準 (ID 0 Sampling)**：系統會取樣 ID 0 (映射為 road 資源) 的尺寸來決定全地圖 11x11 網格的基礎間距，確保精準對齊。
 - `Stair` 在建立時會被注入 lambda 閉包，使其能安全觸發 `App` 的樓層切換方法。
 
 三、交互觸發流程
@@ -84,6 +88,6 @@ classDiagram
     - **封裝邏輯**：`App` 僅需呼叫 `m_StatusUI->Update(player, story)` 即可完成所有 UI 同步。
     - **字體配置**：支援建構時注入預設字體大小，靈活調整排版。
 
-UI 與存檔系統 (待擴充)
-- UI 疊層將優先生於 z-index 更靠前的位置。
-- 存檔將以 CSV 格式紀錄主角數值與各樓層 ID 變動。
+五、數據驅動層 (`AppUtil::GlobalObjectRegistry`)
+- **單一事實來源 (Single Source of Truth)**：整合 ID、名稱、資源目錄、通行性、動畫標記。
+- **擴充性**：新增遊戲物件只需在 `AppUtil.cpp` 的 Map 中增加定義，無需修改 `MapBlock` 或 `Entity` 的核心邏輯。

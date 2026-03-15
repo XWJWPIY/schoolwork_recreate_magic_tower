@@ -4,12 +4,7 @@
 #include "Util/Logger.hpp"
 
 Item::Item(int id)
-    : Entity(id,
-             MAGIC_TOWER_RESOURCE_DIR "/bmp/Item/" +
-                 AppUtil::GetIdResourcePath(id),
-             true) {
-  m_IsPassable = true;
-}
+    : Entity(id, "", true) {}
 
 void Item::reaction(std::shared_ptr<Player> player) {
   LOG_INFO("Item collected! ID: {} ({})", m_ObjectId,
