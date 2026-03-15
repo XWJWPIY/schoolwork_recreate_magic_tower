@@ -25,7 +25,6 @@ public:
 
   virtual void reaction(std::shared_ptr<Player> player) = 0;
   virtual void ObjectUpdate() override {}
-  virtual bool IsPassable() const { return false; }
 
   void SetReplacementComponent(std::shared_ptr<DynamicReplacementComponent> comp) {
     m_ReplacementComp = comp;

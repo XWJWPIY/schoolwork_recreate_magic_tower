@@ -14,6 +14,7 @@
 #include "Player.hpp"
 #include "Shop.hpp"
 #include "Stair.hpp"
+#include "StatusUI.hpp"
 
 void App::Start() {
   LOG_TRACE("Start");
@@ -100,35 +101,10 @@ void App::Start() {
   }
   m_ThingsMap->SetAllVisible(false);
 
-  // Test Text
-  m_TestText = std::make_shared<NumericDisplayText>(
-      MAGIC_TOWER_RESOURCE_DIR "/Font/Cubic_11.ttf", 32);
-  m_TestText->SetPrefix("");
-  m_TestText->SetNumber(0);
-  m_TestText->SetSuffix(" F");
-  m_TestText->m_Transform.translation = {150.0f, 335.0f};
-  m_TestText->SetZIndex(-3.0f);
-  m_TestText->SetVisible(false);
-  m_Root.AddChild(m_TestText);
 
-  // Key Displays
-  auto initKeyText = [&](std::shared_ptr<NumericDisplayText> &text,
-                         const std::string &prefix, const Util::Color &color,
-                         float x, float y) {
-    text = std::make_shared<NumericDisplayText>(
-        MAGIC_TOWER_RESOURCE_DIR "/Font/Cubic_11.ttf", 36);
-    text->SetPrefix(prefix);
-    text->SetNumber(0);
-    text->SetColor(color);
-    text->m_Transform.translation = {x, y};
-    text->SetZIndex(-3.0f);
-    text->SetVisible(false);
-    m_Root.AddChild(text);
-  };
-
-  initKeyText(m_YellowKeyText, "", Util::Color::FromRGB(255, 255, 255), -290.0f, -115.0f);
-  initKeyText(m_BlueKeyText, "", Util::Color::FromRGB(255, 255, 255), -290.0f, -172.0f);
-  initKeyText(m_RedKeyText, "", Util::Color::FromRGB(255, 255, 255), -290.0f, -228.0f);
+  // Status UI Initialization
+  m_StatusUI = std::make_shared<StatusUI>();
+  m_StatusUI->AddToRoot(m_Root);
 
   // Player Initialization
   m_Player = std::make_shared<Player>();
@@ -146,20 +122,14 @@ void App::Update() {
       m_Background->NextPhase(1);
       m_RoadMap->SetAllVisible(true);
       m_ThingsMap->SetAllVisible(true);
-      m_TestText->SetVisible(true);
-      m_YellowKeyText->SetVisible(true);
-      m_BlueKeyText->SetVisible(true);
-      m_RedKeyText->SetVisible(true);
+      m_StatusUI->SetVisible(true);
       m_Player->SetVisible(true);
     }
     break;
 
   case AppUtil::GameState::Playing:
-    m_TestText->SetNumber(m_RoadMap->GetCurrentStory());
-    if (m_Player) {
-      m_YellowKeyText->SetNumber(m_Player->GetYellowKeys());
-      m_BlueKeyText->SetNumber(m_Player->GetBlueKeys());
-      m_RedKeyText->SetNumber(m_Player->GetRedKeys());
+    if (m_StatusUI) {
+      m_StatusUI->Update(m_Player, m_RoadMap->GetCurrentStory());
     }
 
     if (Util::Input::IsKeyDown(Util::Keycode::W) ||
@@ -206,10 +176,6 @@ void App::Update() {
   m_RoadMap->Update();
   m_ThingsMap->Update();
 
-  m_TestText->UpdateDisplayText();
-  m_YellowKeyText->UpdateDisplayText();
-  m_BlueKeyText->UpdateDisplayText();
-  m_RedKeyText->UpdateDisplayText();
   m_Root.Update();
 
   /*

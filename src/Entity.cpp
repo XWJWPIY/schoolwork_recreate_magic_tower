@@ -10,6 +10,7 @@ Entity::Entity(int initialId, const std::string &imagePath, bool canReact)
                          : MAGIC_TOWER_RESOURCE_DIR "/bmp/Door/no_door.png"),
                  -2, initialId),
       m_GridX(0), m_GridY(0), m_CanReact(canReact) {
+  m_IsPassable = false; // Entities are blocking by default
   // Update properties after members are initialized
   UpdateProperties(initialId);
 }

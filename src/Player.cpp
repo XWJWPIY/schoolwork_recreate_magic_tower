@@ -14,10 +14,9 @@ Player::Player()
   m_GridX = 5;
   m_GridY = 9;
 
-  // Initial keys (default)
-  m_YellowKeys = 0;
-  m_BlueKeys = 0;
-  m_RedKeys = 0;
+  m_YellowKeys = 2;
+  m_BlueKeys = 1;
+  m_RedKeys = 1;  
 }
 
 void Player::Move(int dx, int dy, std::shared_ptr<FloorMap> roadmap,

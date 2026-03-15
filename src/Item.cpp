@@ -7,13 +7,15 @@ Item::Item(int id)
     : Entity(id,
              MAGIC_TOWER_RESOURCE_DIR "/bmp/Item/" +
                  AppUtil::GetIdResourcePath(id),
-             true) {}
+             true) {
+  m_IsPassable = true;
+}
 
 void Item::reaction(std::shared_ptr<Player> player) {
   LOG_INFO("Item collected! ID: {} ({})", m_ObjectId,
            AppUtil::GetIdString(m_ObjectId));
   
-  if (player && m_ObjectId >= 201 && m_ObjectId <= 204) {
+  if (player && m_ObjectId >= 201 && m_ObjectId <= 203) {
     player->AddKey(m_ObjectId);
   }
 

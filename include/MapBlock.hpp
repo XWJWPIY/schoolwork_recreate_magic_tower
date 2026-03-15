@@ -20,12 +20,8 @@ public:
     return {0.0f, 0.0f};
   }
 
-  // Data-driven properties
-  bool IsPassable() const { return m_IsPassable; }
-  void SetPassable(bool passable) { m_IsPassable = passable; }
 
 private:
-  bool m_IsPassable = true; // Default to passable, can be changed per instance
   int m_CurrentLocalFrame = 1;
   std::string GetImagePath(int id) const;
   void UpdateProperties(int id);

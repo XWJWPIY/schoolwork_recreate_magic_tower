@@ -3,10 +3,6 @@ set(SRC_FILES
     AppUtil.cpp
     Entity.cpp
     AllObjects.cpp
-    Tile.cpp
-    StaticTile.cpp
-    EventTile.cpp
-    CollectableTile.cpp
     Background.cpp
     MapBlock.cpp
     FloorMap.cpp
@@ -19,6 +15,7 @@ set(SRC_FILES
     Enemy.cpp
     NPC.cpp
     DynamicReplacementComponent.cpp
+    StatusUI.cpp
 )
 
 set(INCLUDE_FILES
@@ -26,10 +23,6 @@ set(INCLUDE_FILES
     AppUtil.hpp
     Entity.hpp
     AllObjects.hpp
-    Tile.hpp
-    StaticTile.hpp
-    EventTile.hpp
-    CollectableTile.hpp
     Background.hpp
     MapBlock.hpp
     FloorMap.hpp
@@ -42,6 +35,7 @@ set(INCLUDE_FILES
     Enemy.hpp
     NPC.hpp
     DynamicReplacementComponent.hpp
+    StatusUI.hpp
 )
 
 set(TEST_FILES

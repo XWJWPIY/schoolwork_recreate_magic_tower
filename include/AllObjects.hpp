@@ -14,6 +14,10 @@ public:
   virtual void ObjectUpdate() {}
   bool GetVisible() const { return this->m_Visible; }
 
+  // Unified passability
+  virtual bool IsPassable() const { return m_IsPassable; }
+  void SetPassable(bool passable) { m_IsPassable = passable; }
+
 protected:
   // Using protected constructor so it can't be instantiated directly
   AllObjects(int initialId = 0);
@@ -23,6 +27,7 @@ protected:
              const float zIndex, int initialId = 0);
 
   int m_ObjectId = 0;
+  bool m_IsPassable = true;
 };
 
 #endif // ALL_OBJECTS_HPP

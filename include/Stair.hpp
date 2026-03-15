@@ -15,7 +15,6 @@ public:
   Stair(int id, TriggerCallback callback);
   ~Stair() override = default;
 
-  bool IsPassable() const override;
   void reaction(std::shared_ptr<Player> player) override;
 
 private:

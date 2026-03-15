@@ -18,15 +18,6 @@ public:
 
   void reaction(std::shared_ptr<Player> player) override;
 
-  // Getters for grid position
-  int GetGridX() const { return m_GridX; }
-  int GetGridY() const { return m_GridY; }
-
-  void SetGridPosition(int x, int y) {
-    m_GridX = x;
-    m_GridY = y;
-  }
-
   // Key management
   int GetYellowKeys() const { return m_YellowKeys; }
   int GetBlueKeys() const { return m_BlueKeys; }
@@ -36,9 +27,6 @@ public:
   bool UseKey(int doorId);
 
 private:
-  int m_GridX = 0;
-  int m_GridY = 0;
-
   int m_YellowKeys = 0;
   int m_BlueKeys = 0;
   int m_RedKeys = 0;
