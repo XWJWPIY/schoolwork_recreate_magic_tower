@@ -36,7 +36,7 @@ void Player::Move(int dx, int dy, std::shared_ptr<FloorMap> roadmap,
 
   // Check collision with thingsMap (interactions)
   if (thingsmap) {
-    auto target = thingsmap->GetBlock(nextX, nextY);
+    auto target = thingsmap->GetObject(nextX, nextY);
     auto entity = std::dynamic_pointer_cast<Entity>(target);
     if (entity && entity->GetVisible()) {
       // Trigger reaction if possible - passing player pointer
@@ -109,12 +109,12 @@ void Player::SyncPosition(std::shared_ptr<FloorMap> roadmap) {
   if (!roadmap)
     return;
 
-  auto block = roadmap->GetBlock(m_GridX, m_GridY);
-  if (block) {
+  auto obj = roadmap->GetObject(m_GridX, m_GridY);
+  if (obj) {
     // Borrow transform (translation and scale)
-    m_Transform = block->m_Transform;
+    m_Transform = obj->m_Transform;
   } else {
-    LOG_ERROR("Player::SyncPosition: Could not find block at {}, {}", m_GridX,
+    LOG_ERROR("Player::SyncPosition: Could not find object at {}, {}", m_GridX,
               m_GridY);
   }
 }

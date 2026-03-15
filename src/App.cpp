@@ -24,16 +24,16 @@ void App::Start() {
   m_Root.AddChild(m_Background);
 
   // Factory for RoadMap (creates MapBlocks)
-  FloorMap::BlockFactory roadFactory =
+  FloorMap::ObjectFactory roadObjFactory =
       [](int id) -> std::shared_ptr<AllObjects> {
     return std::make_shared<MapBlock>(id);
   };
 
   // Factory for ThingsMap (Create specialized Entities based on ID)
   auto replacementComp = std::make_shared<DynamicReplacementComponent>(
-      [this](int x, int y, int id) { this->m_ThingsMap->SetBlock(x, y, id); });
+      [this](int x, int y, int id) { this->m_ThingsMap->SetObject(x, y, id); });
 
-  FloorMap::BlockFactory thingsFactory =
+  FloorMap::ObjectFactory thingsObjFactory =
       [this, replacementComp](int id) -> std::shared_ptr<AllObjects> {
     std::shared_ptr<Entity> entity;
     if (id >= 200 && id < 300)
@@ -71,7 +71,7 @@ void App::Start() {
     return entity;
   };
 
-  m_RoadMap = std::make_shared<FloorMap>(roadFactory, 141.0f, 0.0f, 0.735f,
+  m_RoadMap = std::make_shared<FloorMap>(roadObjFactory, 141.0f, 0.0f, 0.735f,
                                          0.735f, -5.0f); // Render at Z=-5
   m_RoadMap->SetRenderer(&m_Root);
   m_RoadMap->AddToRenderer(); // Add default blocks to root
@@ -86,8 +86,8 @@ void App::Start() {
   m_RoadMap->SetAllVisible(false);
 
   m_ThingsMap = std::make_shared<FloorMap>(
-      thingsFactory, 141.0f, 0.0f, 0.735f, 0.735f, -4.0f,
-      m_RoadMap->GetBaseBlockSize()); // Use RoadMap spacing
+      thingsObjFactory, 141.0f, 0.0f, 0.735f, 0.735f, -4.0f,
+      m_RoadMap->GetBaseSize()); // Use RoadMap spacing
   m_ThingsMap->SetRenderer(&m_Root);
   m_ThingsMap->AddToRenderer(); // Add default blocks to root
 

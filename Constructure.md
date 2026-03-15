@@ -2,10 +2,16 @@
 
 ```mermaid
 classDiagram
+    %% 包含關係 (Containment)
+    FloorMap o-- AllObjects : Contains (Grid)
+    StatusUI o-- NumericDisplayText : Contains
+
+    %% 依賴關係 (Dependency)
     FloorMap ..> AppUtil : Uses Registry
     MapBlock ..> AppUtil : Uses Registry
     Entity ..> AppUtil : Uses Registry
 
+    %% 繼承關係 (Inheritance)
     GameObject --> AllObjects
     GameObject --> Background
     GameObject --> NumericDisplayText
@@ -20,8 +26,6 @@ classDiagram
     Entity --> Item
     Entity --> Stair
     Entity --> Player
-    
-    StatusUI o-- NumericDisplayText : Contains
 ```
 
 架構設計方案：
