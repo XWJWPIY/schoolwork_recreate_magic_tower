@@ -67,7 +67,7 @@ std::string GetIdResourcePath(int id) {
   return "";
 }
 std::vector<std::vector<MapCell>>
-MapParser::ParseCSV(const std::string &filepath) {
+MapParser::ParseCsv(const std::string &filepath) {
   std::vector<std::vector<MapCell>> mapData;
   std::ifstream file(filepath);
 
@@ -117,8 +117,8 @@ MapParser::ParseCSV(const std::string &filepath) {
 }
 
 std::vector<std::vector<int>>
-MapParser::ParseCSVToRawIDs(const std::string &filepath) {
-  auto parsedCells = ParseCSV(filepath);
+MapParser::ParseCsvToRawIDs(const std::string &filepath) {
+  auto parsedCells = ParseCsv(filepath);
   std::vector<std::vector<int>> rawData;
 
   rawData.reserve(parsedCells.size());

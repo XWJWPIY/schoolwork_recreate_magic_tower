@@ -12,9 +12,9 @@ namespace AppUtil {
 struct ObjectMetadata {
     std::string name;
     std::string folder;    // e.g. "Road", "Enemy", "Item", "Door", "Stair"
-    bool isPassable;
-    bool isAnimated;
-    int animationFrames = 1; // Default to 1
+    bool is_passable;
+    bool is_animated;
+    int animation_frames = 1; // Default to 1
 };
 
 extern const std::unordered_map<int, ObjectMetadata> GlobalObjectRegistry;
@@ -29,8 +29,8 @@ std::string GetIdResourcePath(int id);
 
 // Game state machine
 enum class GameState {
-  MainMenu = 0, // 0: Main menu
-  Playing = 1   // 1: Playing session
+  MAIN_MENU = 0, // 0: Main menu
+  PLAYING = 1   // 1: Playing session
 };
 
 struct MapCell {
@@ -52,9 +52,9 @@ struct TileAnimationManager {
 class MapParser {
 public:
   static std::vector<std::vector<MapCell>>
-  ParseCSV(const std::string &filepath);
+  ParseCsv(const std::string &filepath);
   static std::vector<std::vector<int>>
-  ParseCSVToRawIDs(const std::string &filepath);
+  ParseCsvToRawIDs(const std::string &filepath);
 };
 
 } // namespace AppUtil

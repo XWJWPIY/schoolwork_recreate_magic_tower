@@ -17,12 +17,12 @@ public:
     void AddToRoot(Util::Renderer& root);
 
 private:
-    std::shared_ptr<NumericDisplayText> m_YellowKeyText;
-    std::shared_ptr<NumericDisplayText> m_BlueKeyText;
-    std::shared_ptr<NumericDisplayText> m_RedKeyText;
-    std::shared_ptr<NumericDisplayText> m_FloorText;
+    std::shared_ptr<NumericDisplayText> m_yellow_key_text;
+    std::shared_ptr<NumericDisplayText> m_blue_key_text;
+    std::shared_ptr<NumericDisplayText> m_red_key_text;
+    std::shared_ptr<NumericDisplayText> m_floor_text;
     
-    unsigned int m_DefaultFontSize;
+    unsigned int m_default_font_size;
 
     // Helper to initialize text objects
     void InitNumericText(std::shared_ptr<NumericDisplayText>& text, 

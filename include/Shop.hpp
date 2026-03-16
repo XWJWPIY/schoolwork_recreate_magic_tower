@@ -12,7 +12,7 @@ public:
   Shop(int id);
   ~Shop() override = default;
 
-  void reaction(std::shared_ptr<Player> player) override;
+  void Reaction(std::shared_ptr<Player> player) override;
 };
 
 #endif // SHOP_HPP

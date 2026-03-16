@@ -6,13 +6,13 @@
 Enemy::Enemy(int id)
     : Entity(id, "", true) {}
 
-void Enemy::reaction(std::shared_ptr<Player> player) {
-  LOG_INFO("Entering battle! Enemy ID: {} ({})", m_ObjectId,
-           AppUtil::GetIdString(m_ObjectId));
+void Enemy::Reaction(std::shared_ptr<Player> player) {
+  LOG_INFO("Entering battle! Enemy ID: {} ({})", m_object_id,
+           AppUtil::GetIdString(m_object_id));
   // TODO: Battle logic and damage calculation
 
-  if (m_ReplacementComp) {
-    m_ReplacementComp->ReplaceWith(m_GridX, m_GridY, 0); // Replace with empty floor
+  if (m_replacement_comp) {
+    m_replacement_comp->ReplaceWith(m_grid_x, m_grid_y, 0); // Replace with empty floor
   } else {
     SetVisible(false);
   }

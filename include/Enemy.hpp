@@ -12,7 +12,7 @@ public:
   Enemy(int id);
   ~Enemy() override = default;
 
-  void reaction(std::shared_ptr<Player> player) override;
+  void Reaction(std::shared_ptr<Player> player) override;
 };
 
 #endif // ENEMY_HPP

@@ -35,12 +35,12 @@ classDiagram
 一、基底物件 (`AllObjects`)
 - 繼承 `Util::GameObject`
 - 提供所有地圖物件的基礎：`ObjectId`、座標 (`Transform`)、顯隱控制。
-- **統一通行性判斷**：提供 `virtual bool IsPassable()` 與成員 `m_IsPassable`。
+- **統一通行性判斷**：提供 `virtual bool IsPassable()` 與成員 `m_is_passable`。
 - 虛擬函數：`ObjectUpdate()`。
 
 二、實體系統 (`Entity` 系統)
 - 繼承 `AllObjects`。
-- **互動基類**：繼承並實作 `virtual void reaction(Player*) = 0;`。
+- **互動基類**：繼承並實作 `virtual void Reaction(Player*) = 0;`。
 - **通行性**：繼承自 `AllObjects`，預設為 `false` (阻擋)。
 - **實作分離**：所有衍生實體 (`Stair`, `Shop`, `Item` 等) 一律採用 `.hpp` 聲明與 `.cpp` 實作分離模式。
 - **數據驅動資源機制**：
@@ -51,11 +51,11 @@ classDiagram
     1. **`Player` (主角)**：
         - 繼承自 `Entity`，由 `App` 持有。
         - 負責處理 `Util::Input`、背包系統、數值計算。
-        - **座標同步**：直接使用繼承自 `Entity` 的 `m_GridX/Y` 成員 (無 Shadowing)。
+        - **座標同步**：直接使用繼承自 `Entity` 的 `m_grid_x/y` 成員 (無 Shadowing)。
         - **Z-Index 設定為 -3**。
     2. **`Character` (角色/怪物/NPC)**：包含 `NPC`, `Enemy` 等。
     3. **`Item` (道具)**：包含鍵、藥水等。
-    4. **`Stair` (樓梯)**：具備 `m_OnTrigger` 回調函式，觸發時呼叫 `App::ChangeFloor`。設定 `m_IsPassable = true`。
+    4. **`Stair` (樓梯)**：具備 `m_on_trigger` 回調函式，觸發時呼叫 `App::ChangeFloor`。設定 `m_is_passable = true`。
 
 三、層級控制 (Z-Index 渲染順序)
 - **Z = -5 (地板層)**：`RoadMap` (牆壁、地板)。
@@ -76,11 +76,11 @@ classDiagram
 三、交互觸發流程
 1. `Player` 嘗試移動。
 2. 檢查 `RoadMap` 是否可通行 (`IsPassable`)。
-3. 如果目標位置在 `ThingsMap` 有物件，呼叫該物件的 `reaction()`。
+3. 如果目標位置在 `ThingsMap` 有物件，呼叫該物件的 `Reaction()`。
 4. **穿透與阻擋條件**：
-    - 若物件為不可通行且 reaction 後仍為 `Visible`，則阻擋移動。
+    - 若物件為不可通行且 Reaction 後仍為 `Visible`，則阻擋移動。
     - 若物件 `IsPassable()` 為 `true` (如樓梯、物品)，則允許重疊。
-4. 根據 `reaction()` 結果決定移動是否成功或觸發特殊事件。
+4. 根據 `Reaction()` 結果決定移動是否成功或觸發特殊事件。
 
 四、UI 系統 (文字與數值顯示)
 - **`NumericDisplayText`**：
@@ -94,4 +94,5 @@ classDiagram
 
 五、數據驅動層 (`AppUtil::GlobalObjectRegistry`)
 - **單一事實來源 (Single Source of Truth)**：整合 ID、名稱、資源目錄、通行性、動畫標記。
+- **工具函式**：使用 `AppUtil::MapParser::ParseCsv` 進行數據載入。
 - **擴充性**：新增遊戲物件只需在 `AppUtil.cpp` 的 Map 中增加定義，無需修改 `MapBlock` 或 `Entity` 的核心邏輯。

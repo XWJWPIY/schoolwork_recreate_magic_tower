@@ -15,7 +15,7 @@ public:
     void ReplaceWith(int x, int y, int id) const;
 
 private:
-    ReplacementCallback m_Callback;
+    ReplacementCallback m_callback;
 };
 
 #endif // DYNAMIC_REPLACEMENT_COMPONENT_HPP

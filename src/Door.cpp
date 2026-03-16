@@ -10,13 +10,13 @@ Door::Door(int id)
              MAGIC_TOWER_RESOURCE_DIR "/bmp/Door/" +
                  AppUtil::GetIdString(id) + "1.BMP",
              true) {
-  std::string doorName = AppUtil::GetIdString(id);
+  std::string door_name = AppUtil::GetIdString(id);
   std::vector<std::string> paths;
   for (int i = 1; i <= MAX_ANIMATION_FRAMES; i++) {
-    std::string path = MAGIC_TOWER_RESOURCE_DIR "/bmp/Door/" + doorName +
+    std::string path = MAGIC_TOWER_RESOURCE_DIR "/bmp/Door/" + door_name +
                        std::to_string(i);
     // Handle the inconsistent extension case (some are .BMP, some .bmp)
-    if (doorName == "iron_fence" && i == 2) {
+    if (door_name == "iron_fence" && i == 2) {
       path += ".bmp";
     } else {
       path += ".BMP";
@@ -25,40 +25,40 @@ Door::Door(int id)
   }
 
   // Create Animation: paths, play, interval(ms), looping, cooldown
-  m_Animation = std::make_shared<Util::Animation>(paths, false, 100, false);
-  SetDrawable(m_Animation);
+  m_animation = std::make_shared<Util::Animation>(paths, false, 100, false);
+  SetDrawable(m_animation);
 }
 
-void Door::reaction(std::shared_ptr<Player> player) {
-  if (m_Animation->GetState() == Util::Animation::State::PLAY)
+void Door::Reaction(std::shared_ptr<Player> player) {
+  if (m_animation->GetState() == Util::Animation::State::PLAY)
     return;
 
-  if (m_ObjectId == 301) { // Iron Fence
+  if (m_object_id == 301) { // Iron Fence
     LOG_INFO("Opening Iron Fence!");
-    m_Animation->Play();
-    m_CanReact = false;
+    m_animation->Play();
+    m_can_react = false;
     return;
   }
 
-  if (player && player->UseKey(m_ObjectId)) {
-    LOG_INFO("Opening Door! ID: {} ({})", m_ObjectId,
-             AppUtil::GetIdString(m_ObjectId));
-    m_Animation->Play();
-    m_CanReact = false;
-  } else if (m_ObjectId == 305) {
-    LOG_INFO("Green door {} requires special condition.", AppUtil::GetIdString(m_ObjectId));
+  if (player && player->UseKey(m_object_id)) {
+    LOG_INFO("Opening Door! ID: {} ({})", m_object_id,
+             AppUtil::GetIdString(m_object_id));
+    m_animation->Play();
+    m_can_react = false;
+  } else if (m_object_id == 305) {
+    LOG_INFO("Green door {} requires special condition.", AppUtil::GetIdString(m_object_id));
     // TODO: Implement special condition for Green Door
   } else {
-    LOG_INFO("No key for door {} ({})", m_ObjectId,
-             AppUtil::GetIdString(m_ObjectId));
+    LOG_INFO("No key for door {} ({})", m_object_id,
+             AppUtil::GetIdString(m_object_id));
   }
 }
 
 void Door::ObjectUpdate() {
   // If animation has ended
-  if (m_Animation->GetState() == Util::Animation::State::ENDED) {
-    if (m_ReplacementComp) {
-      m_ReplacementComp->ReplaceWith(m_GridX, m_GridY, 0);
+  if (m_animation->GetState() == Util::Animation::State::ENDED) {
+    if (m_replacement_comp) {
+      m_replacement_comp->ReplaceWith(m_grid_x, m_grid_y, 0);
     } else {
       SetVisible(false);
     }

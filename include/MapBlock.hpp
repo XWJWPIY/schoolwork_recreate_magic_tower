@@ -22,7 +22,7 @@ public:
 
 
 private:
-  int m_CurrentLocalFrame = 1;
+  int m_current_local_frame = 1;
   std::string GetImagePath(int id) const;
   void UpdateProperties(int id);
 };

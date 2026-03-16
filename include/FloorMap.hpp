@@ -18,7 +18,7 @@ public:
            const glm::vec2 &baseSize = {0.0f, 0.0f});
   ~FloorMap() = default;
 
-  glm::vec2 GetBaseSize() const { return m_BaseSize; }
+  glm::vec2 GetBaseSize() const { return m_base_size; }
 
   void
   LoadFloorData(const std::vector<std::vector<AppUtil::MapCell>> &floorData,
@@ -34,17 +34,17 @@ public:
 
   void Update();
 
-  int GetCurrentStory() const { return m_CurrentStory; }
+  int GetCurrentStory() const { return m_current_story; }
   void SetObject(int x, int y, int id, int story = -1);
 
   void SetAllVisible(bool visible) {
     for (int s = 0; s < AppUtil::TOTAL_STORY; ++s) {
-      for (auto &row : m_Objects[s]) {
+      for (auto &row : m_objects[s]) {
         for (auto &obj : row) {
           if (obj) {
-            if (visible && s == m_CurrentStory && obj->GetObjectId() == 0) {
+            if (visible && s == m_current_story && obj->GetObjectId() == 0) {
               obj->SetVisible(false);
-            } else if (visible && s == m_CurrentStory) {
+            } else if (visible && s == m_current_story) {
               obj->SetVisible(true);
             } else {
               obj->SetVisible(false);
@@ -56,23 +56,23 @@ public:
   }
 
   // Set the Root Renderer so FloorMap can Add/Remove objects dynamically
-  void SetRenderer(Util::Renderer *root) { m_Root = root; }
+  void SetRenderer(Util::Renderer *root) { m_root = root; }
   void AddToRenderer();
 
 private:
-  Util::Renderer *m_Root = nullptr;
-  ObjectFactory m_Factory;
-  std::vector<std::vector<std::vector<std::shared_ptr<AllObjects>>>> m_Objects;
-  int m_CurrentStory = 0;
+  Util::Renderer *m_root = nullptr;
+  ObjectFactory m_factory;
+  std::vector<std::vector<std::vector<std::shared_ptr<AllObjects>>>> m_objects;
+  int m_current_story = 0;
   const float DEFAULT_SIZE =
       48.0f; // Default size used when image path is missing
-  glm::vec2 m_BaseSize = {48.0f, 48.0f}; // stored dynamic base image size
+  glm::vec2 m_base_size = {48.0f, 48.0f}; // stored dynamic base image size
 
-  float m_CenterX = 0.0f;
-  float m_CenterY = 0.0f;
-  float m_ScaleX = 1.0f;
-  float m_ScaleY = 1.0f;
-  float m_ZIndex = -5.0f;
+  float m_center_x = 0.0f;
+  float m_center_y = 0.0f;
+  float m_scale_x = 1.0f;
+  float m_scale_y = 1.0f;
+  float m_z_index = -5.0f;
 };
 
 #endif // FLOOR_MAP_HPP

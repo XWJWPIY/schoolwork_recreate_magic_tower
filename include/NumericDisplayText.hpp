@@ -20,16 +20,16 @@ public:
   void UpdateDisplayText();
 
 private:
-  std::shared_ptr<Util::Text> m_TextDrawable;
+  std::shared_ptr<Util::Text> m_text_drawable;
 
-  std::string m_Prefix = "";
-  std::string m_Suffix = "";
-  int m_Number = 0;
+  std::string m_prefix = "";
+  std::string m_suffix = "";
+  int m_number = 0;
 
-  bool m_ShowNumber = true;
-  bool m_ShowText = true;
+  bool m_show_number = true;
+  bool m_show_text = true;
 
-  bool m_NeedsUpdate = true;
+  bool m_needs_update = true;
 };
 
 #endif // NUMERIC_DISPLAY_TEXT_HPP

@@ -15,13 +15,13 @@
 class App {
 
 public:
-  enum class State {
+  enum class STATE {
     START,
     UPDATE,
     END,
   };
 
-  State GetCurrentState() const { return m_CurrentState; }
+  STATE GetCurrentState() const { return m_current_state; }
 
   void Start();
 
@@ -35,15 +35,15 @@ private:
   void ValidTask();
 
 private:
-  State m_CurrentState = State::START;
-  AppUtil::GameState m_GameState = AppUtil::GameState::MainMenu;
+  STATE m_current_state = STATE::START;
+  AppUtil::GameState m_game_state = AppUtil::GameState::MAIN_MENU;
 
-  Util::Renderer m_Root;
-  std::shared_ptr<Background> m_Background;
-  std::shared_ptr<FloorMap> m_RoadMap;
-  std::shared_ptr<FloorMap> m_ThingsMap;
-  std::shared_ptr<StatusUI> m_StatusUI;
-  std::shared_ptr<Player> m_Player;
+  Util::Renderer m_root;
+  std::shared_ptr<Background> m_background;
+  std::shared_ptr<FloorMap> m_road_map;
+  std::shared_ptr<FloorMap> m_things_map;
+  std::shared_ptr<StatusUI> m_status_ui;
+  std::shared_ptr<Player> m_player;
 };
 
 #endif

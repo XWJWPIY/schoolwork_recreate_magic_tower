@@ -16,20 +16,20 @@ public:
   // Sync screen position by borrowing from FloorMap
   void SyncPosition(std::shared_ptr<FloorMap> roadmap);
 
-  void reaction(std::shared_ptr<Player> player) override;
+  void Reaction(std::shared_ptr<Player> player) override;
 
   // Key management
-  int GetYellowKeys() const { return m_YellowKeys; }
-  int GetBlueKeys() const { return m_BlueKeys; }
-  int GetRedKeys() const { return m_RedKeys; }
+  int GetYellowKeys() const { return m_yellow_keys; }
+  int GetBlueKeys() const { return m_blue_keys; }
+  int GetRedKeys() const { return m_red_keys; }
 
   void AddKey(int id);
   bool UseKey(int doorId);
 
 private:
-  int m_YellowKeys = 0;
-  int m_BlueKeys = 0;
-  int m_RedKeys = 0;
+  int m_yellow_keys = 0;
+  int m_blue_keys = 0;
+  int m_red_keys = 0;
 };
 
 #endif // PLAYER_HPP

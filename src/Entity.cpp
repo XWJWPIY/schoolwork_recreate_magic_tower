@@ -12,20 +12,20 @@ Entity::Entity(int initialId, const std::string &imagePath, bool canReact)
                            ? imagePath
                            : MAGIC_TOWER_RESOURCE_DIR "/bmp/Door/no_door.png")),
                  -2, initialId),
-      m_GridX(0), m_GridY(0), m_CanReact(canReact) {
+      m_grid_x(0), m_grid_y(0), m_can_react(canReact) {
   
   auto it = AppUtil::GlobalObjectRegistry.find(initialId);
   if (it != AppUtil::GlobalObjectRegistry.end()) {
-      m_IsPassable = it->second.isPassable;
+      m_is_passable = it->second.is_passable;
   } else {
-      m_IsPassable = false; // Default for unknown entities
+      m_is_passable = false; // Default for unknown entities
   }
   // Update properties after members are initialized
   UpdateProperties(initialId);
 }
 
 void Entity::SetObjectId(int newId) {
-  m_ObjectId = newId;
+  m_object_id = newId;
   UpdateProperties(newId);
 }
 

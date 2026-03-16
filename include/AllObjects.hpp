@@ -8,15 +8,15 @@ class AllObjects : public Util::GameObject {
 public:
   virtual ~AllObjects() = default;
 
-  virtual void SetObjectId(int newId) { m_ObjectId = newId; }
-  int GetObjectId() const { return m_ObjectId; }
+  virtual void SetObjectId(int newId) { m_object_id = newId; }
+  int GetObjectId() const { return m_object_id; }
 
   virtual void ObjectUpdate() {}
   bool GetVisible() const { return this->m_Visible; }
 
   // Unified passability
-  virtual bool IsPassable() const { return m_IsPassable; }
-  void SetPassable(bool passable) { m_IsPassable = passable; }
+  virtual bool IsPassable() const { return m_is_passable; }
+  void SetPassable(bool passable) { m_is_passable = passable; }
 
 protected:
   // Using protected constructor so it can't be instantiated directly
@@ -26,8 +26,8 @@ protected:
   AllObjects(const std::shared_ptr<Core::Drawable> &drawable,
              const float zIndex, int initialId = 0);
 
-  int m_ObjectId = 0;
-  bool m_IsPassable = true;
+  int m_object_id = 0;
+  bool m_is_passable = true;
 };
 
 #endif // ALL_OBJECTS_HPP

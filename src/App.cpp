@@ -18,10 +18,10 @@
 
 void App::Start() {
   LOG_TRACE("Start");
-  m_CurrentState = State::UPDATE;
+  m_current_state = STATE::UPDATE;
 
-  m_Background = std::make_shared<Background>();
-  m_Root.AddChild(m_Background);
+  m_background = std::make_shared<Background>();
+  m_root.AddChild(m_background);
 
   // Factory for RoadMap (creates MapBlocks)
   FloorMap::ObjectFactory roadObjFactory =
@@ -31,7 +31,7 @@ void App::Start() {
 
   // Factory for ThingsMap (Create specialized Entities based on ID)
   auto replacementComp = std::make_shared<DynamicReplacementComponent>(
-      [this](int x, int y, int id) { this->m_ThingsMap->SetObject(x, y, id); });
+      [this](int x, int y, int id) { this->m_things_map->SetObject(x, y, id); });
 
   FloorMap::ObjectFactory thingsObjFactory =
       [this, replacementComp](int id) -> std::shared_ptr<AllObjects> {
@@ -58,8 +58,8 @@ void App::Start() {
           if (i == 0)
             SetVisible(false);
         }
-        void reaction(std::shared_ptr<Player> player) override {
-          LOG_DEBUG("Unknown entity reaction");
+        void Reaction(std::shared_ptr<Player> player) override {
+          LOG_DEBUG("Unknown entity Reaction");
         }
       };
       entity = std::make_shared<UnknownEntity>(id);
@@ -71,82 +71,82 @@ void App::Start() {
     return entity;
   };
 
-  m_RoadMap = std::make_shared<FloorMap>(roadObjFactory, 141.0f, 0.0f, 0.735f,
+  m_road_map = std::make_shared<FloorMap>(roadObjFactory, 141.0f, 0.0f, 0.735f,
                                          0.735f, -5.0f); // Render at Z=-5
-  m_RoadMap->SetRenderer(&m_Root);
-  m_RoadMap->AddToRenderer(); // Add default blocks to root
+  m_road_map->SetRenderer(&m_root);
+  m_road_map->AddToRenderer(); // Add default blocks to root
 
   for (int i = 0; i < AppUtil::TOTAL_STORY; ++i) {
-    auto roadData = AppUtil::MapParser::ParseCSV(
+    auto roadData = AppUtil::MapParser::ParseCsv(
         MAGIC_TOWER_RESOURCE_DIR "/Data/RoadMap" + std::to_string(i) + ".csv");
     if (!roadData.empty()) {
-      m_RoadMap->LoadFloorData(roadData, i);
+      m_road_map->LoadFloorData(roadData, i);
     }
   }
-  m_RoadMap->SetAllVisible(false);
+  m_road_map->SetAllVisible(false);
 
-  m_ThingsMap = std::make_shared<FloorMap>(
+  m_things_map = std::make_shared<FloorMap>(
       thingsObjFactory, 141.0f, 0.0f, 0.735f, 0.735f, -4.0f,
-      m_RoadMap->GetBaseSize()); // Use RoadMap spacing
-  m_ThingsMap->SetRenderer(&m_Root);
-  m_ThingsMap->AddToRenderer(); // Add default blocks to root
+      m_road_map->GetBaseSize()); // Use RoadMap spacing
+  m_things_map->SetRenderer(&m_root);
+  m_things_map->AddToRenderer(); // Add default blocks to root
 
   for (int i = 0; i < AppUtil::TOTAL_STORY; ++i) {
-    auto thingsData = AppUtil::MapParser::ParseCSV(MAGIC_TOWER_RESOURCE_DIR
+    auto thingsData = AppUtil::MapParser::ParseCsv(MAGIC_TOWER_RESOURCE_DIR
                                                    "/Data/ThingsMap" +
                                                    std::to_string(i) + ".csv");
     if (!thingsData.empty()) {
-      m_ThingsMap->LoadFloorData(thingsData, i);
+      m_things_map->LoadFloorData(thingsData, i);
     }
   }
-  m_ThingsMap->SetAllVisible(false);
+  m_things_map->SetAllVisible(false);
 
 
   // Status UI Initialization
-  m_StatusUI = std::make_shared<StatusUI>();
-  m_StatusUI->AddToRoot(m_Root);
+  m_status_ui = std::make_shared<StatusUI>();
+  m_status_ui->AddToRoot(m_root);
 
   // Player Initialization
-  m_Player = std::make_shared<Player>();
-  m_Player->SyncPosition(m_RoadMap);
-  m_Root.AddChild(m_Player);
-  m_Player->SetVisible(false);
+  m_player = std::make_shared<Player>();
+  m_player->SyncPosition(m_road_map);
+  m_root.AddChild(m_player);
+  m_player->SetVisible(false);
 }
 
 void App::Update() {
 
-  switch (m_GameState) {
-  case AppUtil::GameState::MainMenu:
+  switch (m_game_state) {
+  case AppUtil::GameState::MAIN_MENU:
     if (Util::Input::IsKeyDown(Util::Keycode::SPACE)) {
-      m_GameState = AppUtil::GameState::Playing;
-      m_Background->NextPhase(1);
-      m_RoadMap->SetAllVisible(true);
-      m_ThingsMap->SetAllVisible(true);
-      m_StatusUI->SetVisible(true);
-      m_Player->SetVisible(true);
+      m_game_state = AppUtil::GameState::PLAYING;
+      m_background->NextPhase(1);
+      m_road_map->SetAllVisible(true);
+      m_things_map->SetAllVisible(true);
+      m_status_ui->SetVisible(true);
+      m_player->SetVisible(true);
     }
     break;
 
-  case AppUtil::GameState::Playing:
-    if (m_StatusUI) {
-      m_StatusUI->Update(m_Player, m_RoadMap->GetCurrentStory());
+  case AppUtil::GameState::PLAYING:
+    if (m_status_ui) {
+      m_status_ui->Update(m_player, m_road_map->GetCurrentStory());
     }
 
     if (Util::Input::IsKeyDown(Util::Keycode::W) ||
         Util::Input::IsKeyDown(Util::Keycode::UP)) {
-      m_Player->Move(0, -1, m_RoadMap, m_ThingsMap);
+      m_player->Move(0, -1, m_road_map, m_things_map);
     }
     if (Util::Input::IsKeyDown(Util::Keycode::S) ||
         Util::Input::IsKeyDown(Util::Keycode::DOWN)) {
-      m_Player->Move(0, 1, m_RoadMap, m_ThingsMap);
+      m_player->Move(0, 1, m_road_map, m_things_map);
     }
     if (Util::Input::IsKeyDown(Util::Keycode::A) ||
         Util::Input::IsKeyDown(Util::Keycode::LEFT)) {
-      m_Player->Move(-1, 0, m_RoadMap, m_ThingsMap);
+      m_player->Move(-1, 0, m_road_map, m_things_map);
     }
     if (Util::Input::IsKeyDown(Util::Keycode::D) ||
         Util::Input::IsKeyDown(Util::Keycode::RIGHT)) {
-      m_Player->Move(1, 0, m_RoadMap, m_ThingsMap);
+      m_player->Move(1, 0, m_road_map, m_things_map);
     }
 
     if (Util::Input::IsKeyDown(Util::Keycode::W) ||
@@ -158,8 +158,8 @@ void App::Update() {
         Util::Input::IsKeyDown(Util::Keycode::D) ||
         Util::Input::IsKeyDown(Util::Keycode::RIGHT)) {
       LOG_INFO("Player Position: Floor {}, Grid({}, {})",
-               m_RoadMap->GetCurrentStory(), m_Player->GetGridX(),
-               m_Player->GetGridY());
+               m_road_map->GetCurrentStory(), m_player->GetGridX(),
+               m_player->GetGridY());
     }
 
     if (Util::Input::IsKeyDown(Util::Keycode::NUM_8) ||
@@ -173,17 +173,17 @@ void App::Update() {
     break;
   }
 
-  m_RoadMap->Update();
-  m_ThingsMap->Update();
+  m_road_map->Update();
+  m_things_map->Update();
 
-  m_Root.Update();
+  m_root.Update();
 
   /*
    * Do not touch the code below as they serve the purpose for
    * closing the window.
    */
   if (Util::Input::IsKeyUp(Util::Keycode::ESCAPE) || Util::Input::IfExit()) {
-    m_CurrentState = State::END;
+    m_current_state = STATE::END;
   }
 }
 
@@ -192,16 +192,16 @@ void App::End() { // NOLINT(this method will mutate members in the future)
 }
 
 void App::ChangeFloor(int delta) {
-  int nextStory = m_RoadMap->GetCurrentStory() + delta;
+  int nextStory = m_road_map->GetCurrentStory() + delta;
   if (nextStory >= 0 && nextStory < AppUtil::TOTAL_STORY) {
-    m_RoadMap->SwitchStory(nextStory);
-    m_ThingsMap->SwitchStory(nextStory);
+    m_road_map->SwitchStory(nextStory);
+    m_things_map->SwitchStory(nextStory);
     LOG_INFO("Switched to story {}", nextStory);
-    if (m_Player) {
-      m_Player->SyncPosition(m_RoadMap);
+    if (m_player) {
+      m_player->SyncPosition(m_road_map);
     }
     LOG_INFO("Player Position (Floor Switch): Floor {}, Grid({}, {})",
-             m_RoadMap->GetCurrentStory(), m_Player->GetGridX(),
-             m_Player->GetGridY());
+             m_road_map->GetCurrentStory(), m_player->GetGridX(),
+             m_player->GetGridY());
   }
 }

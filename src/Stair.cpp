@@ -5,16 +5,16 @@
 
 Stair::Stair(int id, TriggerCallback callback)
     : Entity(id, "", true),
-      m_OnTrigger(std::move(callback)) {}
+      m_on_trigger(std::move(callback)) {}
 
-void Stair::reaction(std::shared_ptr<Player> player) {
-  LOG_INFO("Using stairs... ID: {} ({})", m_ObjectId,
-           AppUtil::GetIdString(m_ObjectId));
-  if (m_OnTrigger) {
-    if (m_ObjectId == 701) {
-      m_OnTrigger(1); // Up
-    } else if (m_ObjectId == 702) {
-      m_OnTrigger(-1); // Down
+void Stair::Reaction(std::shared_ptr<Player> player) {
+  LOG_INFO("Using stairs... ID: {} ({})", m_object_id,
+           AppUtil::GetIdString(m_object_id));
+  if (m_on_trigger) {
+    if (m_object_id == 701) {
+      m_on_trigger(1); // Up
+    } else if (m_object_id == 702) {
+      m_on_trigger(-1); // Down
     }
   }
 }

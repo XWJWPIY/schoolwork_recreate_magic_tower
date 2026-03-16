@@ -17,56 +17,56 @@ public:
   Entity(int initialId, const std::string &imagePath, bool canReact = true);
   ~Entity() override = default;
 
-  bool CanReact() const { return m_CanReact; }
-  void SetCanReact(bool value) { m_CanReact = value; }
+  bool CanReact() const { return m_can_react; }
+  void SetCanReact(bool value) { m_can_react = value; }
 
   void SetObjectId(int newId) override;
   void UpdateProperties(int id);
 
-  virtual void reaction(std::shared_ptr<Player> player) = 0;
+  virtual void Reaction(std::shared_ptr<Player> player) = 0;
   virtual void ObjectUpdate() override {}
 
   void SetReplacementComponent(std::shared_ptr<DynamicReplacementComponent> comp) {
-    m_ReplacementComp = comp;
+    m_replacement_comp = comp;
   }
 
   void SetGridPosition(int x, int y) {
-    m_GridX = x;
-    m_GridY = y;
+    m_grid_x = x;
+    m_grid_y = y;
   }
-  int GetGridX() const { return m_GridX; }
-  int GetGridY() const { return m_GridY; }
+  int GetGridX() const { return m_grid_x; }
+  int GetGridY() const { return m_grid_y; }
 
   // Getters and Setters
-  int getHp() const { return hp; }
-  void setHp(int value) { hp = value; }
+  int GetHp() const { return m_hp; }
+  void SetHp(int value) { m_hp = value; }
 
-  int getAttack() const { return attack; }
-  void setAttack(int value) { attack = value; }
+  int GetAttack() const { return m_attack; }
+  void SetAttack(int value) { m_attack = value; }
 
-  int getDefense() const { return defense; }
-  void setDefense(int value) { defense = value; }
+  int GetDefense() const { return m_defense; }
+  void SetDefense(int value) { m_defense = value; }
 
-  int getLevel() const { return level; }
-  void setLevel(int value) { level = value; }
+  int GetLevel() const { return m_level; }
+  void SetLevel(int value) { m_level = value; }
 
-  void setMovable(bool value) { is_movable = value; }
-  bool getMovable() const { return is_movable; }
+  void SetMovable(bool value) { m_is_movable = value; }
+  bool GetMovable() const { return m_is_movable; }
 
 protected:
-  int m_GridX = 0;
-  int m_GridY = 0;
+  int m_grid_x = 0;
+  int m_grid_y = 0;
 
-  bool m_CanReact = true;
-  bool is_movable = false;
-  int hp = 0;
-  int attack = 0;
-  int defense = 0;
-  int level = 1;
+  bool m_can_react = true;
+  bool m_is_movable = false;
+  int m_hp = 0;
+  int m_attack = 0;
+  int m_defense = 0;
+  int m_level = 1;
 
-  int current_frame = 0;
+  int m_current_frame = 0;
 
-  std::shared_ptr<DynamicReplacementComponent> m_ReplacementComp;
+  std::shared_ptr<DynamicReplacementComponent> m_replacement_comp;
 };
 
 #endif // ENTITY_HPP

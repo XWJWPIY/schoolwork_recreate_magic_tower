@@ -6,8 +6,8 @@
 Shop::Shop(int id)
     : Entity(id, "", true) {}
 
-void Shop::reaction(std::shared_ptr<Player> player) {
-  LOG_INFO("Opening Shop menu... ID: {} ({})", m_ObjectId,
-           AppUtil::GetIdString(m_ObjectId));
+void Shop::Reaction(std::shared_ptr<Player> player) {
+  LOG_INFO("Opening Shop menu... ID: {} ({})", m_object_id,
+           AppUtil::GetIdString(m_object_id));
   // TODO: Implement trading system (UI/Logic)
 }

@@ -15,10 +15,10 @@ public:
   Stair(int id, TriggerCallback callback);
   ~Stair() override = default;
 
-  void reaction(std::shared_ptr<Player> player) override;
+  void Reaction(std::shared_ptr<Player> player) override;
 
 private:
-  TriggerCallback m_OnTrigger;
+  TriggerCallback m_on_trigger;
 };
 
 #endif // STAIR_HPP

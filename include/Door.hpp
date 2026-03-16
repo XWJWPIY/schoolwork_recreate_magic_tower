@@ -9,13 +9,13 @@ public:
   Door(int id);
   ~Door() override = default;
 
-  void reaction(std::shared_ptr<Player> player) override;
+  void Reaction(std::shared_ptr<Player> player) override;
 
   void ObjectUpdate() override;
 
 private:
   static constexpr int MAX_ANIMATION_FRAMES = 5;
-  std::shared_ptr<Util::Animation> m_Animation;
+  std::shared_ptr<Util::Animation> m_animation;
 };
 
 #endif // DOOR_HPP
