@@ -26,10 +26,16 @@ public:
   void AddKey(int id);
   bool UseKey(int doorId);
 
+  // Coin management
+  int GetCoins() const { return m_coins; }
+  void AddCoins(int amount) { m_coins += amount; }
+  void SetCoins(int count) { m_coins = count; }
+
 private:
   int m_yellow_keys = 0;
   int m_blue_keys = 0;
   int m_red_keys = 0;
+  int m_coins = 0;
 };
 
 #endif // PLAYER_HPP

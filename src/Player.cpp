@@ -14,9 +14,17 @@ Player::Player()
   m_grid_x = 5;
   m_grid_y = 9;
 
-  m_yellow_keys = 0;
-  m_blue_keys = 0;
-  m_red_keys = 0;  
+  // Initial Stats from reference UI
+  m_hp = 1000;
+  m_attack = 10;
+  m_defense = 10;
+  m_agility = 2;
+  m_exp = 0;
+
+  m_yellow_keys = 1;
+  m_blue_keys = 1;
+  m_red_keys = 1;  
+  m_coins = 0;
 }
 
 void Player::Move(int dx, int dy, std::shared_ptr<FloorMap> roadmap,

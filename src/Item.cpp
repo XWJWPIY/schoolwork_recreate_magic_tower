@@ -10,8 +10,12 @@ void Item::Reaction(std::shared_ptr<Player> player) {
   LOG_INFO("Item collected! ID: {} ({})", m_object_id,
            AppUtil::GetIdString(m_object_id));
   
-  if (player && m_object_id >= 201 && m_object_id <= 203) {
-    player->AddKey(m_object_id);
+  if (player) {
+    if (m_object_id >= 201 && m_object_id <= 203) {
+      player->AddKey(m_object_id);
+    } else if (m_object_id == 204) {
+      player->AddCoins(1); // Default 1 coin
+    }
   }
 
   if (m_replacement_comp) {

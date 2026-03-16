@@ -20,6 +20,13 @@ private:
     std::shared_ptr<NumericDisplayText> m_yellow_key_text;
     std::shared_ptr<NumericDisplayText> m_blue_key_text;
     std::shared_ptr<NumericDisplayText> m_red_key_text;
+    std::shared_ptr<NumericDisplayText> m_coin_text;
+    std::shared_ptr<NumericDisplayText> m_level_text;
+    std::shared_ptr<NumericDisplayText> m_hp_text;
+    std::shared_ptr<NumericDisplayText> m_attack_text;
+    std::shared_ptr<NumericDisplayText> m_defense_text;
+    std::shared_ptr<NumericDisplayText> m_agility_text;
+    std::shared_ptr<NumericDisplayText> m_exp_text;
     std::shared_ptr<NumericDisplayText> m_floor_text;
     
     unsigned int m_default_font_size;

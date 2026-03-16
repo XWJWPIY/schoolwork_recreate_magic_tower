@@ -26,6 +26,7 @@ const std::unordered_map<int, ObjectMetadata> GlobalObjectRegistry = {
     {201, {"yellow_key", "Item", true, false}},
     {202, {"blue_key", "Item", true, false}},
     {203, {"red_key", "Item", true, false}},
+    {204, {"coin", "Item", true, false}},
 
     // Doors/Fences (ID 300-399)
     {301, {"iron_fence", "Door", false, true, 5}},
