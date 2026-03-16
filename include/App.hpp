@@ -5,6 +5,8 @@
 #include "Background.hpp"
 #include "FloorMap.hpp"
 #include "NumericDisplayText.hpp"
+#include "NoticeUI.hpp"
+#include "FlyUI.hpp"
 #include "Player.hpp"
 #include "StatusUI.hpp"
 #include "Util/Renderer.hpp"
@@ -44,6 +46,9 @@ private:
   std::shared_ptr<FloorMap> m_things_map;
   std::shared_ptr<StatusUI> m_status_ui;
   std::shared_ptr<Player> m_player;
+  std::shared_ptr<NoticeUI> m_notice_ui;
+  std::shared_ptr<FlyUI> m_fly_ui;
+  int m_preview_floor = 0;
 };
 
 #endif

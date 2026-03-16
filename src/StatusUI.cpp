@@ -23,6 +23,12 @@ StatusUI::StatusUI(unsigned int fontSize) : m_default_font_size(fontSize) {
     // Floor Display: {150, 335}, size 32 (from App.cpp)
     InitNumericText(m_floor_text, 150.0f, 335.0f, Util::Color::FromRGB(255, 255, 255), 32);
     m_floor_text->SetSuffix(" F");
+
+    // Manual Hint
+    InitNumericText(m_manual_hint_text, 390.0f, -335.0f, Util::Color::FromRGB(0, 0, 0), 24);
+    m_manual_hint_text->SetPrefix("-Press (L)-");
+    m_manual_hint_text->SetShowNumber(false);
+    m_manual_hint_text->UpdateDisplayText();
 }
 
 void StatusUI::InitNumericText(std::shared_ptr<NumericDisplayText>& text, 
@@ -80,6 +86,7 @@ void StatusUI::SetVisible(bool visible) {
     m_agility_text->SetVisible(visible);
     m_exp_text->SetVisible(visible);
     m_floor_text->SetVisible(visible);
+    m_manual_hint_text->SetVisible(visible);
 }
 
 void StatusUI::AddToRoot(Util::Renderer& root) {
@@ -94,4 +101,5 @@ void StatusUI::AddToRoot(Util::Renderer& root) {
     root.AddChild(m_agility_text);
     root.AddChild(m_exp_text);
     root.AddChild(m_floor_text);
+    root.AddChild(m_manual_hint_text);
 }

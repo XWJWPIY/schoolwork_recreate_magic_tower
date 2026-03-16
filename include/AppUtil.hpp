@@ -29,8 +29,10 @@ std::string GetIdResourcePath(int id);
 
 // Game state machine
 enum class GameState {
-  MAIN_MENU = 0, // 0: Main menu
-  PLAYING = 1   // 1: Playing session
+  MAIN_MENU = 0,    // 0: Main menu
+  PLAYING = 1,      // 1: Playing session
+  INSTRUCTIONS = 2, // 2: Instruction manual
+  FAST_ELEVATOR = 3 // 3: Floor selection menu
 };
 
 struct MapCell {

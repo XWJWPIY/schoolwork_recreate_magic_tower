@@ -16,6 +16,8 @@ set(SRC_FILES
     NPC.cpp
     DynamicReplacementComponent.cpp
     StatusUI.cpp
+    NoticeUI.cpp
+    FlyUI.cpp
 )
 
 set(INCLUDE_FILES
@@ -36,6 +38,8 @@ set(INCLUDE_FILES
     NPC.hpp
     DynamicReplacementComponent.hpp
     StatusUI.hpp
+    NoticeUI.hpp
+    FlyUI.hpp
 )
 
 set(TEST_FILES

@@ -5,6 +5,8 @@ classDiagram
     %% 包含關係 (Containment)
     FloorMap o-- AllObjects : Contains (Grid)
     StatusUI o-- NumericDisplayText : Contains
+    FlyUI o-- NumericDisplayText : Contains
+    FlyUI o-- GameObject : Background
 
     %% 依賴關係 (Dependency)
     FloorMap ..> AppUtil : Uses Registry
@@ -15,7 +17,7 @@ classDiagram
     GameObject --> AllObjects
     GameObject --> Background
     GameObject --> NumericDisplayText
-    GameObject --> StatusUI
+    GameObject --> NoticeUI
     
     AllObjects --> MapBlock
     AllObjects --> Entity
@@ -58,9 +60,11 @@ classDiagram
     4. **`Stair` (樓梯)**：具備 `m_on_trigger` 回調函式，觸發時呼叫 `App::ChangeFloor`。設定 `m_is_passable = true`。
 
 三、層級控制 (Z-Index 渲染順序)
-- **Z = -5 (地板層)**：`RoadMap` (牆壁、地板)。
-- **Z = -4 (物件層)**：`ThingsMap` (怪物、道具、NPC、樓梯)。
+- **Z = 90 ~ 95 (UI 頂層)**：`NoticeUI`, `FlyUI` 及其子物件。
+- **Z = -0.1 (UI 提示層)**：`StatusUI` 的操作提示文字。
 - **Z = -3 (主角層)**：單一 `Player` 實例。
+- **Z = -4 (物件層)**：`ThingsMap` (怪物、道具、NPC、樓梯)。
+- **Z = -5 (地板層)**：`RoadMap` (牆壁、地板)。
 
 地圖系統 (FloorMap 3D 結構)
 
@@ -91,6 +95,15 @@ classDiagram
     - **中心化更新**：集中管理黃/藍/紅鑰匙數量與樓層顯示。
     - **封裝邏輯**：`App` 僅需呼叫 `m_StatusUI->Update(player, story)` 即可完成所有 UI 同步。
     - **字體配置**：支援建構時注入預設字體大小，靈活調整排版。
+
+六、選單與說明系統
+- **`NoticeUI` (遊戲說明書)**：
+    - 繼承自 `Util::GameObject`。
+    - 負責顯示 `notice.bmp` 背景，支援全畫面覆蓋。
+- **`FlyUI` (快速電梯選單)**：
+    - **組合管理**：持有背景背景圖片、`NumericDisplayText` (樓層) 以及導引箭頭。
+    - **動態回饋**：根據當前預覽樓層動態切換上下箭頭的顏色 (白/灰)。
+    - **控制解耦**：管理自身的顯示與隱藏，並暴露 `AddToRoot` 接口。
 
 五、數據驅動層 (`AppUtil::GlobalObjectRegistry`)
 - **單一事實來源 (Single Source of Truth)**：整合 ID、名稱、資源目錄、通行性、動畫標記。

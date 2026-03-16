@@ -28,6 +28,7 @@ private:
     std::shared_ptr<NumericDisplayText> m_agility_text;
     std::shared_ptr<NumericDisplayText> m_exp_text;
     std::shared_ptr<NumericDisplayText> m_floor_text;
+    std::shared_ptr<NumericDisplayText> m_manual_hint_text;
     
     unsigned int m_default_font_size;
 
