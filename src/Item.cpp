@@ -14,7 +14,17 @@ void Item::Reaction(std::shared_ptr<Player> player) {
     if (m_object_id >= 201 && m_object_id <= 203) {
       player->AddKey(m_object_id);
     } else if (m_object_id == 204) {
-      player->AddCoins(1); // Default 1 coin
+      player->AddCoins(1);
+    } else if (m_object_id == 205) {
+      player->SetHp(player->GetHp() + 150); 
+    } else if (m_object_id == 206) {
+      player->SetAgility(player->GetAgility() + 0);
+    } else if (m_object_id == 211) {
+      player->SetAgility(player->GetAgility() + 0);
+    } else if (m_object_id == 212) {
+      player->SetDefense(player->GetDefense() + 2);
+    } else if (m_object_id == 213) {
+      player->SetAttack(player->GetAttack() + 2);
     }
   }
 

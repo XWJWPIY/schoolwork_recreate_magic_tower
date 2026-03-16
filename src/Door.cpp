@@ -33,7 +33,7 @@ void Door::Reaction(std::shared_ptr<Player> player) {
   if (m_animation->GetState() == Util::Animation::State::PLAY)
     return;
 
-  if (m_object_id == 301) { // Iron Fence
+  if (m_object_id == 304) { // Iron Fence (ID now 304)
     LOG_INFO("Opening Iron Fence!");
     m_animation->Play();
     m_can_react = false;

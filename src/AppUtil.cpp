@@ -27,12 +27,17 @@ const std::unordered_map<int, ObjectMetadata> GlobalObjectRegistry = {
     {202, {"blue_key", "Item", true, false}},
     {203, {"red_key", "Item", true, false}},
     {204, {"coin", "Item", true, false}},
+    {205, {"red_potion", "Item", true, false}}, // 傷藥 HP+150
+    {206, {"blue_potion", "Item", true, false}}, 
+    {211, {"emerald", "Item", true, false}},    // 綠寶石 Agility+0
+    {212, {"sapphire", "Item", true, false}},   // 藍寶石 Defense+2
+    {213, {"ruby", "Item", true, false}},       // 紅寶石 Attack+2
 
     // Doors/Fences (ID 300-399)
-    {301, {"iron_fence", "Door", false, true, 5}},
-    {302, {"yellow_door", "Door", false, true, 5}},
-    {303, {"blue_door", "Door", false, true, 5}},
-    {304, {"red_door", "Door", false, true, 5}},
+    {301, {"yellow_door", "Door", false, true, 5}},
+    {302, {"blue_door", "Door", false, true, 5}},
+    {303, {"red_door", "Door", false, true, 5}},
+    {304, {"iron_fence", "Door", false, true, 5}},
     {305, {"green_door", "Door", false, true, 5}},
 
     // Combatants (ID 400-499)

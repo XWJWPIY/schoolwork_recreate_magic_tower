@@ -88,19 +88,19 @@ void Player::AddKey(int id) {
 
 bool Player::UseKey(int doorId) {
   switch (doorId) {
-  case 302: // Yellow Door
+  case 301: // Yellow Door
     if (m_yellow_keys > 0) {
       m_yellow_keys--;
       return true;
     }
     break;
-  case 303: // Blue Door
+  case 302: // Blue Door
     if (m_blue_keys > 0) {
       m_blue_keys--;
       return true;
     }
     break;
-  case 304: // Red Door
+  case 303: // Red Door
     if (m_red_keys > 0) {
       m_red_keys--;
       return true;
