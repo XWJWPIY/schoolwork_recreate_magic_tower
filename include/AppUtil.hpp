@@ -22,7 +22,7 @@ extern const std::unordered_map<int, ObjectMetadata> GlobalObjectRegistry;
 // Global or shared utility functions and constant definitions
 const int WINDOW_WIDTH = 1200;
 const int WINDOW_HEIGHT = 800;
-constexpr int TOTAL_STORY = 4;
+constexpr int TOTAL_STORY = 26;
 
 std::string GetIdString(int id);
 std::string GetIdResourcePath(int id);
