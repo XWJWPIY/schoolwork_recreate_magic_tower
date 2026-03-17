@@ -30,6 +30,28 @@ classDiagram
     Entity --> Player
 ```
 
+### 繼承關係圖
+```mermaid
+classDiagram
+    class GameObject["Util::GameObject"]
+    
+    GameObject --> Background
+    GameObject --> NumericDisplayText
+    GameObject --> AllObjects
+    
+    AllObjects --> MapBlock
+    AllObjects --> Entity
+    
+    Entity --> Door
+    Entity --> Enemy
+    Entity --> NPC
+    Entity --> Item
+    Entity --> Stair
+    Entity --> Player
+```
+
+---
+
 架構設計方案：
 
 類別架構 (Entity 系統)
