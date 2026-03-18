@@ -4,8 +4,8 @@
 #include "Util/Logger.hpp"
 
 Player::Player()
-    : Entity(0, MAGIC_TOWER_RESOURCE_DIR "/bmp/Player/player_backward.png",
-             false) { // Player defaults to not reacting (Reaction() disabled)
+    : Entity(0, MAGIC_TOWER_RESOURCE_DIR "/bmp/Player/player_11.BMP",
+             false) { // Start facing Down, Frame 1
   // Player layer is -3 based on Constructure.md
   SetZIndex(-3.0f);
   SetVisible(true);
@@ -29,16 +29,32 @@ Player::Player()
 
 void Player::Move(int dx, int dy, std::shared_ptr<FloorMap> roadmap,
                   std::shared_ptr<FloorMap> thingsmap) {
+  // Update direction based on input
+  if (dx > 0) m_direction = PlayerDirection::RIGHT;
+  else if (dx < 0) m_direction = PlayerDirection::LEFT;
+  else if (dy > 0) m_direction = PlayerDirection::DOWN;
+  else if (dy < 0) m_direction = PlayerDirection::UP;
+
   int next_x = m_grid_x + dx;
   int next_y = m_grid_y + dy;
 
+  // Animation trigger (always start animation, but if blocked it will stay on frame 1)
+  // Actually as per requirement: Failure -> Face direction but stay on frame 1.
+  // Success -> 1-4 cycle.
+
   // Basic bounds checking for 11x11 grid
   if (next_x < 0 || next_x >= 11 || next_y < 0 || next_y >= 11) {
+    m_is_animating = false;
+    m_current_frame = 1;
+    UpdateSprite();
     return;
   }
 
   // Check collision with roadmap
   if (roadmap && !roadmap->IsPassable(next_x, next_y)) {
+    m_is_animating = false;
+    m_current_frame = 1;
+    UpdateSprite();
     return;
   }
 
@@ -47,20 +63,27 @@ void Player::Move(int dx, int dy, std::shared_ptr<FloorMap> roadmap,
     auto target = thingsmap->GetObject(next_x, next_y);
     auto entity = std::dynamic_pointer_cast<Entity>(target);
     if (entity && entity->GetVisible()) {
-      // Trigger reaction if possible - passing player pointer
       if (entity->CanReact()) {
         entity->Reaction(shared_from_this());
       }
 
-      // Block movement if the entity is still visible and not passable
       if (entity->GetVisible() && !entity->IsPassable()) {
+        m_is_animating = false;
+        m_current_frame = 1;
+        UpdateSprite();
         return;
       }
     }
   }
 
+  // Success move
   m_grid_x = next_x;
   m_grid_y = next_y;
+
+  m_is_animating = true;
+  m_current_frame = 1;
+  m_animation_timer = 0.0f;
+  UpdateSprite();
 
   SyncPosition(roadmap);
 }
@@ -173,4 +196,27 @@ void Player::ApplyEffect(AppUtil::Effect type, int value) {
   default:
     break;
   }
+}
+
+void Player::ObjectUpdate() {
+  if (m_is_animating) {
+    m_animation_timer += static_cast<float>(Util::Time::GetDeltaTime());
+    if (m_animation_timer >= FRAME_INTERVAL) {
+      m_animation_timer = 0.0f;
+      m_current_frame++;
+      if (m_current_frame > 4) {
+        m_current_frame = 1;
+        m_is_animating = false; // Stop animation after one full loop
+      }
+      UpdateSprite();
+    }
+  }
+}
+
+void Player::UpdateSprite() {
+  std::string path = MAGIC_TOWER_RESOURCE_DIR "/bmp/Player/player_" +
+                     std::to_string(static_cast<int>(m_direction)) +
+                     std::to_string(m_current_frame) + ".BMP";
+  // Dynamically change the drawable (Image)
+  m_Drawable = std::make_shared<Util::Image>(path);
 }

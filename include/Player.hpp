@@ -33,10 +33,35 @@ public:
 
   void ApplyEffect(AppUtil::Effect type, int value);
 
+public:
+  enum class PlayerDirection {
+    DOWN = 1,
+    UP = 2,
+    LEFT = 3,
+    RIGHT = 4
+  };
+
+  void ObjectUpdate() override;
+
 private:
+  void UpdateSprite();
+
+  PlayerDirection m_direction = PlayerDirection::DOWN;
+  int m_current_frame = 1;
+  bool m_is_animating = false;
+  float m_animation_timer = 0.0f;
+  const float FRAME_INTERVAL = 0.05f; // 50ms per frame for a fast movement feel
+
   int m_yellow_keys = 0;
   int m_blue_keys = 0;
   int m_red_keys = 0;
+  int m_hp = 0;
+  int m_attack = 0;
+  int m_defense = 0;
+  int m_agility = 0;
+  int m_exp = 0;
+  int m_level = 1;
+
   int m_coins = 0;
 };
 

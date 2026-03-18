@@ -245,6 +245,10 @@ void App::Update() {
     }
   }
 
+  if (m_player) {
+    m_player->ObjectUpdate();
+  }
+
   m_root.Update();
 
   /*

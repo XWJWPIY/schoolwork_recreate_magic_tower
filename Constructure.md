@@ -7,7 +7,7 @@ classDiagram
     RegistryLoader ..> AppUtil : Populates GlobalObjectRegistry
     
     FloorMap o-- AllObjects : Contains (Grid)
-    
+
     %% 元數據與組件 (Component-based Design)
     ObjectMetadata *-- ItemComponent : Optional
     ObjectMetadata *-- CombatComponent : Optional
@@ -96,9 +96,11 @@ classDiagram
 一、多樓層存儲與切換
 - 使用 **3D 陣列 `[story][y][x]`** 支援多樓層。
 - **`App::ChangeFloor(int delta)`**：中心化切換邏輯，同步更新 `RoadMap`, `ThingsMap` 的樓層指標，並觸發 `Player->SyncPosition`。
+- **`App::TeleportToFloor(int story, int stairId)`**：智慧傳送邏輯。會自動在目標樓層搜尋指定 ID 的樓梯座標（如 701-上樓、702-下樓），並將玩家定位於該座標。
 
 二、物件管理
 - `FloorMap` 透過 `BlockFactory` 根據 ID 動態生成對應的衍生類別。
+- **物件搜尋法 (`FindFirstObjectPosition`)**：支援在指定樓層中搜尋第一個符合 ID 的網格座標，為電梯傳送提供基礎。
 - **排版校準 (ID 0 Sampling)**：系統會取樣 ID 0 (映射為 road 資源) 的尺寸來決定全地圖 11x11 網格的基礎間距，確保精準對齊。
 - `Stair` 在建立時會被注入 lambda 閉包，使其能安全觸發 `App` 的樓層切換方法。
 
@@ -123,15 +125,17 @@ classDiagram
 
 六、選單與說明系統 (`MenuUI`)
 - **整合管理模式**：將所有「覆蓋選單」由單一 `MenuUI` 類別管理，根據計時與 `GameState` 切換子面板。
+- **模態對話框 (`ITEM_DIALOG`)**：新增 `ITEM_DIALOG` 遊戲狀態。當觸發道具對話時，遊戲會進入此狀態並暫停移動與動畫，直到玩家按下 `Space/Enter` 確認。
 - **子組件包含**：
     - **Notice Panel**：顯示 `notice.bmp` 背景，支援全畫面覆蓋與遊戲暫停。
     - **Fast Elevator Panel**：包含樓層顯示、導引箭頭與操作提示文字。
-    - **Item Notice Panel**：顯示 `itemDialog.bmp` 背景、獲得物品的文字，以及Space確認。
+    - **Item Notice Panel**：顯示 `itemDialog.bmp` 背景、獲得物品的文字，以及 `-Space-` 操作提示。
     - **未來擴充**：預留「怪物手冊」顯示槽位與資源。
 - **動態回饋**：根據選單類型的數值 (如電梯樓層) 動態切換箭頭顏色及文字內容。
 
 五、數據驅動層 (`AppUtil::RegistryLoader`)
 - **單一事實來源 (Single Source of Truth)**：整合 ID、名稱、資源目錄、通行性、動畫幀數及各類型組件數值。
+- **多樣化效果 (`Effect`)**：支援 `HP`, `ATK`, `DEF`, `AGI`, `EXP`, `Level`, `Keys`, `Coins`, `Weak`, `Poison` 等多種道具效果。
 - **動態解析**：使用 `AppUtil::MapParser::ParseCsvToStrings` 進行複雜屬性數據的載入。
 - **擴充性**：新增遊戲物件或修改數值只需調整 `Datas/Data/` 下的 CSV 檔案，無需修改任何 C++ 代碼或重新編譯。
 - **特殊鎖定**：ID 0 (道路) 於程式碼中硬編碼保留，確保基礎地景渲染的穩定性。
