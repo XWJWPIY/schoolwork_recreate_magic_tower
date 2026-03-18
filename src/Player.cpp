@@ -109,28 +109,28 @@ void Player::AddKey(int id) {
   }
 }
 
-bool Player::UseKey(int doorId) {
-  switch (doorId) {
-  case 301: // Yellow Door
-    if (m_yellow_keys > 0) {
-      m_yellow_keys--;
+bool Player::UseKey(AppUtil::Effect type, int count) {
+  switch (type) {
+  case AppUtil::Effect::KEY_YELLOW:
+    if (m_yellow_keys >= count) {
+      m_yellow_keys -= count;
       return true;
     }
     break;
-  case 302: // Blue Door
-    if (m_blue_keys > 0) {
-      m_blue_keys--;
+  case AppUtil::Effect::KEY_BLUE:
+    if (m_blue_keys >= count) {
+      m_blue_keys -= count;
       return true;
     }
     break;
-  case 303: // Red Door
-    if (m_red_keys > 0) {
-      m_red_keys--;
+  case AppUtil::Effect::KEY_RED:
+    if (m_red_keys >= count) {
+      m_red_keys -= count;
       return true;
     }
     break;
   default:
-    LOG_WARN("Player::UseKey: Unknown door ID {}", doorId);
+    LOG_WARN("Player::UseKey: Unsupported effect type for key consumption");
     break;
   }
   return false;

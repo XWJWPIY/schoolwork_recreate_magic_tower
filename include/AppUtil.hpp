@@ -52,6 +52,7 @@ struct DoorComponent {
     int yellow_key = 0;
     int blue_key = 0;
     int red_key = 0;
+    bool is_passive = false;
 };
 
 // --- Main Metadata ---

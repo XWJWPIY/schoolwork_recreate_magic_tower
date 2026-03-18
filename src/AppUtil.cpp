@@ -57,13 +57,16 @@ void RegistryLoader::LoadDoors(const std::string& path) {
         int id = std::stoi(row[0]);
         std::string res_name = row[1];
         bool passable = (row[2] == "true");
-        int frames = 5; // Doors usually have 5 frames for open animation
+        int frames = std::stoi(row[3]); // Doors usually have 5 frames for open animation, but now from CSV
 
         ObjectMetadata meta(res_name, "Door", passable, frames);
         meta.door_props = std::make_shared<DoorComponent>();
         meta.door_props->yellow_key = std::stoi(row[4]);
-        meta.door_props->blue_key   = std::stoi(row[5]);
-        meta.door_props->red_key    = std::stoi(row[6]);
+        meta.door_props->blue_key = std::stoi(row[5]);
+        meta.door_props->red_key = std::stoi(row[6]);
+        if (row.size() >= 8) {
+            meta.door_props->is_passive = (row[7] == "true");
+        }
 
         GlobalObjectRegistry.emplace(id, std::move(meta));
     }

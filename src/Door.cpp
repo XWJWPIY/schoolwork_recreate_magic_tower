@@ -33,25 +33,52 @@ void Door::Reaction(std::shared_ptr<Player> player) {
   if (m_animation->GetState() == Util::Animation::State::PLAY)
     return;
 
-  if (m_object_id == 304) { // Iron Fence (ID now 304)
-    LOG_INFO("Opening Iron Fence!");
+  auto it = AppUtil::GlobalObjectRegistry.find(m_object_id);
+  if (it == AppUtil::GlobalObjectRegistry.end() || !it->second.door_props) {
+    LOG_INFO("No door metadata for ID {}", m_object_id);
+    return;
+  }
+
+  const auto &meta = it->second;
+  const auto &props = *meta.door_props;
+
+  if (props.is_passive) {
+    LOG_INFO("Door {} is passive and requires a special condition to open.",
+             meta.name);
+    return;
+  }
+
+  // Open immediately if no keys are required
+  if (props.yellow_key == 0 && props.blue_key == 0 && props.red_key == 0) {
+    LOG_INFO("Opening {} (requires no keys)!", meta.name);
     m_animation->Play();
     m_can_react = false;
     return;
   }
 
-  if (player && player->UseKey(m_object_id)) {
-    LOG_INFO("Opening Door! ID: {} ({})", m_object_id,
-             AppUtil::GetIdString(m_object_id));
+  bool can_open = true;
+  if (props.yellow_key > 0 &&
+      !player->UseKey(AppUtil::Effect::KEY_YELLOW, props.yellow_key)) {
+    can_open = false;
+  }
+  if (can_open && props.blue_key > 0 &&
+      !player->UseKey(AppUtil::Effect::KEY_BLUE, props.blue_key)) {
+    can_open = false;
+  }
+  if (can_open && props.red_key > 0 &&
+      !player->UseKey(AppUtil::Effect::KEY_RED, props.red_key)) {
+    can_open = false;
+  }
+
+  if (can_open) {
+    LOG_INFO("Opening Door! ID: {} ({})", m_object_id, meta.name);
     m_animation->Play();
     m_can_react = false;
-  } else if (m_object_id == 305) {
-    LOG_INFO("Green door {} requires special condition.", AppUtil::GetIdString(m_object_id));
-    // TODO: Implement special condition for Green Door
-  } else {
-    LOG_INFO("No key for door {} ({})", m_object_id,
-             AppUtil::GetIdString(m_object_id));
+    return;
   }
+
+  LOG_INFO("No key/condition for door {} ({})", m_object_id,
+           AppUtil::GetIdString(m_object_id));
 }
 
 void Door::ObjectUpdate() {

@@ -24,7 +24,7 @@ public:
   int GetRedKeys() const { return m_red_keys; }
 
   void AddKey(int id);
-  bool UseKey(int doorId);
+  bool UseKey(AppUtil::Effect type, int count = 1);
 
   // Coin management
   int GetCoins() const { return m_coins; }
@@ -55,13 +55,6 @@ private:
   int m_yellow_keys = 0;
   int m_blue_keys = 0;
   int m_red_keys = 0;
-  int m_hp = 0;
-  int m_attack = 0;
-  int m_defense = 0;
-  int m_agility = 0;
-  int m_exp = 0;
-  int m_level = 1;
-
   int m_coins = 0;
 };
 
