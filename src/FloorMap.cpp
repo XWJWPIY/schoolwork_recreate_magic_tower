@@ -309,6 +309,40 @@ void FloorMap::Update() {
   }
 }
 
+void FloorMap::SetAllVisible(bool visible) {
+  for (int s = 0; s < AppUtil::TOTAL_STORY; ++s) {
+    for (auto &row : m_objects[s]) {
+      for (auto &obj : row) {
+        if (obj) {
+          if (visible && s == m_current_story && obj->GetObjectId() == 0) {
+            obj->SetVisible(false);
+          } else if (visible && s == m_current_story) {
+            obj->SetVisible(true);
+          } else {
+            obj->SetVisible(false);
+          }
+        }
+      }
+    }
+  }
+}
+
+glm::ivec2 FloorMap::FindFirstObjectPosition(int id, int story) {
+  int targetStory = (story == -1) ? m_current_story : story;
+  if (targetStory < 0 || targetStory >= AppUtil::TOTAL_STORY)
+    return {-1, -1};
+
+  for (int y = 0; y < 11; ++y) {
+    for (int x = 0; x < 11; ++x) {
+      auto obj = m_objects[targetStory][y][x];
+      if (obj && obj->GetObjectId() == id) {
+        return {x, y};
+      }
+    }
+  }
+  return {-1, -1};
+}
+
 void FloorMap::AddToRenderer() {
   if (!m_root)
     return;

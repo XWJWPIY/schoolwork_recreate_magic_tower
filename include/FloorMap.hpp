@@ -37,23 +37,8 @@ public:
   int GetCurrentStory() const { return m_current_story; }
   void SetObject(int x, int y, int id, int story = -1);
 
-  void SetAllVisible(bool visible) {
-    for (int s = 0; s < AppUtil::TOTAL_STORY; ++s) {
-      for (auto &row : m_objects[s]) {
-        for (auto &obj : row) {
-          if (obj) {
-            if (visible && s == m_current_story && obj->GetObjectId() == 0) {
-              obj->SetVisible(false);
-            } else if (visible && s == m_current_story) {
-              obj->SetVisible(true);
-            } else {
-              obj->SetVisible(false);
-            }
-          }
-        }
-      }
-    }
-  }
+  void SetAllVisible(bool visible);
+  glm::ivec2 FindFirstObjectPosition(int id, int story = -1);
 
   // Set the Root Renderer so FloorMap can Add/Remove objects dynamically
   void SetRenderer(Util::Renderer *root) { m_root = root; }

@@ -214,7 +214,11 @@ void App::Update() {
       }
     }
     if (Util::Input::IsKeyDown(Util::Keycode::RETURN)) {
-      ChangeFloor(m_preview_floor - m_road_map->GetCurrentStory());
+      int currentStory = m_road_map->GetCurrentStory();
+      if (m_preview_floor != currentStory) {
+        int targetStair = (m_preview_floor < currentStory) ? 701 : 702; // Down -> Up stair, Up -> Down stair
+        TeleportToFloor(m_preview_floor, targetStair);
+      }
       m_game_state = AppUtil::GameState::PLAYING;
       m_menu_ui->SetVisible(false);
       LOG_INFO("Confirmed floor switch to {}", m_preview_floor);
@@ -268,6 +272,22 @@ void App::ChangeFloor(int delta) {
     LOG_INFO("Player Position (Floor Switch): Floor {}, Grid({}, {})",
              m_road_map->GetCurrentStory(), m_player->GetGridX(),
              m_player->GetGridY());
+  }
+}
+
+void App::TeleportToFloor(int targetStory, int targetStairId) {
+  if (targetStory >= 0 && targetStory < AppUtil::TOTAL_STORY) {
+    m_road_map->SwitchStory(targetStory);
+    m_things_map->SwitchStory(targetStory);
+
+    if (m_player) {
+      glm::ivec2 pos = m_things_map->FindFirstObjectPosition(targetStairId, targetStory);
+      if (pos.x != -1) {
+        m_player->SetGridPosition(pos.x, pos.y);
+      }
+      m_player->SyncPosition(m_road_map);
+    }
+    LOG_INFO("Teleported to story {} at stair {}", targetStory, targetStairId);
   }
 }
 
