@@ -39,7 +39,7 @@ void App::Start() {
       [this, replacementComp](int id) -> std::shared_ptr<AllObjects> {
     std::shared_ptr<Entity> entity;
     if (id >= 200 && id < 300)
-      entity = std::make_shared<Item>(id);
+      entity = std::make_shared<Item>(id, [this](const std::string& text) { this->ShowItemNotice(text); });
     else if (id >= 300 && id < 400)
       entity = std::make_shared<Door>(id);
     else if (id >= 400 && id < 500)
@@ -232,6 +232,15 @@ void App::Update() {
     m_things_map->Update();
   }
 
+  // Handle Modal Dialogs
+  if (m_game_state == AppUtil::GameState::ITEM_DIALOG) {
+    if (Util::Input::IsKeyDown(Util::Keycode::SPACE) || 
+        Util::Input::IsKeyDown(Util::Keycode::RETURN)) {
+      HideItemNotice();
+      m_game_state = AppUtil::GameState::PLAYING;
+    }
+  }
+
   m_root.Update();
 
   /*
@@ -259,5 +268,18 @@ void App::ChangeFloor(int delta) {
     LOG_INFO("Player Position (Floor Switch): Floor {}, Grid({}, {})",
              m_road_map->GetCurrentStory(), m_player->GetGridX(),
              m_player->GetGridY());
+  }
+}
+
+void App::ShowItemNotice(const std::string& text) {
+  if (m_menu_ui) {
+    m_menu_ui->SetItemNotice(text);
+    m_game_state = AppUtil::GameState::ITEM_DIALOG;
+  }
+}
+
+void App::HideItemNotice() {
+  if (m_menu_ui) {
+    m_menu_ui->SetVisible(false); // This will clear ITEM_NOTICE
   }
 }

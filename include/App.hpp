@@ -31,6 +31,9 @@ public:
   void End(); // NOLINT(readability-convert-member-functions-to-static)
 
   void ChangeFloor(int delta);
+  
+  void ShowItemNotice(const std::string& text);
+  void HideItemNotice();
 
 private:
   void ValidTask();
@@ -47,6 +50,8 @@ private:
   std::shared_ptr<Player> m_player;
   std::shared_ptr<MenuUI> m_menu_ui;
   int m_preview_floor = 0;
+  
+  float m_item_notice_timer = 0.0f;
 };
 
 #endif

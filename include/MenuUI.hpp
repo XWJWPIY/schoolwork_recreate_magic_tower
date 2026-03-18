@@ -14,7 +14,8 @@ public:
     enum class MenuType {
         NONE,
         NOTICE,
-        FAST_ELEVATOR
+        FAST_ELEVATOR,
+        ITEM_NOTICE
         // FUTURE: MONSTER_MANUAL
     };
 
@@ -24,6 +25,9 @@ public:
 
     // Fast Elevator specific
     void SetTargetFloor(int floor);
+
+    // Item Notice specific
+    void SetItemNotice(const std::string& text);
 
 private:
     void UpdateArrows(int currentFloor);
@@ -48,6 +52,11 @@ private:
     std::shared_ptr<Util::Image> m_up_gray;
     std::shared_ptr<Util::Image> m_down_white;
     std::shared_ptr<Util::Image> m_down_gray;
+
+    // Item Notice Overlay
+    std::shared_ptr<Util::GameObject> m_item_notice_bg;
+    std::shared_ptr<NumericDisplayText> m_item_notice_text;
+    std::shared_ptr<NumericDisplayText> m_item_confirm_text;
 };
 
 #endif // MENU_UI_HPP

@@ -126,6 +126,7 @@ classDiagram
 - **子組件包含**：
     - **Notice Panel**：顯示 `notice.bmp` 背景，支援全畫面覆蓋與遊戲暫停。
     - **Fast Elevator Panel**：包含樓層顯示、導引箭頭與操作提示文字。
+    - **Item Notice Panel**：顯示 `itemDialog.bmp` 背景、獲得物品的文字，以及Space確認。
     - **未來擴充**：預留「怪物手冊」顯示槽位與資源。
 - **動態回饋**：根據選單類型的數值 (如電梯樓層) 動態切換箭頭顏色及文字內容。
 
