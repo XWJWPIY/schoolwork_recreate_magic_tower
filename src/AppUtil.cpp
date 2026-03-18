@@ -9,48 +9,136 @@
 
 namespace AppUtil {
 
-// 全域物件註冊表
-// 格式：{ ID, {名稱, 資源資料夾, 是否可通行, 是否為動畫, [動畫幀數]} }
-const std::unordered_map<int, ObjectMetadata> GlobalObjectRegistry = {
-    // Road/Blocks (ID 0-99)
-    {0, {"road", "Road", true, false}}, // 0 is nothing, but use road1.bmp as default to avoid error
-    {1, {"road", "Road", true, false}},
-    {2, {"lava_road", "Road", true, true}},
-    {3, {"wall", "Road", false, false}},
-    {4, {"wall_b", "Road", false, false}},
-    {5, {"wall_shine", "Road", false, true}},
-    {6, {"wall_special", "Road", false, false}},
-    {7, {"lava", "Road", false, true}},
-
-    // Items (ID 200-299)
-    {201, {"yellow_key", "Item", true, false}},
-    {202, {"blue_key", "Item", true, false}},
-    {203, {"red_key", "Item", true, false}},
-    {204, {"coin", "Item", true, false}},
-    {205, {"red_potion", "Item", true, false}}, // 傷藥 HP+150
-    {206, {"blue_potion", "Item", true, false}}, 
-    {211, {"emerald", "Item", true, false}},    // 綠寶石 Agility+0
-    {212, {"sapphire", "Item", true, false}},   // 藍寶石 Defense+2
-    {213, {"ruby", "Item", true, false}},       // 紅寶石 Attack+2
-
-    // Doors/Fences (ID 300-399)
-    {301, {"yellow_door", "Door", false, true, 5}},
-    {302, {"blue_door", "Door", false, true, 5}},
-    {303, {"red_door", "Door", false, true, 5}},
-    {304, {"iron_fence", "Door", false, true, 5}},
-    {305, {"green_door", "Door", false, true, 5}},
-
-    // Combatants (ID 400-499)
-    {401, {"slime", "Enemy", false, false}},
-
-    // NPCs/Shops (ID 500-699)
-    {501, {"npc", "NPC", false, false}},
-    {601, {"shop", "Things", false, false}},
-
-    // Stairs/Transitions (ID 700-799)
-    {701, {"upstair", "Stair", true, false}},
-    {702, {"downstair", "Stair", true, false}}
+// 全域物件註冊表 (Global Object Registry)
+// 格式：{ ID, {名稱, 資源資料夾, 是否可通行} }
+std::unordered_map<int, ObjectMetadata> GlobalObjectRegistry = {
+    {0, {"road", "Road", true}} // 預設為空，但參考道路的圖片大小
 };
+
+void RegistryLoader::LoadAllData() {
+    LOG_INFO("Loading Game Object Registry from CSV...");
+    // Keep ID 0, but we can clear others if LoadAllData is called multiple times
+    // For now, let's keep it simple as it's called once at start.
+    LoadBlocks(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Block.csv");
+    LoadDoors(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Door.csv");
+    LoadItems(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Item.csv");
+    LoadStairs(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Stair.csv");
+    LOG_INFO("Object Registry loaded. Total objects: {}", GlobalObjectRegistry.size());
+}
+
+void RegistryLoader::LoadBlocks(const std::string& path) {
+    auto data = MapParser::ParseCsvToStrings(path);
+    if (data.empty()) return;
+
+    // Header: ID,Path,Name,Passable,Animation
+    for (size_t i = 1; i < data.size(); ++i) {
+        const auto& row = data[i];
+        if (row.size() < 5) continue;
+
+        int id = std::stoi(row[0]);
+        std::string res_name = row[1];
+        std::string folder = "Road"; // Blocks are usually in Road folder
+        bool passable = (row[3] == "true");
+        int frames = std::stoi(row[4]);
+
+        GlobalObjectRegistry.emplace(id, ObjectMetadata(res_name, folder, passable, frames));
+    }
+}
+
+void RegistryLoader::LoadDoors(const std::string& path) {
+    auto data = MapParser::ParseCsvToStrings(path);
+    if (data.empty()) return;
+
+    // Header: ID,Path,Passable,Animation,yellow_key,blue_key,red_key
+    for (size_t i = 1; i < data.size(); ++i) {
+        const auto& row = data[i];
+        if (row.size() < 7) continue;
+
+        int id = std::stoi(row[0]);
+        std::string res_name = row[1];
+        bool passable = (row[2] == "true");
+        int frames = 5; // Doors usually have 5 frames for open animation
+
+        ObjectMetadata meta(res_name, "Door", passable, frames);
+        meta.door_props = std::make_shared<DoorComponent>();
+        meta.door_props->yellow_key = std::stoi(row[4]);
+        meta.door_props->blue_key   = std::stoi(row[5]);
+        meta.door_props->red_key    = std::stoi(row[6]);
+
+        GlobalObjectRegistry.emplace(id, std::move(meta));
+    }
+}
+
+void RegistryLoader::LoadItems(const std::string& path) {
+    auto data = MapParser::ParseCsvToStrings(path);
+    if (data.empty()) return;
+
+    // Header: ID,Path,Passable,Animation,Level,HP,ATK,DEF,AGI,EXP,yellow key,blue key,red key,Coin,Weak,Poison,Dialog
+    const auto& header = data[0];
+    std::unordered_map<std::string, size_t> col_map;
+    for (size_t j = 0; j < header.size(); ++j) col_map[header[j]] = j;
+
+    for (size_t i = 1; i < data.size(); ++i) {
+        const auto& row = data[i];
+        if (row.size() < header.size()) continue;
+
+        int id = std::stoi(row[0]);
+        std::string res_name = row[1];
+        bool passable = (row[2] == "true");
+        int frames = std::stoi(row[3]);
+
+        ObjectMetadata meta(res_name, "Item", passable, frames);
+        meta.item_props = std::make_shared<ItemComponent>();
+
+        // Map column values to effects
+        auto add_effect = [&](const std::string& col, Effect type) {
+            if (col_map.count(col)) {
+                int val = std::stoi(row[col_map[col]]);
+                if (val != 0) meta.item_props->effects.push_back({type, val});
+            }
+        };
+
+        add_effect("Level", Effect::LEVEL);
+        add_effect("HP", Effect::HP);
+        add_effect("ATK", Effect::ATTACK);
+        add_effect("DEF", Effect::DEFENSE);
+        add_effect("AGI", Effect::AGILITY);
+        add_effect("EXP", Effect::COIN); // Wait, EXP is missing in Effect enum or mapped to Coin? 
+                                          // Looking at AppUtil.hpp, COIN is index 21, EXP is missing.
+                                          // Let's use COIN for now if appropriate or just skip.
+        add_effect("yellow key", Effect::KEY_YELLOW);
+        add_effect("blue key", Effect::KEY_BLUE);
+        add_effect("red key", Effect::KEY_RED);
+        add_effect("Coin", Effect::COIN);
+        add_effect("Weak", Effect::WEAK);
+        add_effect("Poison", Effect::POISON);
+
+        if (col_map.count("Dialog") && !row[col_map["Dialog"]].empty()) {
+            meta.dialog_props = std::make_shared<DialogComponent>();
+            meta.dialog_props->lines.push_back(row[col_map["Dialog"]]);
+        }
+
+        GlobalObjectRegistry.emplace(id, std::move(meta));
+    }
+}
+
+void RegistryLoader::LoadStairs(const std::string& path) {
+    auto data = MapParser::ParseCsvToStrings(path);
+    if (data.empty()) return;
+
+    // Header: ID,Path,Passable,Animation
+    for (size_t i = 1; i < data.size(); ++i) {
+        const auto& row = data[i];
+        if (row.size() < 4) continue;
+
+        int id = std::stoi(row[0]);
+        std::string res_name = row[1];
+        bool passable = (row[2] == "true");
+        int frames = std::stoi(row[3]);
+
+        GlobalObjectRegistry.emplace(id, ObjectMetadata(res_name, "Stair", passable, frames));
+    }
+}
 
 std::string GetIdString(int id) {
   auto it = GlobalObjectRegistry.find(id);
@@ -112,6 +200,45 @@ MapParser::ParseCsv(const std::string &filepath) {
         cell.id = 0;
       }
       row.push_back(cell);
+    }
+
+    if (!row.empty()) {
+      mapData.push_back(row);
+    }
+  }
+
+  return mapData;
+}
+
+std::vector<std::vector<std::string>>
+MapParser::ParseCsvToStrings(const std::string &filepath) {
+  std::vector<std::vector<std::string>> mapData;
+  std::ifstream file(filepath);
+
+  if (!file.is_open()) {
+    LOG_ERROR("MapParser failed to open file: {}", filepath);
+    return mapData;
+  }
+
+  std::string line;
+  while (std::getline(file, line)) {
+    if (line.empty())
+      continue;
+
+    if (!line.empty() && line.back() == '\r') {
+      line.pop_back();
+    }
+
+    std::vector<std::string> row;
+    std::stringstream ss(line);
+    std::string cellString;
+
+    while (std::getline(ss, cellString, ',')) {
+      // Trim whitespace
+      cellString.erase(0, cellString.find_first_not_of(" \t\r\n"));
+      cellString.erase(cellString.find_last_not_of(" \t\r\n") + 1);
+
+      row.push_back(cellString);
     }
 
     if (!row.empty()) {

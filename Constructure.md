@@ -2,23 +2,22 @@
 
 ```mermaid
 classDiagram
-    %% 包含關係 (Containment)
-    FloorMap o-- AllObjects : Contains (Grid)
-    StatusUI o-- NumericDisplayText : Contains
-    MenuUI o-- NumericDisplayText : Contains (Multiple)
-    MenuUI o-- GameObject : Background Panels
-
-    %% 依賴關係 (Dependency)
-    FloorMap ..> AppUtil : Uses Registry
-    MapBlock ..> AppUtil : Uses Registry
-    Entity ..> AppUtil : Uses Registry
-
-    %% 繼承關係 (Inheritance)
-    GameObject --> AllObjects
-    GameObject --> Background
-    GameObject --> NumericDisplayText
-    %% MenuUI is a Manager, not necessarily a GameObject (holds them)
+    %% 核心架構與組合關係
+    App ..> RegistryLoader : Calls LoadAllData()
+    RegistryLoader ..> AppUtil : Populates GlobalObjectRegistry
     
+    FloorMap o-- AllObjects : Contains (Grid)
+    
+    %% 元數據與組件 (Component-based Design)
+    ObjectMetadata *-- ItemComponent : Optional
+    ObjectMetadata *-- CombatComponent : Optional
+    ObjectMetadata *-- DialogComponent : Optional
+    ObjectMetadata *-- DoorComponent : Optional
+    
+    AppUtil o-- ObjectMetadata : Registry holds
+    
+    %% 繼承關係
+    GameObject --> AllObjects
     AllObjects --> MapBlock
     AllObjects --> Entity
     
@@ -28,6 +27,9 @@ classDiagram
     Entity --> Item
     Entity --> Stair
     Entity --> Player
+    
+    %% 重點依賴
+    Entity ..> ObjectMetadata : Uses for properties
 ```
 
 ### 繼承關係圖
@@ -67,10 +69,11 @@ classDiagram
 - **互動基類**：繼承並實作 `virtual void Reaction(Player*) = 0;`。
 - **通行性**：繼承自 `AllObjects`，預設為 `false` (阻擋)。
 - **實作分離**：所有衍生實體 (`Stair`, `Shop`, `Item` 等) 一律採用 `.hpp` 聲明與 `.cpp` 實作分離模式。
-- **數據驅動資源機制**：
+- **數據驅動與組件化架構**：
     - 核心：`AppUtil::GlobalObjectRegistry` 管理所有物件的元數據 (`ObjectMetadata`)。
+    - **組件化設計 (Component-based)**：`ObjectMetadata` 採用插槽式設計，包含 `ItemComponent`、`CombatComponent`、`DialogComponent` 與 `DoorComponent`。物件僅在需要時掛載對應組件，避免結構臃腫。
+    - **動態加載機制**：透過 `AppUtil::RegistryLoader` 在遊戲啟動時從 `Block.csv`, `Item.csv`, `Door.csv`, `Stair.csv` 等外部檔案自動填充註冊表。
     - **資源定位**：透過 `AppUtil::GetIdResourcePath(id)` 自動從註冊表獲取屬性並動態合成路徑 (例如：`{401, "slime", "Enemy"}` -> `"/bmp/Enemy/slime.bmp"`)。
-    - **屬性自動化**：建構子不再寫死目錄名稱，一律由註冊表驅動，大幅降低代碼重複。
 - **多型衍生**：
     1. **`Player` (主角)**：
         - 繼承自 `Entity`，由 `App` 持有。
@@ -126,7 +129,8 @@ classDiagram
     - **未來擴充**：預留「怪物手冊」顯示槽位與資源。
 - **動態回饋**：根據選單類型的數值 (如電梯樓層) 動態切換箭頭顏色及文字內容。
 
-五、數據驅動層 (`AppUtil::GlobalObjectRegistry`)
-- **單一事實來源 (Single Source of Truth)**：整合 ID、名稱、資源目錄、通行性、動畫標記。
-- **工具函式**：使用 `AppUtil::MapParser::ParseCsv` 進行數據載入。
-- **擴充性**：新增遊戲物件只需在 `AppUtil.cpp` 的 Map 中增加定義，無需修改 `MapBlock` 或 `Entity` 的核心邏輯。
+五、數據驅動層 (`AppUtil::RegistryLoader`)
+- **單一事實來源 (Single Source of Truth)**：整合 ID、名稱、資源目錄、通行性、動畫幀數及各類型組件數值。
+- **動態解析**：使用 `AppUtil::MapParser::ParseCsvToStrings` 進行複雜屬性數據的載入。
+- **擴充性**：新增遊戲物件或修改數值只需調整 `Datas/Data/` 下的 CSV 檔案，無需修改任何 C++ 代碼或重新編譯。
+- **特殊鎖定**：ID 0 (道路) 於程式碼中硬編碼保留，確保基礎地景渲染的穩定性。

@@ -9,15 +9,95 @@
 
 namespace AppUtil {
 
-struct ObjectMetadata {
-    std::string name;
-    std::string folder;    // e.g. "Road", "Enemy", "Item", "Door", "Stair"
-    bool is_passable;
-    bool is_animated;
-    int animation_frames = 1; // Default to 1
+enum class Effect {
+    NONE,
+    HP,
+    ATTACK,
+    DEFENSE,
+    AGILITY,
+    KEY_YELLOW,
+    KEY_BLUE,
+    KEY_RED,
+    COIN,
+    LEVEL,
+    WEAK,
+    POISON
 };
 
-extern const std::unordered_map<int, ObjectMetadata> GlobalObjectRegistry;
+struct SubEffect {
+    Effect type;
+    int value;
+};
+
+// --- Components ---
+
+struct ItemComponent {
+    std::vector<SubEffect> effects;
+};
+
+struct CombatComponent {
+    int hp = 0;
+    int attack = 0;
+    int defense = 0;
+    int exp_reward = 0;
+    int coin_reward = 0;
+};
+
+struct DialogComponent {
+    std::vector<std::string> lines;
+};
+
+struct DoorComponent {
+    int yellow_key = 0;
+    int blue_key = 0;
+    int red_key = 0;
+};
+
+// --- Main Metadata ---
+
+struct ObjectMetadata {
+    std::string name;
+    std::string folder;
+    bool is_passable;
+    bool is_animated;
+    int animation_frames = 1;
+
+    // Optional Components
+    std::shared_ptr<ItemComponent>   item_props   = nullptr;
+    std::shared_ptr<CombatComponent> combat_props = nullptr;
+    std::shared_ptr<DialogComponent> dialog_props = nullptr;
+    std::shared_ptr<DoorComponent>   door_props   = nullptr;
+
+    // Picture Static Object (Wall, Road, NPC, etc.)
+    ObjectMetadata(std::string n, std::string f, bool p)
+        : name(std::move(n)), folder(std::move(f)), is_passable(p), 
+          is_animated(false), animation_frames(1) {}
+
+    // Picture Animated Object (Lava, Doors)
+    ObjectMetadata(std::string n, std::string f, bool p, int frames)
+        : name(std::move(n)), folder(std::move(f)), is_passable(p), 
+          is_animated(frames > 1), animation_frames(frames) {}
+
+    // Item Object (Implicitly passable, static)
+    // We add a helper to attach items
+    static ObjectMetadata Item(std::string n, std::string f, std::vector<SubEffect> e) {
+        ObjectMetadata meta(std::move(n), std::move(f), true);
+        meta.item_props = std::make_shared<ItemComponent>();
+        meta.item_props->effects = std::move(e);
+        return meta;
+    }
+};
+
+extern std::unordered_map<int, ObjectMetadata> GlobalObjectRegistry;
+
+class RegistryLoader {
+public:
+    static void LoadAllData();
+    static void LoadBlocks(const std::string& path);
+    static void LoadDoors(const std::string& path);
+    static void LoadItems(const std::string& path);
+    static void LoadStairs(const std::string& path);
+};
 
 // Global or shared utility functions and constant definitions
 const int WINDOW_WIDTH = 1200;
@@ -55,6 +135,8 @@ class MapParser {
 public:
   static std::vector<std::vector<MapCell>>
   ParseCsv(const std::string &filepath);
+  static std::vector<std::vector<std::string>>
+  ParseCsvToStrings(const std::string &filepath);
   static std::vector<std::vector<int>>
   ParseCsvToRawIDs(const std::string &filepath);
 };

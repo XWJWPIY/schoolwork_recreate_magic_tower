@@ -1,0 +1,6 @@
+ID,Path,Passable,Animation,yellow_key,blue_key,red_key
+301,yellow_door,false,1,1,0,0
+302,blue_door,false,1,0,1,0
+303,red_door,false,1,0,0,1
+304,iron_fence,false,1,0,0,0
+305,green_door,false,1,0,0,0

@@ -1,0 +1,11 @@
+﻿ID,Path,Passable,Animation,Level,HP,ATK,DEF,AGI,EXP,yellow key,blue key,red key,Coin,Weak,Poison,Dialog
+201,yellow_key,false,1,0,0,0,0,0,0,1,0,0,0,0,0,黃鑰匙
+202,blue_key,false,1,0,0,0,0,0,0,0,1,0,0,0,0,藍鑰匙
+203,red_key,false,1,0,0,0,0,0,0,0,0,1,0,0,0,紅鑰匙
+204,magic_key,false,1,0,0,0,0,0,0,1,1,1,0,0,0,魔法之匙 所有鑰匙數+1
+205,coin,false,1,0,0,0,0,0,0,0,0,0,200,0,0,金幣200塊
+206,red_potion,false,1,0,150,0,0,0,0,0,0,0,0,0,0,傷藥 體力+150
+207,blue_potion,false,1,0,400,0,0,0,0,0,0,0,0,0,0,高級傷藥 體力+400
+211,emerald,false,1,0,0,0,0,1,0,0,0,0,0,0,0,綠寶石 敏捷+1
+212,sapphire,false,1,0,0,0,2,0,0,0,0,0,0,0,0,藍寶石 防禦力+2
+213,ruby,false,1,0,0,2,0,0,0,0,0,0,0,0,0,紅寶石 攻擊力+2

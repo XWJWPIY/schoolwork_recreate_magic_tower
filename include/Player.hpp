@@ -31,6 +31,8 @@ public:
   void AddCoins(int amount) { m_coins += amount; }
   void SetCoins(int count) { m_coins = count; }
 
+  void ApplyEffect(AppUtil::Effect type, int value);
+
 private:
   int m_yellow_keys = 0;
   int m_blue_keys = 0;

@@ -126,3 +126,47 @@ void Player::SyncPosition(std::shared_ptr<FloorMap> roadmap) {
               m_grid_y);
   }
 }
+
+void Player::ApplyEffect(AppUtil::Effect type, int value) {
+  switch (type) {
+  case AppUtil::Effect::HP:
+    m_hp += value;
+    break;
+  case AppUtil::Effect::ATTACK:
+    m_attack += value;
+    break;
+  case AppUtil::Effect::DEFENSE:
+    m_defense += value;
+    break;
+  case AppUtil::Effect::AGILITY:
+    m_agility += value;
+    break;
+  case AppUtil::Effect::KEY_YELLOW:
+    m_yellow_keys += value;
+    break;
+  case AppUtil::Effect::KEY_BLUE:
+    m_blue_keys += value;
+    break;
+  case AppUtil::Effect::KEY_RED:
+    m_red_keys += value;
+    break;
+  case AppUtil::Effect::COIN:
+    m_coins += value;
+    break;
+  case AppUtil::Effect::LEVEL:
+    // TODO: Implement level up logic (e.g. increase HP/ATK/DEF)
+    LOG_INFO("Player level increased by {}", value);
+    break;
+  case AppUtil::Effect::WEAK:
+    // TODO: Implement weak status logic
+    LOG_INFO("Player current weak status: {}", value);
+    break;
+  case AppUtil::Effect::POISON:
+    // TODO: Implement poison status logic
+    LOG_INFO("Player current poison status: {}", value);
+    break;
+  case AppUtil::Effect::NONE:
+  default:
+    break;
+  }
+}

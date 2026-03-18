@@ -1,0 +1,8 @@
+ID,Path,Name,Passable,Animation
+1,road,road,true,1
+2,lava_road,lava_road,true,2
+3,wall,wall,false,1
+4,wall_b,wall_b,false,1
+5,wall_shine,wall_shine,false,2
+6,wall_special,wall_special,false,1
+7,lava,lava,false,2
