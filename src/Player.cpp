@@ -154,8 +154,12 @@ void Player::ApplyEffect(AppUtil::Effect type, int value) {
     m_coins += value;
     break;
   case AppUtil::Effect::LEVEL:
-    // TODO: Implement level up logic (e.g. increase HP/ATK/DEF)
+    m_level += value;
     LOG_INFO("Player level increased by {}", value);
+    break;
+  case AppUtil::Effect::EXP:
+    m_exp += value;
+    LOG_INFO("Player EXP increased by {}", value);
     break;
   case AppUtil::Effect::WEAK:
     // TODO: Implement weak status logic

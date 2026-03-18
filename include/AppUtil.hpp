@@ -20,6 +20,7 @@ enum class Effect {
     KEY_RED,
     COIN,
     LEVEL,
+    EXP,
     WEAK,
     POISON
 };

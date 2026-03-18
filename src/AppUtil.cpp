@@ -103,9 +103,7 @@ void RegistryLoader::LoadItems(const std::string& path) {
         add_effect("ATK", Effect::ATTACK);
         add_effect("DEF", Effect::DEFENSE);
         add_effect("AGI", Effect::AGILITY);
-        add_effect("EXP", Effect::COIN); // Wait, EXP is missing in Effect enum or mapped to Coin? 
-                                          // Looking at AppUtil.hpp, COIN is index 21, EXP is missing.
-                                          // Let's use COIN for now if appropriate or just skip.
+        add_effect("EXP", Effect::EXP);
         add_effect("yellow key", Effect::KEY_YELLOW);
         add_effect("blue key", Effect::KEY_BLUE);
         add_effect("red key", Effect::KEY_RED);
