@@ -1,7 +1,7 @@
-ID,Path,Folder,Passable,Animation,HP_Value,ATK_Value,DEF_Value,Cost,Title,Icon,Initial_Transactions
-601,shop_1_1,Shop,false,2,0,0,0,0,None,None,1
-602,shop_1_2,Shop,false,2,800,4,4,25,貪婪之神,shop_1_22.bmp,0
-603,shop_1_3,Shop,false,2,0,0,0,0,None,None,0
-611,shop_2_1,Shop,false,2,0,0,0,0,None,None,1
-612,shop_2_2,Shop,false,2,800,4,4,25,戰鬥之神,shop_2_22.bmp,0
-613,shop_2_3,Shop,false,2,0,0,0,0,None,None,0
+ID,Path,Folder,Passable,Animation,Title,Icon,Initial_Transactions
+601,shop_1_1,Shop,false,2,None,None,1
+602,shop_1_2,Shop,false,2,貪婪之神,shop_1_22.bmp,0
+603,shop_1_3,Shop,false,2,None,None,0
+611,shop_2_1,Shop,false,2,None,None,1
+612,shop_2_2,Shop,false,2,戰鬥之神,shop_2_22.bmp,0
+613,shop_2_3,Shop,false,2,None,None,0

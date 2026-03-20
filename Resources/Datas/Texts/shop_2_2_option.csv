@@ -1,0 +1,4 @@
+Dialog,Level,HP,ATK,DEF,EXP,yellow key,blue key,red key,Coin
+提升一個等級(Exp70),1,0,0,0,-70,0,0,0,0
+增加1點攻擊力(Exp20),0,0,1,0,-20,0,0,0,0
+增加2點防禦力(Exp20),0,0,0,2,-20,0,0,0,0

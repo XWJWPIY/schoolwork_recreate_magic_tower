@@ -16,9 +16,10 @@ std::unordered_map<int, ObjectMetadata> GlobalObjectRegistry = {
 };
 
 void RegistryLoader::LoadAllData() {
-    LOG_INFO("Loading Game Object Registry from CSV...");
-    // Keep ID 0, but we can clear others if LoadAllData is called multiple times
-    // For now, let's keep it simple as it's called once at start.
+    LOG_INFO("Cleaning and Loading Game Object Registry from CSV...");
+    // Clear old data to ensure re-entry/restart resets transaction counts
+    GlobalObjectRegistry.clear();
+    GlobalObjectRegistry.emplace(0, ObjectMetadata("road", "Road", true));
     LoadBlocks(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Block.csv");
     LoadDoors(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Door.csv");
     LoadItems(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Item.csv");
@@ -146,10 +147,10 @@ void RegistryLoader::LoadShops(const std::string& path) {
     auto data = MapParser::ParseCsvToStrings(path);
     if (data.empty()) return;
 
-    // Header: ID,Path,Folder,Passable,Animation,HP_Value,ATK_Value,DEF_Value,Cost,Title
+    // Header: ID,Path,Folder,Passable,Animation,Title,Icon,Initial_Transactions
     for (size_t i = 1; i < data.size(); ++i) {
         const auto& row = data[i];
-        if (row.size() < 10) continue;
+        if (row.size() < 8) continue;
 
         int id = std::stoi(row[0]);
         std::string res_name = row[1];
@@ -159,24 +160,14 @@ void RegistryLoader::LoadShops(const std::string& path) {
 
         ObjectMetadata meta(res_name, folder, passable, frames);
         
-        int hp = std::stoi(row[5]);
-        int atk = std::stoi(row[6]);
-        int def = std::stoi(row[7]);
-        int cost = std::stoi(row[8]);
-        std::string title = row[9];
-        std::string icon_path = (row.size() >= 11) ? row[10] : "";
-        int initial_transactions = (row.size() >= 12) ? std::stoi(row[11]) : 0;
+        std::string title = row[5];
+        std::string icon_path = (row.size() >= 7) ? row[6] : "";
+        int initial_transactions = (row.size() >= 8) ? std::stoi(row[7]) : 0;
 
-        if (cost > 0) {
-            meta.shop_props = std::make_shared<ShopComponent>();
-            meta.shop_props->hp_reward = hp;
-            meta.shop_props->atk_reward = atk;
-            meta.shop_props->def_reward = def;
-            meta.shop_props->cost = cost;
-            meta.shop_props->title = title;
-            meta.shop_props->icon_path = icon_path;
-            meta.shop_props->transaction_count = initial_transactions;
-        }
+        meta.shop_props = std::make_shared<ShopComponent>();
+        meta.shop_props->title = title;
+        meta.shop_props->icon_path = icon_path;
+        meta.shop_props->transaction_count = initial_transactions;
 
         GlobalObjectRegistry.emplace(id, std::move(meta));
     }
@@ -316,5 +307,43 @@ MapParser::ParseCsvToRawIDs(const std::string &filepath) {
 
   return rawData;
 }
+
+std::vector<ShopOption> MapParser::ParseShopOptions(const std::string& filepath) {
+    std::vector<ShopOption> options;
+    auto data = ParseCsvToStrings(filepath);
+    if (data.empty()) return options;
+
+    // Header: Dialog,Level,HP,ATK,DEF,EXP,yellow key,blue key,red key,Coin
+    for (size_t i = 1; i < data.size(); ++i) {
+        const auto& row = data[i];
+        if (row.size() < 10) continue;
+
+        ShopOption opt;
+        opt.text = row[0];
+
+        auto add_effect = [&](size_t idx, Effect type) {
+            if (idx < row.size() && !row[idx].empty()) {
+                int val = std::stoi(row[idx]);
+                if (val != 0) opt.effects.push_back({type, val});
+            }
+        };
+
+        add_effect(1, Effect::LEVEL);
+        add_effect(2, Effect::HP);
+        add_effect(3, Effect::ATTACK);
+        add_effect(4, Effect::DEFENSE);
+        add_effect(5, Effect::EXP);
+        add_effect(6, Effect::KEY_YELLOW);
+        add_effect(7, Effect::KEY_BLUE);
+        add_effect(8, Effect::KEY_RED);
+        add_effect(9, Effect::COIN);
+
+        if (!opt.effects.empty() || !opt.text.empty()) {
+            options.push_back(std::move(opt));
+        }
+    }
+    return options;
+}
+
 
 } // namespace AppUtil

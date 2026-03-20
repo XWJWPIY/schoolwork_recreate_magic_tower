@@ -67,6 +67,7 @@ private:
     std::shared_ptr<Util::GameObject> m_shop_bg;
     std::shared_ptr<Util::GameObject> m_shop_icon;
     std::shared_ptr<NumericDisplayText> m_shop_title;
+    std::vector<std::shared_ptr<NumericDisplayText>> m_shop_prompts;
     std::vector<std::shared_ptr<NumericDisplayText>> m_shop_options;
     std::shared_ptr<Util::GameObject> m_shop_selector;
 };

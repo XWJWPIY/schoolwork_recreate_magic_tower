@@ -55,10 +55,6 @@ struct DoorComponent {
     bool is_passive = false;
 };
 struct ShopComponent {
-    int hp_reward = 0;
-    int atk_reward = 0;
-    int def_reward = 0;
-    int cost = 0;
     std::string title = "Store Explorer";
     std::string icon_path = "";
     int transaction_count = 0;
@@ -119,14 +115,13 @@ constexpr int TOTAL_STORY = 26;
 
 struct ShopOption {
     std::string text;
-    Effect effect;
-    int value;
-    int cost;
+    std::vector<SubEffect> effects;
 };
 
 struct ShopData {
     std::string title;
     std::string icon_path;
+    std::vector<std::string> prompts;
     int transaction_count;
     std::vector<ShopOption> options;
 };
@@ -169,6 +164,7 @@ public:
   ParseCsvToStrings(const std::string &filepath);
   static std::vector<std::vector<int>>
   ParseCsvToRawIDs(const std::string &filepath);
+  static std::vector<ShopOption> ParseShopOptions(const std::string &filepath);
 };
 
 } // namespace AppUtil

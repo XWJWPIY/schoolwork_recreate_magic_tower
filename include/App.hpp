@@ -58,6 +58,8 @@ private:
   int m_loading_frame = 0;
 
   int m_shop_selection = 0;
+  int m_current_shop_id = -1;
+  void ApplyShopScaling(AppUtil::ShopData& data, int id, int times);
   AppUtil::ShopData m_current_shop_data;
 };
 

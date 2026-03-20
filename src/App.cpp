@@ -170,15 +170,42 @@ void App::Update() {
       m_menu_ui->UpdateShopSelection(m_shop_selection);
     }
     if (Util::Input::IsKeyDown(Util::Keycode::SPACE) || Util::Input::IsKeyDown(Util::Keycode::RETURN)) {
-      const auto& opt = m_current_shop_data.options[m_shop_selection];
-      if (opt.text == "Exit") {
-        m_game_state = AppUtil::GameState::PLAYING;
-        m_menu_ui->SetVisible(false);
-      } else if (m_player->GetCoins() >= opt.cost) {
-        m_player->AddCoins(-opt.cost);
-        m_player->ApplyEffect(opt.effect, opt.value);
-        // Refresh status UI
-        m_status_ui->Update(m_player, m_road_map->GetCurrentStory());
+      if (m_shop_selection >= 0 && m_shop_selection < m_current_shop_data.options.size()) {
+        const auto& opt = m_current_shop_data.options[m_shop_selection];
+        if (opt.text == "Exit") {
+          m_game_state = AppUtil::GameState::PLAYING;
+          m_menu_ui->SetVisible(false);
+        } else {
+          // Check affordability for all costs (negative values)
+          bool canAfford = true;
+          for (const auto& eff : opt.effects) {
+            if (eff.value < 0) {
+              if (eff.type == AppUtil::Effect::COIN && m_player->GetCoins() < -eff.value) canAfford = false;
+              if (eff.type == AppUtil::Effect::EXP && m_player->GetExp() < -eff.value) canAfford = false;
+              if (eff.type == AppUtil::Effect::HP && m_player->GetHp() <= -eff.value) canAfford = false;
+              if (eff.type == AppUtil::Effect::KEY_YELLOW && m_player->GetYellowKeys() < -eff.value) canAfford = false;
+              if (eff.type == AppUtil::Effect::KEY_BLUE && m_player->GetBlueKeys() < -eff.value) canAfford = false;
+              if (eff.type == AppUtil::Effect::KEY_RED && m_player->GetRedKeys() < -eff.value) canAfford = false;
+            }
+          }
+
+          if (canAfford) {
+            for (const auto& eff : opt.effects) {
+              m_player->ApplyEffect(eff.type, eff.value);
+            }
+
+            // Increment transaction count in registry
+            auto it = AppUtil::GlobalObjectRegistry.find(m_current_shop_id);
+            if (it != AppUtil::GlobalObjectRegistry.end() && it->second.shop_props) {
+                it->second.shop_props->transaction_count++;
+                // Re-apply scaling and update UI data
+                ApplyShopScaling(m_current_shop_data, m_current_shop_id, it->second.shop_props->transaction_count);
+                m_menu_ui->SetShopData(m_current_shop_data);
+            }
+
+            m_status_ui->Update(m_player, m_road_map->GetCurrentStory());
+          }
+        }
       }
     }
     if (Util::Input::IsKeyDown(Util::Keycode::ESCAPE) || Util::Input::IsKeyDown(Util::Keycode::Q)) {
@@ -195,19 +222,36 @@ void App::Update() {
       auto it = AppUtil::GlobalObjectRegistry.find(id);
       if (it != AppUtil::GlobalObjectRegistry.end() && it->second.shop_props) {
         auto& shop = it->second.shop_props;
-        m_current_shop_data.title = shop->title;
-        m_current_shop_data.icon_path = shop->icon_path;
-        m_current_shop_data.transaction_count = shop->transaction_count;
-        m_current_shop_data.options.clear();
-        m_current_shop_data.options.push_back({"+ " + std::to_string(shop->hp_reward) + " HP (" + std::to_string(shop->cost) + " G)", AppUtil::Effect::HP, shop->hp_reward, shop->cost});
-        m_current_shop_data.options.push_back({"+ " + std::to_string(shop->atk_reward) + " ATK (" + std::to_string(shop->cost) + " G)", AppUtil::Effect::ATTACK, shop->atk_reward, shop->cost});
-        m_current_shop_data.options.push_back({"+ " + std::to_string(shop->def_reward) + " DEF (" + std::to_string(shop->cost) + " G)", AppUtil::Effect::DEFENSE, shop->def_reward, shop->cost});
-        m_current_shop_data.options.push_back({"Exit", AppUtil::Effect::NONE, 0, 0});
+        
+        // Don't open shop if title is None (decorative tiles 601, 603)
+        if (shop->title != "None") {
+            m_current_shop_data.title = shop->title;
+            m_current_shop_data.icon_path = shop->icon_path;
+            m_current_shop_data.transaction_count = shop->transaction_count;
+            m_current_shop_data.options.clear();
 
-        m_game_state = AppUtil::GameState::SHOP;
-        m_shop_selection = 0;
-        m_menu_ui->SetShopData(m_current_shop_data);
-        m_menu_ui->SetVisible(true, MenuUI::MenuType::SHOP);
+            // Standardized path: Resources/Datas/Texts/[shop_name]_option.csv
+            std::string shop_name = it->second.name;
+            std::string full_path = std::string(MAGIC_TOWER_RESOURCE_DIR) + "/Datas/Texts/" + shop_name + "_option.csv";
+
+            // Try to load options from CSV. If it fails, ParseShopOptions will return an empty vector.
+            m_current_shop_data.options = AppUtil::MapParser::ParseShopOptions(full_path);
+
+            if (m_current_shop_data.options.empty()) {
+                // Fallback to minimal if no CSV found or empty
+                m_current_shop_data.options.push_back({"No Inventory Found", {}});
+            }
+            m_current_shop_data.options.push_back({"Exit", {}});
+
+            m_current_shop_id = id;
+            ApplyShopScaling(m_current_shop_data, id, shop->transaction_count);
+
+            m_game_state = AppUtil::GameState::SHOP;
+            m_shop_selection = 0;
+            m_menu_ui->SetVisible(true, MenuUI::MenuType::SHOP);
+            m_menu_ui->SetShopData(m_current_shop_data);
+            m_menu_ui->UpdateShopSelection(m_shop_selection);
+        }
         break;
       }
     }
@@ -267,6 +311,10 @@ void App::Update() {
       m_game_state = AppUtil::GameState::INSTRUCTIONS;
       m_menu_ui->SetVisible(true, MenuUI::MenuType::NOTICE);
       LOG_INFO("Switched to INSTRUCTIONS state");
+    }
+
+    if (Util::Input::IsKeyDown(Util::Keycode::R)) {
+      Restart();
     }
     break;
 
@@ -333,9 +381,6 @@ void App::Update() {
    * Do not touch the code below as they serve the purpose for
    * closing the window.
    */
-  if (Util::Input::IsKeyDown(Util::Keycode::R)) {
-    Restart();
-  }
 
   if (Util::Input::IsKeyUp(Util::Keycode::ESCAPE) || Util::Input::IfExit()) {
     m_current_state = STATE::END;
@@ -401,4 +446,65 @@ void App::HideItemNotice() {
   if (m_menu_ui) {
     m_menu_ui->SetVisible(false); // This will clear ITEM_NOTICE
   }
+}
+
+void App::ApplyShopScaling(AppUtil::ShopData& data, int id, int times) {
+    std::string shop_name = "";
+    auto it = AppUtil::GlobalObjectRegistry.find(id);
+    if (it != AppUtil::GlobalObjectRegistry.end()) {
+        shop_name = it->second.name;
+    }
+
+    // Load dialogue from Resources/Datas/Texts/[shop_name].csv
+    std::string dialogue_path = std::string(MAGIC_TOWER_RESOURCE_DIR) + "/Datas/Texts/" + shop_name + ".csv";
+    auto dialogue_data = AppUtil::MapParser::ParseCsvToStrings(dialogue_path);
+    data.prompts.clear();
+    for (const auto& row : dialogue_data) {
+        if (!row.empty() && !row[0].empty()) data.prompts.push_back(row[0]);
+    }
+
+    if (id == 612) { // War God (EXP Shop)
+        return;
+    }
+
+    if (id != 602) { // Other shops
+        return;
+    }
+
+    // P = 20 + times * 1 + Bonus
+    int current_cost = 20 + times * 1 + (times > 25 ? (times - 25) * 4 : 0);
+    
+    std::string next_p_line = "";
+    next_p_line += std::to_string(current_cost);
+    data.prompts.push_back(next_p_line);
+
+    for (size_t i = 0; i < data.prompts.size(); ++i) {
+        std::string& prompt = data.prompts[i];
+        // Find the line with placeholders (3 ideographic spaces)
+        size_t pos = prompt.find("　　　");
+        if (pos != std::string::npos) {
+            std::string price_str = std::to_string(current_cost);
+            // Better alignment Padding (half-width spaces to fit full-width area)
+            if (price_str.length() == 2) price_str = " " + price_str; 
+            
+            prompt.replace(pos, 9, price_str); 
+        }
+    }
+
+    for (auto& opt : data.options) {
+        if (opt.text == "Exit") continue;
+
+        // Update Coin cost in effects
+        for (auto& eff : opt.effects) {
+            if (eff.type == AppUtil::Effect::COIN) {
+                eff.value = -current_cost;
+            }
+        }
+
+        // Strip inline price like (20G) from option text
+        size_t pos = opt.text.find("(");
+        if (pos != std::string::npos) {
+            opt.text = opt.text.substr(0, pos);
+        }
+    }
 }
