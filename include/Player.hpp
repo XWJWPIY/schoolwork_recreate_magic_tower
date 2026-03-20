@@ -33,6 +33,9 @@ public:
 
   void ApplyEffect(AppUtil::Effect type, int value);
 
+  void SetPendingShop(int id) { m_pending_shop_id = id; }
+  int GetPendingShop() const { return m_pending_shop_id; }
+
 public:
   enum class PlayerDirection {
     DOWN = 1,
@@ -56,6 +59,7 @@ private:
   int m_blue_keys = 0;
   int m_red_keys = 0;
   int m_coins = 0;
+  int m_pending_shop_id = -1;
 };
 
 #endif // PLAYER_HPP

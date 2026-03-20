@@ -54,6 +54,15 @@ struct DoorComponent {
     int red_key = 0;
     bool is_passive = false;
 };
+struct ShopComponent {
+    int hp_reward = 0;
+    int atk_reward = 0;
+    int def_reward = 0;
+    int cost = 0;
+    std::string title = "Store Explorer";
+    std::string icon_path = "";
+    int transaction_count = 0;
+};
 
 // --- Main Metadata ---
 
@@ -69,6 +78,7 @@ struct ObjectMetadata {
     std::shared_ptr<CombatComponent> combat_props = nullptr;
     std::shared_ptr<DialogComponent> dialog_props = nullptr;
     std::shared_ptr<DoorComponent>   door_props   = nullptr;
+    std::shared_ptr<ShopComponent>   shop_props   = nullptr;
 
     // Picture Static Object (Wall, Road, NPC, etc.)
     ObjectMetadata(std::string n, std::string f, bool p)
@@ -99,12 +109,27 @@ public:
     static void LoadDoors(const std::string& path);
     static void LoadItems(const std::string& path);
     static void LoadStairs(const std::string& path);
+    static void LoadShops(const std::string& path);
 };
 
 // Global or shared utility functions and constant definitions
 const int WINDOW_WIDTH = 1200;
 const int WINDOW_HEIGHT = 800;
 constexpr int TOTAL_STORY = 26;
+
+struct ShopOption {
+    std::string text;
+    Effect effect;
+    int value;
+    int cost;
+};
+
+struct ShopData {
+    std::string title;
+    std::string icon_path;
+    int transaction_count;
+    std::vector<ShopOption> options;
+};
 
 std::string GetIdString(int id);
 std::string GetIdResourcePath(int id);
@@ -116,7 +141,8 @@ enum class GameState {
   INSTRUCTIONS = 2, // 2: Instruction manual
   FAST_ELEVATOR = 3, // 3: Floor selection menu
   ITEM_DIALOG = 4,   // 4: Item acquisition dialog (Modal)
-  LOADING = 5        // 5: Loading state
+  LOADING = 5,       // 5: Loading state
+  SHOP = 6           // 6: Shop state
 };
 
 struct MapCell {

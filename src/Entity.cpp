@@ -33,3 +33,15 @@ void Entity::UpdateProperties(int id) {
   // Basic shared properties (hp, attack, defense) logic could go here
   // Currently placeholder
 }
+
+void Entity::ObjectUpdate() {
+  auto it = AppUtil::GlobalObjectRegistry.find(m_object_id);
+  if (it != AppUtil::GlobalObjectRegistry.end() && it->second.animation_frames > 1) {
+    // Current animated path
+    std::string path = MAGIC_TOWER_RESOURCE_DIR + AppUtil::GetIdResourcePath(m_object_id);
+    
+    // Simple way to check if we need to update drawable
+    // In a more complex system, we might store the current path or frame index
+    m_Drawable = std::make_shared<Util::Image>(path);
+  }
+}

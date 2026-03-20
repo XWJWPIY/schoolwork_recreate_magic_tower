@@ -23,6 +23,7 @@ void RegistryLoader::LoadAllData() {
     LoadDoors(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Door.csv");
     LoadItems(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Item.csv");
     LoadStairs(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Stair.csv");
+    LoadShops(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Shop.csv");
     LOG_INFO("Object Registry loaded. Total objects: {}", GlobalObjectRegistry.size());
 }
 
@@ -141,6 +142,46 @@ void RegistryLoader::LoadStairs(const std::string& path) {
     }
 }
 
+void RegistryLoader::LoadShops(const std::string& path) {
+    auto data = MapParser::ParseCsvToStrings(path);
+    if (data.empty()) return;
+
+    // Header: ID,Path,Folder,Passable,Animation,HP_Value,ATK_Value,DEF_Value,Cost,Title
+    for (size_t i = 1; i < data.size(); ++i) {
+        const auto& row = data[i];
+        if (row.size() < 10) continue;
+
+        int id = std::stoi(row[0]);
+        std::string res_name = row[1];
+        std::string folder = row[2];
+        bool passable = (row[3] == "true");
+        int frames = std::stoi(row[4]);
+
+        ObjectMetadata meta(res_name, folder, passable, frames);
+        
+        int hp = std::stoi(row[5]);
+        int atk = std::stoi(row[6]);
+        int def = std::stoi(row[7]);
+        int cost = std::stoi(row[8]);
+        std::string title = row[9];
+        std::string icon_path = (row.size() >= 11) ? row[10] : "";
+        int initial_transactions = (row.size() >= 12) ? std::stoi(row[11]) : 0;
+
+        if (cost > 0) {
+            meta.shop_props = std::make_shared<ShopComponent>();
+            meta.shop_props->hp_reward = hp;
+            meta.shop_props->atk_reward = atk;
+            meta.shop_props->def_reward = def;
+            meta.shop_props->cost = cost;
+            meta.shop_props->title = title;
+            meta.shop_props->icon_path = icon_path;
+            meta.shop_props->transaction_count = initial_transactions;
+        }
+
+        GlobalObjectRegistry.emplace(id, std::move(meta));
+    }
+}
+
 std::string GetIdString(int id) {
   auto it = GlobalObjectRegistry.find(id);
   if (it != GlobalObjectRegistry.end()) {
@@ -153,9 +194,16 @@ std::string GetIdResourcePath(int id) {
   auto it = GlobalObjectRegistry.find(id);
   if (it != GlobalObjectRegistry.end()) {
     const auto& meta = it->second;
-    if (meta.folder == "Road") {
-        // Special case for roads which often have "1" suffix or are animated
-        return "/bmp/Road/" + meta.name + "1.bmp";
+    int frame = meta.is_animated ? TileAnimationManager::GetGlobalFrame2() : 1;
+
+    // Road and Shop folders always use numbered filenames (e.g. road1.bmp, shop_1_11.bmp)
+    if (meta.folder == "Road" || meta.folder == "Shop") {
+        return "/bmp/" + meta.folder + "/" + meta.name + std::to_string(frame) + ".bmp";
+    }
+
+    // Other folders (Item, Door, etc.) only use numbers if animated
+    if (meta.is_animated) {
+        return "/bmp/" + meta.folder + "/" + meta.name + std::to_string(frame) + ".bmp";
     }
     return "/bmp/" + meta.folder + "/" + meta.name + ".bmp";
   }

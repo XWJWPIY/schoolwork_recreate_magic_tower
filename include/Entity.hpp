@@ -24,7 +24,7 @@ public:
   void UpdateProperties(int id);
 
   virtual void Reaction(std::shared_ptr<Player> player) = 0;
-  virtual void ObjectUpdate() override {}
+  void ObjectUpdate() override;
 
   void SetReplacementComponent(std::shared_ptr<DynamicReplacementComponent> comp) {
     m_replacement_comp = comp;

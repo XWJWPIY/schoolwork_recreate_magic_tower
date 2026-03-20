@@ -9,5 +9,5 @@ Shop::Shop(int id)
 void Shop::Reaction(std::shared_ptr<Player> player) {
   LOG_INFO("Opening Shop menu... ID: {} ({})", m_object_id,
            AppUtil::GetIdString(m_object_id));
-  // TODO: Implement trading system (UI/Logic)
+  player->SetPendingShop(m_object_id);
 }

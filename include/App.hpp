@@ -56,6 +56,9 @@ private:
   float m_item_notice_timer = 0.0f;
   float m_loading_timer = 0.0f;
   int m_loading_frame = 0;
+
+  int m_shop_selection = 0;
+  AppUtil::ShopData m_current_shop_data;
 };
 
 #endif

@@ -15,7 +15,8 @@ public:
         NONE,
         NOTICE,
         FAST_ELEVATOR,
-        ITEM_NOTICE
+        ITEM_NOTICE,
+        SHOP
         // FUTURE: MONSTER_MANUAL
     };
 
@@ -29,8 +30,12 @@ public:
     // Item Notice specific
     void SetItemNotice(const std::string& text);
 
-private:
+    // Shop specific
+    void SetShopData(const AppUtil::ShopData& data);
+    void UpdateShopSelection(int index);
     void UpdateArrows(int currentFloor);
+
+private:
     void InitText(std::shared_ptr<NumericDisplayText>& text, const std::string& prefix, float x, float y, int size);
 
 private:
@@ -57,6 +62,13 @@ private:
     std::shared_ptr<Util::GameObject> m_item_notice_bg;
     std::shared_ptr<NumericDisplayText> m_item_notice_text;
     std::shared_ptr<NumericDisplayText> m_item_confirm_text;
+
+    // Shop Overlay
+    std::shared_ptr<Util::GameObject> m_shop_bg;
+    std::shared_ptr<Util::GameObject> m_shop_icon;
+    std::shared_ptr<NumericDisplayText> m_shop_title;
+    std::vector<std::shared_ptr<NumericDisplayText>> m_shop_options;
+    std::shared_ptr<Util::GameObject> m_shop_selector;
 };
 
 #endif // MENU_UI_HPP

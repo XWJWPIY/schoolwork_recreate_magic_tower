@@ -60,6 +60,36 @@ MenuUI::MenuUI() {
     m_item_confirm_text->UpdateDisplayText();
     m_item_confirm_text->SetZIndex(91.0f);
 
+    // 4. Shop Initialization
+    m_shop_bg = std::make_shared<Util::GameObject>();
+    m_shop_bg->SetDrawable(std::make_shared<Util::Image>(MAGIC_TOWER_RESOURCE_DIR "/bmp/Shop/ShopDialog.bmp"));
+    m_shop_bg->m_Transform.translation = {141.0f, 0.0f};
+    m_shop_bg->m_Transform.scale = {0.735f, 0.735f};
+    m_shop_bg->SetZIndex(90.0f);
+
+    m_shop_icon = std::make_shared<Util::GameObject>();
+    m_shop_icon->m_Transform.translation = { 28.0f, 141.0f }; // Centered in the top-left box
+    m_shop_icon->m_Transform.scale = { 0.735f, 0.735f };      // Match UI scale
+    m_shop_icon->SetZIndex(91.0f);
+
+    InitText(m_shop_title, "Store Explorer", 185.0f, 200.0f, 32);
+    m_shop_title->SetShowNumber(false);
+    m_shop_title->UpdateDisplayText();
+    m_shop_title->SetZIndex(91.0f);
+
+    for (int i = 0; i < 4; ++i) { // Usually 3 items + 1 exit
+        auto opt = std::make_shared<NumericDisplayText>(MAGIC_TOWER_RESOURCE_DIR "/Font/Cubic_11.ttf", 24);
+        opt->SetShowNumber(false);
+        opt->m_Transform.translation = {141.0f, -10.0f - i * 60.0f};
+        opt->SetZIndex(91.0f);
+        m_shop_options.push_back(opt);
+    }
+
+    m_shop_selector = std::make_shared<Util::GameObject>();
+    m_shop_selector->SetDrawable(std::make_shared<Util::Image>(MAGIC_TOWER_RESOURCE_DIR "/bmp/Special/right_arrow_white.png"));
+    m_shop_selector->m_Transform.scale = {0.5f, 0.5f};
+    m_shop_selector->SetZIndex(92.0f);
+
     SetVisible(false);
 }
 
@@ -84,6 +114,11 @@ void MenuUI::SetVisible(bool visible, MenuType type) {
     m_item_notice_bg->SetVisible(false);
     m_item_notice_text->SetVisible(false);
     m_item_confirm_text->SetVisible(false);
+    m_shop_bg->SetVisible(false);
+    m_shop_icon->SetVisible(false);
+    m_shop_title->SetVisible(false);
+    for (auto& opt : m_shop_options) opt->SetVisible(false);
+    m_shop_selector->SetVisible(false);
 
     if (!visible) {
         m_current_menu = MenuType::NONE;
@@ -104,6 +139,12 @@ void MenuUI::SetVisible(bool visible, MenuType type) {
         m_item_notice_bg->SetVisible(true);
         m_item_notice_text->SetVisible(true);
         m_item_confirm_text->SetVisible(true);
+    } else if (type == MenuType::SHOP) {
+        m_shop_bg->SetVisible(true);
+        m_shop_icon->SetVisible(true);
+        m_shop_title->SetVisible(true);
+        for (auto& opt : m_shop_options) opt->SetVisible(true);
+        m_shop_selector->SetVisible(true);
     }
 }
 
@@ -138,4 +179,35 @@ void MenuUI::AddToRoot(Util::Renderer& root) {
     root.AddChild(m_item_notice_bg);
     root.AddChild(m_item_notice_text);
     root.AddChild(m_item_confirm_text);
+
+    root.AddChild(m_shop_bg);
+    root.AddChild(m_shop_icon);
+    root.AddChild(m_shop_title);
+    for (auto& opt : m_shop_options) root.AddChild(opt);
+    root.AddChild(m_shop_selector);
+}
+
+void MenuUI::SetShopData(const AppUtil::ShopData& data) {
+    if (!data.icon_path.empty()) {
+        m_shop_icon->SetDrawable(std::make_shared<Util::Image>(MAGIC_TOWER_RESOURCE_DIR "/bmp/Shop/" + data.icon_path));
+    }
+    m_shop_title->SetPrefix(data.title);
+    m_shop_title->UpdateDisplayText();
+    for (size_t i = 0; i < m_shop_options.size(); ++i) {
+        if (i < data.options.size()) {
+            m_shop_options[i]->SetPrefix(data.options[i].text);
+            m_shop_options[i]->SetVisible(true);
+        } else {
+            m_shop_options[i]->SetPrefix("");
+            m_shop_options[i]->SetVisible(false);
+        }
+        m_shop_options[i]->UpdateDisplayText();
+    }
+    UpdateShopSelection(0);
+}
+
+void MenuUI::UpdateShopSelection(int index) {
+    if (index >= 0 && index < static_cast<int>(m_shop_options.size())) {
+        m_shop_selector->m_Transform.translation = m_shop_options[index]->m_Transform.translation + glm::vec2(-150.0f, 0.0f);
+    }
 }

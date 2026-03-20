@@ -155,11 +155,63 @@ void App::Update() {
         m_player->SetVisible(true);
         m_loading_timer = 0.0f;
         m_loading_frame = 0;
+        m_menu_ui->UpdateArrows(m_road_map->GetCurrentStory());
       }
     }
     break;
 
+  case AppUtil::GameState::SHOP:
+    if (Util::Input::IsKeyDown(Util::Keycode::W) || Util::Input::IsKeyDown(Util::Keycode::UP)) {
+      m_shop_selection = (m_shop_selection - 1 + static_cast<int>(m_current_shop_data.options.size())) % m_current_shop_data.options.size();
+      m_menu_ui->UpdateShopSelection(m_shop_selection);
+    }
+    if (Util::Input::IsKeyDown(Util::Keycode::S) || Util::Input::IsKeyDown(Util::Keycode::DOWN)) {
+      m_shop_selection = (m_shop_selection + 1) % m_current_shop_data.options.size();
+      m_menu_ui->UpdateShopSelection(m_shop_selection);
+    }
+    if (Util::Input::IsKeyDown(Util::Keycode::SPACE) || Util::Input::IsKeyDown(Util::Keycode::RETURN)) {
+      const auto& opt = m_current_shop_data.options[m_shop_selection];
+      if (opt.text == "Exit") {
+        m_game_state = AppUtil::GameState::PLAYING;
+        m_menu_ui->SetVisible(false);
+      } else if (m_player->GetCoins() >= opt.cost) {
+        m_player->AddCoins(-opt.cost);
+        m_player->ApplyEffect(opt.effect, opt.value);
+        // Refresh status UI
+        m_status_ui->Update(m_player, m_road_map->GetCurrentStory());
+      }
+    }
+    if (Util::Input::IsKeyDown(Util::Keycode::ESCAPE) || Util::Input::IsKeyDown(Util::Keycode::Q)) {
+      m_game_state = AppUtil::GameState::PLAYING;
+      m_menu_ui->SetVisible(false);
+    }
+    break;
+
   case AppUtil::GameState::PLAYING:
+    if (m_player->GetPendingShop() != -1) {
+      int id = m_player->GetPendingShop();
+      m_player->SetPendingShop(-1);
+
+      auto it = AppUtil::GlobalObjectRegistry.find(id);
+      if (it != AppUtil::GlobalObjectRegistry.end() && it->second.shop_props) {
+        auto& shop = it->second.shop_props;
+        m_current_shop_data.title = shop->title;
+        m_current_shop_data.icon_path = shop->icon_path;
+        m_current_shop_data.transaction_count = shop->transaction_count;
+        m_current_shop_data.options.clear();
+        m_current_shop_data.options.push_back({"+ " + std::to_string(shop->hp_reward) + " HP (" + std::to_string(shop->cost) + " G)", AppUtil::Effect::HP, shop->hp_reward, shop->cost});
+        m_current_shop_data.options.push_back({"+ " + std::to_string(shop->atk_reward) + " ATK (" + std::to_string(shop->cost) + " G)", AppUtil::Effect::ATTACK, shop->atk_reward, shop->cost});
+        m_current_shop_data.options.push_back({"+ " + std::to_string(shop->def_reward) + " DEF (" + std::to_string(shop->cost) + " G)", AppUtil::Effect::DEFENSE, shop->def_reward, shop->cost});
+        m_current_shop_data.options.push_back({"Exit", AppUtil::Effect::NONE, 0, 0});
+
+        m_game_state = AppUtil::GameState::SHOP;
+        m_shop_selection = 0;
+        m_menu_ui->SetShopData(m_current_shop_data);
+        m_menu_ui->SetVisible(true, MenuUI::MenuType::SHOP);
+        break;
+      }
+    }
+
     if (m_status_ui) {
       m_status_ui->Update(m_player, m_road_map->GetCurrentStory());
     }
@@ -257,7 +309,7 @@ void App::Update() {
     break;
   }
 
-  if (m_game_state == AppUtil::GameState::PLAYING) {
+  if (m_game_state == AppUtil::GameState::PLAYING || m_game_state == AppUtil::GameState::SHOP) {
     m_road_map->Update();
     m_things_map->Update();
   }
