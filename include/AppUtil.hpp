@@ -115,7 +115,8 @@ enum class GameState {
   PLAYING = 1,      // 1: Playing session
   INSTRUCTIONS = 2, // 2: Instruction manual
   FAST_ELEVATOR = 3, // 3: Floor selection menu
-  ITEM_DIALOG = 4   // 4: Item acquisition dialog (Modal)
+  ITEM_DIALOG = 4,   // 4: Item acquisition dialog (Modal)
+  LOADING = 5        // 5: Loading state
 };
 
 struct MapCell {

@@ -15,6 +15,7 @@ public:
 
   // 切換到指定的相階段 (phase) 的背景圖片
   void NextPhase(const int phase);
+  void SetLoadingFrame(int frame);
 
 private:
   // 組合圖片路徑的輔助函式

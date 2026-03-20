@@ -34,9 +34,11 @@ public:
   void TeleportToFloor(int targetStory, int targetStairId);
   void ShowItemNotice(const std::string& text);
   void HideItemNotice();
+  void Restart();
 
 private:
   void ValidTask();
+  void InitializeGame();
 
 private:
   STATE m_current_state = STATE::START;
@@ -52,6 +54,8 @@ private:
   int m_preview_floor = 0;
   
   float m_item_notice_timer = 0.0f;
+  float m_loading_timer = 0.0f;
+  int m_loading_frame = 0;
 };
 
 #endif

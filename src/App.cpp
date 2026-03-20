@@ -18,12 +18,15 @@
 #include "StatusUI.hpp"
 
 void App::Start() {
-  AppUtil::RegistryLoader::LoadAllData();
-  LOG_TRACE("Start");
   m_current_state = STATE::UPDATE;
 
   m_background = std::make_shared<Background>();
   m_root.AddChild(m_background);
+  m_game_state = AppUtil::GameState::MAIN_MENU;
+}
+
+void App::InitializeGame() {
+  LOG_TRACE("InitializeGame");
 
   // Factory for RoadMap (creates MapBlocks)
   FloorMap::ObjectFactory roadObjFactory =
@@ -124,12 +127,35 @@ void App::Update() {
   switch (m_game_state) {
   case AppUtil::GameState::MAIN_MENU:
     if (Util::Input::IsKeyDown(Util::Keycode::SPACE)) {
-      m_game_state = AppUtil::GameState::PLAYING;
-      m_background->NextPhase(1);
-      m_road_map->SetAllVisible(true);
-      m_things_map->SetAllVisible(true);
-      m_status_ui->SetVisible(true);
-      m_player->SetVisible(true);
+      m_game_state = AppUtil::GameState::LOADING;
+      m_loading_timer = 0.0f;
+      m_loading_frame = 1;
+      m_background->SetLoadingFrame(m_loading_frame);
+    }
+    break;
+
+  case AppUtil::GameState::LOADING:
+    m_loading_timer += Util::Time::GetDeltaTimeMs();
+    {
+      int current_frame = static_cast<int>(m_loading_timer / 150.0f) + 1; // 150ms per frame
+      if (current_frame <= 4) {
+        if (current_frame != m_loading_frame) {
+          m_loading_frame = current_frame;
+          m_background->SetLoadingFrame(m_loading_frame);
+        }
+      } else {
+        // Animation finished
+        AppUtil::RegistryLoader::LoadAllData();
+        InitializeGame();
+        m_game_state = AppUtil::GameState::PLAYING;
+        m_background->NextPhase(1);
+        m_road_map->SetAllVisible(true);
+        m_things_map->SetAllVisible(true);
+        m_status_ui->SetVisible(true);
+        m_player->SetVisible(true);
+        m_loading_timer = 0.0f;
+        m_loading_frame = 0;
+      }
     }
     break;
 
@@ -255,6 +281,10 @@ void App::Update() {
    * Do not touch the code below as they serve the purpose for
    * closing the window.
    */
+  if (Util::Input::IsKeyDown(Util::Keycode::R)) {
+    Restart();
+  }
+
   if (Util::Input::IsKeyUp(Util::Keycode::ESCAPE) || Util::Input::IfExit()) {
     m_current_state = STATE::END;
   }
@@ -262,6 +292,19 @@ void App::Update() {
 
 void App::End() { // NOLINT(this method will mutate members in the future)
   LOG_TRACE("End");
+}
+
+void App::Restart() {
+  LOG_INFO("Restarting game...");
+  m_root = Util::Renderer();
+  m_game_state = AppUtil::GameState::MAIN_MENU;
+  m_preview_floor = 0;
+  m_item_notice_timer = 0.0f;
+
+  m_background = std::make_shared<Background>();
+  m_root.AddChild(m_background);
+  m_loading_timer = 0.0f;
+  m_loading_frame = 0;
 }
 
 void App::ChangeFloor(int delta) {
