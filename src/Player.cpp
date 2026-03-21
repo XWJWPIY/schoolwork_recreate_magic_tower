@@ -4,11 +4,10 @@
 #include "Util/Logger.hpp"
 
 Player::Player()
-    : Entity(0, MAGIC_TOWER_RESOURCE_DIR "/bmp/Player/player_11.BMP",
+    : Actor(0, MAGIC_TOWER_RESOURCE_DIR "/bmp/Player/player_11.BMP",
              false) { // Start facing Down, Frame 1
   // Player layer is -3 based on Constructure.md
   SetZIndex(-3.0f);
-  SetVisible(true);
 
   // Initial grid position
   m_grid_x = 5;
@@ -25,6 +24,8 @@ Player::Player()
   m_blue_keys = 1;
   m_red_keys = 1;  
   m_coins = 0;
+
+  UpdateSprite();
 }
 
 void Player::Move(int dx, int dy, std::shared_ptr<FloorMap> roadmap,
@@ -61,17 +62,34 @@ void Player::Move(int dx, int dy, std::shared_ptr<FloorMap> roadmap,
   // Check collision with thingsMap (interactions)
   if (thingsmap) {
     auto target = thingsmap->GetObject(next_x, next_y);
-    auto entity = std::dynamic_pointer_cast<Entity>(target);
-    if (entity && entity->GetVisible()) {
-      if (entity->CanReact()) {
-        entity->Reaction(shared_from_this());
-      }
-
-      if (entity->GetVisible() && !entity->IsPassable()) {
+    if (target) {
+      auto it = AppUtil::GlobalObjectRegistry.find(target->GetObjectId());
+      if (it != AppUtil::GlobalObjectRegistry.end() && it->second.stair_props) {
+        // It's a stair! Move but don't animate according to requirement.
+        m_grid_x = next_x;
+        m_grid_y = next_y;
         m_is_animating = false;
         m_current_frame = 1;
         UpdateSprite();
+        SyncPosition(roadmap);
+        
+        auto stairEntity = std::dynamic_pointer_cast<Entity>(target);
+        if (stairEntity) stairEntity->Reaction(shared_from_this());
         return;
+      }
+
+      auto entity = std::dynamic_pointer_cast<Entity>(target);
+      if (entity && entity->GetVisible()) {
+        if (entity->CanReact()) {
+          entity->Reaction(shared_from_this());
+        }
+
+        if (entity->GetVisible() && !entity->IsPassable()) {
+          m_is_animating = false;
+          m_current_frame = 1;
+          UpdateSprite();
+          return;
+        }
       }
     }
   }
@@ -90,23 +108,6 @@ void Player::Move(int dx, int dy, std::shared_ptr<FloorMap> roadmap,
 
 void Player::Reaction(std::shared_ptr<Player> player) {
   LOG_INFO("Player triggered Reaction()! Possible mirror stage.");
-}
-
-void Player::AddKey(int id) {
-  switch (id) {
-  case 201:
-    m_yellow_keys++;
-    break;
-  case 202:
-    m_blue_keys++;
-    break;
-  case 203:
-    m_red_keys++;
-    break;
-  default:
-    LOG_WARN("Player::AddKey: Unknown key ID {}", id);
-    break;
-  }
 }
 
 bool Player::UseKey(AppUtil::Effect type, int count) {
@@ -134,6 +135,13 @@ bool Player::UseKey(AppUtil::Effect type, int count) {
     break;
   }
   return false;
+}
+
+void Player::ResetStateAfterFloorChange() {
+  m_direction = PlayerDirection::DOWN;
+  m_is_animating = false;
+  m_current_frame = 1;
+  UpdateSprite();
 }
 
 void Player::SyncPosition(std::shared_ptr<FloorMap> roadmap) {
@@ -214,9 +222,18 @@ void Player::ObjectUpdate() {
 }
 
 void Player::UpdateSprite() {
-  std::string path = MAGIC_TOWER_RESOURCE_DIR "/bmp/Player/player_" +
-                     std::to_string(static_cast<int>(m_direction)) +
-                     std::to_string(m_current_frame) + ".BMP";
+  std::string path;
+  if (!m_is_animating) {
+    // Static standing frame
+    path = MAGIC_TOWER_RESOURCE_DIR "/bmp/Player/player_" +
+           std::to_string(static_cast<int>(m_direction)) + ".png";
+  } else {
+    // Animated moving frames
+    path = MAGIC_TOWER_RESOURCE_DIR "/bmp/Player/player_" +
+           std::to_string(static_cast<int>(m_direction)) +
+           std::to_string(m_current_frame) + ".BMP";
+  }
+  
   // Dynamically change the drawable (Image)
   m_Drawable = std::make_shared<Util::Image>(path);
 }

@@ -1,148 +1,666 @@
 # 魔塔專案架構概覽
 
+## 完整類別圖（繼承、屬性、方法）
+
 ```mermaid
 classDiagram
-    %% 核心架構與組合關係
-    App ..> RegistryLoader : Calls LoadAllData()
-    RegistryLoader ..> AppUtil : Populates GlobalObjectRegistry
-    
-    FloorMap o-- AllObjects : Contains (Grid)
+    direction TB
 
-    %% 元數據與組件 (Component-based Design)
-    ObjectMetadata *-- ItemComponent : Optional
-    ObjectMetadata *-- CombatComponent : Optional
-    ObjectMetadata *-- DialogComponent : Optional
-    ObjectMetadata *-- DoorComponent : Optional
-    
-    AppUtil o-- ObjectMetadata : Registry holds
-    
-    %% 繼承關係
-    GameObject --> AllObjects
-    AllObjects --> MapBlock
-    AllObjects --> Entity
-    
-    Entity --> Door
-    Entity --> Enemy
-    Entity --> NPC
-    Entity --> Item
-    Entity --> Stair
-    Entity --> Shop
-    Entity --> Player
-    
-    %% 重點依賴
-    Entity ..> ObjectMetadata : Uses for properties
+    class GameObject["Util::GameObject"] {
+        +Transform m_Transform
+        #shared_ptr~Drawable~ m_Drawable
+        #bool m_Visible
+        +SetDrawable(drawable)
+        +SetZIndex(z)
+        +SetVisible(bool)
+        +GetVisible() bool
+        +GetScaledSize() vec2
+    }
+
+    class AllObjects {
+        #int m_object_id
+        #bool m_is_passable
+        #AllObjects(int initialId)
+        #AllObjects(drawable, zIndex, initialId)
+        +virtual ~AllObjects()
+        +virtual SetObjectId(int newId)
+        +GetObjectId() int
+        +virtual ObjectUpdate()
+        +GetVisible() bool
+        +virtual IsPassable() bool
+        +SetPassable(bool)
+    }
+
+    class Entity {
+        #int m_grid_x
+        #int m_grid_y
+        #bool m_can_react
+        #bool m_is_movable
+        #int m_current_frame
+        #shared_ptr~DynamicReplacementComponent~ m_replacement_comp
+        +Entity(id, imagePath, canReact)
+        +SetObjectId(int) override
+        +UpdateProperties(int)
+        +virtual Reaction(shared_ptr~Player~) = 0*
+        +ObjectUpdate() override
+        +SetReplacementComponent(comp)
+        +SetGridPosition(x, y)
+        +SetMovable(bool) / GetMovable() bool
+        +CanReact() bool
+    }
+
+    class Actor {
+        #int m_hp
+        #int m_attack
+        #int m_defense
+        #int m_level
+        #int m_agility
+        #int m_exp
+        +Actor(id, imagePath, canReact)
+        +Get/Set Hp, Attack, Defense, Level, Agility, Exp
+    }
+
+    class MapBlock {
+        -int m_current_local_frame
+        +MapBlock(int initialId)
+        +SetObjectId(int) override
+        +ObjectUpdate() override
+        +GetImageSize() vec2
+        -GetImagePath(int) string
+        -UpdateProperties(int)
+    }
+
+    class Player {
+        -PlayerDirection m_direction
+        -int m_current_frame
+        -bool m_is_animating
+        -float m_animation_timer
+        -float FRAME_INTERVAL
+        -int m_yellow_keys
+        -int m_blue_keys
+        -int m_red_keys
+        -int m_coins
+        -int m_pending_shop_id
+        +Player()
+        +Move(dx, dy, roadmap, thingsmap)
+        +SyncPosition(roadmap)
+        +Reaction(player) override
+        +ObjectUpdate() override
+        +UseKey(Effect, count) bool
+        +ApplyEffect(Effect, value)
+        +ResetStateAfterFloorChange()
+        +Get YellowKeys/BlueKeys/RedKeys/Coins
+        +SetPendingShop(id) / GetPendingShop()
+        -UpdateSprite()
+    }
+
+    class Door {
+        -int MAX_ANIMATION_FRAMES$
+        -shared_ptr~Animation~ m_animation
+        +Door(int id)
+        +Reaction(player) override
+        +ObjectUpdate() override
+    }
+
+    class Enemy {
+        %% (尚未實作完整戰鬥邏輯)
+        +Enemy(int id)
+        +Reaction(player) override
+    }
+
+    class NPC {
+        +NPC(int id)
+        +Reaction(player) override
+    }
+
+    class Item {
+        -NoticeCallback m_notice_callback
+        +Item(int id, NoticeCallback)
+        +Reaction(player) override
+    }
+
+    class Stair {
+        -TriggerCallback m_on_trigger
+        +Stair(id, callback)
+        +Reaction(player) override
+    }
+
+    class Shop {
+        -ShopData m_session_data
+        -int m_transaction_count
+        -bool m_is_open
+        -int m_selection
+        -OpenCallback m_on_open
+        -CloseCallback m_on_close
+        +Shop(id, onOpen, onClose)
+        +Reaction(player) override
+        +Open(player, MenuUI)
+        +Close(MenuUI)
+        +HandleInput(player, MenuUI)
+        +IsOpen() bool
+        +GetSelectionIndex() int
+        #BuildShopData()
+        #CanAfford(ShopOption, Player) bool
+        #ExecutePurchase(ShopOption, player)
+    }
+
+    class Background {
+        +Background()
+        +NextPhase(int phase)
+        +SetLoadingFrame(int frame)
+        -ImagePath(int) string
+    }
+
+    class NumericDisplayText {
+        -shared_ptr~Text~ m_text_drawable
+        -string m_prefix
+        -string m_suffix
+        -int m_number
+        -bool m_show_number
+        -bool m_show_text
+        -bool m_needs_update
+        +NumericDisplayText(fontPath, fontSize)
+        +SetPrefix(string)
+        +SetSuffix(string)
+        +SetNumber(int)
+        +SetShowNumber(bool)
+        +SetShowText(bool)
+        +SetColor(Color)
+        +UpdateDisplayText()
+    }
+
+    %% ── 繼承關係 ──
+    GameObject <|-- AllObjects
+    GameObject <|-- Background
+    GameObject <|-- NumericDisplayText
+    AllObjects <|-- MapBlock
+    AllObjects <|-- Entity
+    Entity <|-- Door
+    Entity <|-- NPC
+    Entity <|-- Item
+    Entity <|-- Stair
+    Entity <|-- Shop
+    Entity <|-- Actor
+    Actor <|-- Player
+    Actor <|-- Enemy
 ```
 
-### 繼承關係圖
+## 非繼承類別（管理器與 UI）
+
 ```mermaid
 classDiagram
-    class GameObject["Util::GameObject"]
-    
-    GameObject --> Background
-    GameObject --> NumericDisplayText
-    GameObject --> AllObjects
-    
-    AllObjects --> MapBlock
-    AllObjects --> Entity
-    
-    Entity --> Door
-    Entity --> Enemy
-    Entity --> NPC
-    Entity --> Item
-    Entity --> Stair
-    Entity --> Shop
-    Entity --> Player
+    direction TB
+
+    class App {
+        -STATE m_current_state
+        -GameState m_game_state
+        -Renderer m_root
+        -shared_ptr~Background~ m_background
+        -shared_ptr~FloorMap~ m_road_map
+        -shared_ptr~FloorMap~ m_things_map
+        -shared_ptr~StatusUI~ m_status_ui
+        -shared_ptr~Player~ m_player
+        -shared_ptr~MenuUI~ m_menu_ui
+        -int m_preview_floor
+        -float m_item_notice_timer
+        -float m_loading_timer
+        -int m_loading_frame
+        -Shop* m_active_shop
+        +GetCurrentState() STATE
+        +Start()
+        +Update()
+        +End()
+        +ChangeFloor(int delta)
+        +TeleportToFloor(int story, int stairId)
+        +ShowItemNotice(string)
+        +HideItemNotice()
+        +Restart()
+        -ValidTask()
+        -InitializeGame()
+    }
+
+    class FloorMap {
+        -Renderer* m_root
+        -ObjectFactory m_factory
+        -vector~3D shared_ptr AllObjects~ m_objects
+        -int m_current_story
+        -float DEFAULT_SIZE
+        -vec2 m_base_size
+        -float m_center_x/y
+        -float m_scale_x/y
+        -float m_z_index
+        +FloorMap(factory, centerX, centerY, ...)
+        +GetBaseSize() vec2
+        +LoadFloorData(MapCell / int)
+        +GetObject(x, y, story) AllObjects
+        +IsPassable(x, y, story) bool
+        +SwitchStory(int)
+        +Update()
+        +GetCurrentStory() int
+        +SetObject(x, y, id, story)
+        +SetAllVisible(bool)
+        +FindFirstObjectPosition(id, story) ivec2
+        +FindFirstObjectOfId(id, story) AllObjects
+        +SetRenderer(Renderer*)
+        +AddToRenderer()
+    }
+
+    class MenuUI {
+        -MenuType m_current_menu
+        -shared_ptr notice_bg / fly_bg / item_notice_bg / shop_bg
+        -shared_ptr floor_text / enter_text / quit_text
+        -shared_ptr up_arrow / down_arrow
+        -shared_ptr item_notice_text / item_confirm_text
+        -shared_ptr shop_icon / shop_title / shop_selector
+        -vector shop_prompts / shop_options
+        +MenuUI()
+        +SetVisible(bool, MenuType)
+        +AddToRoot(Renderer)
+        +SetTargetFloor(int)
+        +SetItemNotice(string)
+        +SetShopData(ShopData)
+        +UpdateShopSelection(int)
+        +UpdateArrows(int)
+        -InitText(text, prefix, x, y, size)
+    }
+
+    class StatusUI {
+        -shared_ptr yellow/blue/red_key_text
+        -shared_ptr coin/level/hp/attack/defense/agility/exp/floor_text
+        -shared_ptr manual_hint_text
+        -unsigned int m_default_font_size
+        +StatusUI(fontSize)
+        +Update(Player, floorNum)
+        +SetVisible(bool)
+        +AddToRoot(Renderer)
+        -InitNumericText(text, x, y, color, size)
+    }
+
+    class DynamicReplacementComponent {
+        -ReplacementCallback m_callback
+        +DynamicReplacementComponent(callback)
+        +ReplaceWith(x, y, id)
+    }
+```
+
+## 使用關係圖
+
+```mermaid
+classDiagram
+    direction LR
+
+    App ..> RegistryLoader : calls LoadAllData()
+    App *-- Background : m_background
+    App *-- FloorMap : m_road_map, m_things_map
+    App *-- Player : m_player
+    App *-- StatusUI : m_status_ui
+    App *-- MenuUI : m_menu_ui
+    App ..> Shop : m_active_shop (non-owning)
+
+    FloorMap o-- AllObjects : m_objects (3D grid)
+    FloorMap ..> MapBlock : roadObjFactory creates
+    FloorMap ..> Entity : thingsObjFactory creates
+
+    Entity *-- DynamicReplacementComponent : m_replacement_comp
+    Entity ..> ObjectMetadata : reads from GlobalObjectRegistry
+
+    Player ..> FloorMap : SyncPosition / Move
+    Player ..> Entity : Reaction via shared_from_this
+
+    Shop ..> MenuUI : drives UI in Open/Close/HandleInput
+    Shop ..> Player : reads & modifies stats
+
+    Door ..> Player : UseKey in Reaction
+    Item ..> Player : ApplyEffect in Reaction
+    Stair ..> App : TriggerCallback→ChangeFloor
+
+    StatusUI *-- NumericDisplayText : 12 text displays
+    MenuUI *-- NumericDisplayText : text elements
+
+    RegistryLoader ..> AppUtil : populates GlobalObjectRegistry
+    AppUtil o-- ObjectMetadata : Registry holds
+    ObjectMetadata *-- ItemComponent : optional
+    ObjectMetadata *-- CombatComponent : optional
+    ObjectMetadata *-- DialogComponent : optional
+    ObjectMetadata *-- DoorComponent : optional
+    ObjectMetadata *-- ShopComponent : optional
+    ObjectMetadata *-- StairComponent : optional
+```
+
+## 資料結構與元件 (AppUtil Namespace)
+
+```mermaid
+classDiagram
+    class ObjectMetadata {
+        +string name
+        +string folder
+        +bool is_passable
+        +bool is_animated
+        +int animation_frames
+        +shared_ptr~ItemComponent~ item_props
+        +shared_ptr~CombatComponent~ combat_props
+        +shared_ptr~DialogComponent~ dialog_props
+        +shared_ptr~DoorComponent~ door_props
+        +shared_ptr~ShopComponent~ shop_props
+        +ObjectMetadata(n, f, p)
+        +ObjectMetadata(n, f, p, frames)
+        +Item(n, f, effects)$ ObjectMetadata
+    }
+    class ItemComponent {
+        +vector~SubEffect~ effects
+    }
+    class CombatComponent {
+        +int hp
+        +int attack
+        +int defense
+        +int exp_reward
+        +int coin_reward
+    }
+    class DialogComponent {
+        +vector~string~ lines
+    }
+    class DoorComponent {
+        +int yellow_key
+        +int blue_key
+        +int red_key
+        +bool is_passive
+    }
+    struct ShopComponent {
+        +string title
+        +string icon_path
+        +int transaction_count
+        +ShopPricingType pricing_type
+    }
+    class StairId {
+        <<enumeration>>
+        UP = 701
+        DOWN = 702
+    }
+    struct StairComponent {
+        +int floor_delta
+    }
+    struct SubEffect {
+        +Effect type
+        +int value
+    }
+    class ShopOption {
+        +string text
+        +vector~SubEffect~ effects
+    }
+    class ShopData {
+        +string title
+        +string icon_path
+        +vector~string~ prompts
+        +int transaction_count
+        +vector~ShopOption~ options
+    }
+    class MapCell {
+        +int id
+    }
+
+    ObjectMetadata *-- ItemComponent
+    ObjectMetadata *-- CombatComponent
+    ObjectMetadata *-- DialogComponent
+    ObjectMetadata *-- DoorComponent
+    ObjectMetadata *-- ShopComponent
+    ObjectMetadata *-- StairComponent
+    ItemComponent *-- SubEffect
+    ShopOption *-- SubEffect
+    ShopData *-- ShopOption
 ```
 
 ---
 
-架構設計方案：
+## 一、基底物件 (`AllObjects`)
+- 繼承 `Util::GameObject`。
+- 提供所有地圖物件的基礎：`m_object_id` (物件 ID)、座標 (`m_Transform`)、顯隱控制 (`m_Visible`)。
+- **統一通行性判斷**：提供 `virtual bool IsPassable()` 與成員 `m_is_passable`（預設 `true`）。
+- **虛擬函數**：`virtual void ObjectUpdate()` — 預設空實作，供子類覆寫。
+- **建構子**：兩個 `protected` 建構子，一個只接收 ID，一個同時接收 `Drawable` 和 `zIndex`。
 
-類別架構 (Entity 系統)
-
-一、基底物件 (`AllObjects`)
-- 繼承 `Util::GameObject`
-- 提供所有地圖物件的基礎：`ObjectId`、座標 (`Transform`)、顯隱控制。
-- **統一通行性判斷**：提供 `virtual bool IsPassable()` 與成員 `m_is_passable`。
-- 虛擬函數：`ObjectUpdate()`。
-
-二、實體系統 (`Entity` 系統)
+## 二、地圖區塊 (`MapBlock`)
 - 繼承 `AllObjects`。
-- **互動基類**：繼承並實作 `virtual void Reaction(Player*) = 0;`。
-- **通行性**：繼承自 `AllObjects`，預設為 `false` (阻擋)。
-- **實作分離**：所有衍生實體 (`Stair`, `Shop`, `Item` 等) 一律採用 `.hpp` 聲明與 `.cpp` 實作分離模式。
-- **數據驅動與組件化架構**：
-    - 核心：`AppUtil::GlobalObjectRegistry` 管理所有物件的元數據 (`ObjectMetadata`)。
-    - **組件化設計 (Component-based)**：`ObjectMetadata` 採用插槽式設計，包含 `ItemComponent`、`CombatComponent`、`DialogComponent` 與 `DoorComponent`。物件僅在需要時掛載對應組件，避免結構臃腫。
-    - **動態加載機制**：透過 `AppUtil::RegistryLoader` 在遊戲啟動時從 `Block.csv`, `Item.csv`, `Door.csv`, `Stair.csv` 等外部檔案自動填充註冊表。
-    - **資源定位**：透過 `AppUtil::GetIdResourcePath(id)` 自動從註冊表獲取屬性並動態合成路徑 (例如：`{401, "slime", "Enemy"}` -> `"/bmp/Enemy/slime.bmp"`)。
-- **多型衍生**：
-    1. **`Player` (主角)**：
-        - 繼承自 `Entity`，由 `App` 持有。
-        - 負責處理 `Util::Input`、背包系統、數值計算。
-        - **座標同步**：直接使用繼承自 `Entity` 的 `m_grid_x/y` 成員 (無 Shadowing)。
-        - **Z-Index 設定為 -3**。
-    2. **`Character` (角色/怪物/NPC)**：包含 `NPC`, `Enemy` 等。
-    3. **`Item` (道具)**：包含鍵、藥水等。
-    4. **`Stair` (樓梯)**：具備 `m_on_trigger` 回調函式，觸發時呼叫 `App::ChangeFloor`。設定 `m_is_passable = true`。
-    5. **`Shop` (商店系統)**：
-        - **自治 Session 模式**：將商店的 UI 驅動、數值判斷 (`CanAfford`) 與交易執行從 `App` 抽離。
-        - **按鍵處理**：直接在 `Shop::HandleInput` 處理方向鍵切換與確認交易。
-        - **動態價格範式**：透過 `BuildShopData()` 實作如「貪婪神」隨購買次數漲價的特殊邏輯。
-        - **解耦設計**：透過回調函式 (`OpenCallback` / `CloseCallback`) 與 `App` 通訊進行遊戲狀態切換。
+- 用於 `RoadMap` 的地板/牆壁等靜態或動畫方塊。
+- **屬性**：`m_current_local_frame` — 動畫當前幀數。
+- **方法覆寫**：
+  - `SetObjectId(int)` override — 更新 ID 並重新載入圖片與通行性。
+  - `ObjectUpdate()` override — 從 `TileAnimationManager::GetGlobalFrame2()` 同步全域動畫幀。
+- **私有方法**：`GetImagePath(int)` 合成資源路徑、`UpdateProperties(int)` 根據 `GlobalObjectRegistry` 載入圖片與通行性。
+- **特殊**：ID 0 硬編碼為不可見但保留圖片尺寸供佈局取樣。
 
-三、層級控制 (Z-Index 渲染順序)
-- **Z = 90 ~ 95 (UI 頂層選單)**：`MenuUI` 及其子物件 (說明書、電梯、怪物手冊)。
-- **Z = -0.1 (UI 提示層)**：`StatusUI` 的操作提示文字。
-- **Z = -3 (主角層)**：單一 `Player` 實例。
-- **Z = -4 (物件層)**：`ThingsMap` (怪物、道具、NPC、樓梯)。
-- **Z = -5 (地板層)**：`RoadMap` (牆壁、地板)。
+## 三、實體基類 (`Entity`)
+- 繼承 `AllObjects`。
+- **互動基類**：宣告 `virtual void Reaction(shared_ptr<Player>) = 0`（純虛擬函數）。
+- **屬性**：`m_grid_x/y`（網格座標）、`m_can_react`（是否可互動）、`m_is_movable`、`m_current_frame`（動畫幀）、`m_replacement_comp`（動態替換組件）。
+- **通行性**：建構時從 `GlobalObjectRegistry` 讀取，未知 ID 預設 `false`。
+- **覆寫方法**：
+  - `SetObjectId(int)` override — 更新 ID 並呼叫 `UpdateProperties`。
+  - `ObjectUpdate()` override — 對有動畫幀數的物件，重新載入動態路徑圖片。
+- **組件持有**：`DynamicReplacementComponent` — 用於物件被消滅後呼叫 `FloorMap::SetObject` 替換為空地。
 
-地圖系統 (FloorMap 3D 結構)
+## 四、多型衍生實體 (Entity 子類)
 
-一、多樓層存儲與切換
-- 使用 **3D 陣列 `[story][y][x]`** 支援多樓層。
-- **`App::ChangeFloor(int delta)`**：中心化切換邏輯，同步更新 `RoadMap`, `ThingsMap` 的樓層指標，並觸發 `Player->SyncPosition`。
-- **`App::TeleportToFloor(int story, int stairId)`**：智慧傳送邏輯。會自動在目標樓層搜尋指定 ID 的樓梯座標（如 701-上樓、702-下樓），並將玩家定位於該座標。
+### 4.0 `Actor` (戰鬥實體)
+- 繼承 `Entity`。戰鬥角色的共同基類。
+- **屬性**：戰鬥數值 (`m_hp`, `m_attack`, `m_defense`, `m_level`, `m_agility`, `m_exp`)。
+- **建構**：從 `GlobalObjectRegistry` 的 `CombatComponent` 讀取並初始化預設數值。
 
-二、物件管理
-- `FloorMap` 透過 `BlockFactory` 根據 ID 動態生成對應的衍生類別。
-- **物件搜尋法 (`FindFirstObjectPosition`)**：支援在指定樓層中搜尋第一個符合 ID 的網格座標，為電梯傳送提供基礎。
-- **排版校準 (ID 0 Sampling)**：系統會取樣 ID 0 (映射為 road 資源) 的尺寸來決定全地圖 11x11 網格的基礎間距，確保精準對齊。
-- `Stair` 在建立時會被注入 lambda 閉包，使其能安全觸發 `App` 的樓層切換方法。
+### 4.1 `Player` (主角)
+- 繼承 `Actor` 與 `std::enable_shared_from_this<Player>`。
+- **Z-Index**：-3。初始位置 (5, 9)。
+- **屬性**：方向 (`PlayerDirection` 枚舉: DOWN/UP/LEFT/RIGHT)、動畫狀態 (`m_is_animating`, `m_animation_timer`, `m_current_frame`, `FRAME_INTERVAL=0.05f`)、鑰匙 (`m_yellow/blue/red_keys`)、金幣 (`m_coins`)、`m_pending_shop_id`。
+- **方法**：
+  - `Move(dx, dy, roadmap, thingsmap)` — 邊界檢查 → `RoadMap::IsPassable` → `ThingsMap` 實體互動 → 移動/阻擋判斷 → 動畫觸發。
+  - `SyncPosition(roadmap)` — 從 `FloorMap` 借用同位置物件的 `m_Transform`。
+  - `UseKey(Effect, count)` — 扣除鑰匙並回傳是否成功。
+  - `ApplyEffect(Effect, value)` — 套用道具效果至角色數值 (支援 HP/ATK/DEF/AGI/EXP/Level/Keys/Coin/Weak/Poison)。
+  - `ResetStateAfterFloorChange()` — 強制重置方向為 DOWN、停止動畫並切換為 `player_1.png`（用於上下樓後的視覺重置）。
+  - `ObjectUpdate()` override — 驅動 4 幀走路動畫循環。
+  - `Reaction()` override — 空實作 (Log 提示)。
+- **私有**：`UpdateSprite()` — 根據方向與幀數動態合成路徑 `player_{dir}{frame}.BMP`。
 
-三、交互觸發流程
-1. `Player` 嘗試移動。
-2. 檢查 `RoadMap` 是否可通行 (`IsPassable`)。
-3. 如果目標位置在 `ThingsMap` 有物件，呼叫該物件的 `Reaction()`。
-4. **穿透與阻擋條件**：
-    - 若物件為不可通行且 Reaction 後仍為 `Visible`，則阻擋移動。
-    - 若物件 `IsPassable()` 為 `true` (如樓梯、物品)，則允許重疊。
-4. 根據 `Reaction()` 結果決定移動是否成功或觸發特殊事件。
+### 4.2 `Door` (門)
+- **屬性**：`MAX_ANIMATION_FRAMES=5`、`shared_ptr<Util::Animation> m_animation`。
+- **建構**：載入 5 帧開門動畫圖片，建立 `Util::Animation` (non-looping, 100ms)。
+- **`Reaction()` override** — 從 `GlobalObjectRegistry` 查詢 `DoorComponent`：
+  - 被動門 (`is_passive`) 直接返回。
+  - 無需鑰匙的門直接播放開門動畫。
+  - 需要鑰匙的門呼叫 `Player::UseKey` 逐一扣除，成功則播放動畫。
+- **`ObjectUpdate()` override** — 偵測動畫結束後，透過 `DynamicReplacementComponent` 將自身替換為 ID 0 (空地)。
 
-四、UI 系統 (文字與數值顯示)
-- **`NumericDisplayText`**：
-    - 繼承自 `Util::GameObject`。
-    - **格式**：`Prefix` + `Number` + `Suffix` (例如：`m_Number` + `" F"` 顯示樓層)。
-    - **更新機制**：手動呼叫 `UpdateDisplayText()` 渲染文字。
-- **`StatusUI` (狀態管理器)**：
-    - **中心化更新**：集中管理黃/藍/紅鑰匙數量與樓層顯示。
-    - **封裝邏輯**：`App` 僅需呼叫 `m_StatusUI->Update(player, story)` 即可完成所有 UI 同步。
-    - **字體配置**：支援建構時注入預設字體大小，靈活調整排版。
+### 4.3 `Enemy` (怪物)
+- **建構**：`Actor(id, "", true)` — 使用自動資源路徑。
+- **註記**：**尚未實作全盤戰鬥系統**，目前僅具備 Actor 的數值儲存結構。
+- **`Reaction()` override** — 目前記錄 Log + 透過 `DynamicReplacementComponent` 替換為空地。(TODO: 戰鬥邏輯)
 
-六、選單與說明系統 (`MenuUI`)
-- **整合管理模式**：將所有「覆蓋選單」由單一 `MenuUI` 類別管理，根據計時與 `GameState` 切換子面板。
-- **模態對話框 (`ITEM_DIALOG`)**：新增 `ITEM_DIALOG` 遊戲狀態。當觸發道具對話時，遊戲會進入此狀態並暫停移動與動畫，直到玩家按下 `Space/Enter` 確認。
-- **子組件包含**：
-    - **Notice Panel**：顯示 `notice.bmp` 背景，支援全畫面覆蓋與遊戲暫停。
-    - **Fast Elevator Panel**：包含樓層顯示、導引箭頭與操作提示文字。
-    - **Item Notice Panel**：顯示 `itemDialog.bmp` 背景、獲得物品的文字，以及 `-Space-` 操作提示。
-    - **未來擴充**：預留「怪物手冊」顯示槽位與資源。
-- **動態回饋**：根據選單類型的數值 (如電梯樓層) 動態切換箭頭顏色及文字內容。
+### 4.4 `NPC` (NPC)
+- **建構**：`Entity(id, "", true)` — 使用自動資源路徑。
+- **`Reaction()` override** — 目前記錄 Log。(TODO: 對話系統)
 
-五、數據驅動層 (`AppUtil::RegistryLoader`)
-- **單一事實來源 (Single Source of Truth)**：整合 ID、名稱、資源目錄、通行性、動畫幀數及各類型組件數值。
-- **多樣化效果 (`Effect`)**：支援 `HP`, `ATK`, `DEF`, `AGI`, `EXP`, `Level`, `Keys`, `Coins`, `Weak`, `Poison` 等多種道具效果。
-- **動態解析**：使用 `AppUtil::MapParser::ParseCsvToStrings` 進行複雜屬性數據的載入。
-- **擴充性**：新增遊戲物件 or 修改數值只需調整 `Datas/Data/` 下的 CSV 檔案，無需修改任何 C++ 代碼或重新編譯。
-- **特殊鎖定**：ID 0 (道路) 於程式碼中硬編碼保留，確保基礎地景渲染的穩定性。
+### 4.5 `Item` (道具)
+- **屬性**：`NoticeCallback m_notice_callback` — 用於觸發道具對話框。
+- **`Reaction()` override** — 從 `GlobalObjectRegistry` 讀取 `ItemComponent` 與 `DialogComponent`：
+  - 若有 `DialogComponent`，透過 callback 呼叫 `App::ShowItemNotice`。
+  - 遍歷 `ItemComponent.effects`，對每個 `SubEffect` 呼叫 `Player::ApplyEffect`。
+  - 最後透過 `DynamicReplacementComponent` 替換為空地。
+
+### 4.6 `Stair` (樓梯)
+- **屬性**：`TriggerCallback m_on_trigger` — lambda 回調，指向 `App::ChangeFloor`。
+- **`Reaction()` override** — 從 `GlobalObjectRegistry` 讀取 `StairComponent` 的 `floor_delta`：
+  - 呼叫 `m_on_trigger(floor_delta)`。
+- **設定**：`m_is_passable = true` (由 CSV 定義)。
+
+### 4.7 `Shop` (商店)
+- **屬性**：`ShopData m_session_data`、`m_transaction_count`、`m_is_open`、`m_selection`、`OpenCallback m_on_open`、`CloseCallback m_on_close`。
+- **`Reaction()` override** — 僅設定 `Player::SetPendingShop(m_object_id)`，由 `App::Update` 在下一幀觸發 `Open()`。
+- **Session 生命週期**：
+  - `Open()` — 從 `GlobalObjectRegistry` 讀取 `ShopComponent` → `BuildShopData()` → 設定 `MenuUI` → 呼叫 `m_on_open` (切換 `GameState::SHOP`)。
+  - `Close()` — 隱藏 `MenuUI` → 呼叫 `m_on_close` (回歸 `GameState::PLAYING`)。
+  - `HandleInput()` — 處理 W/S/方向鍵切換選項、Space/Enter 確認購買、Esc/Q 離開。
+- **保護方法**：
+  - `BuildShopData()` — 從 CSV 載入對話與選項，ID 602 (貪婪神) 實作 `cost = 20 + count + (count > 25 ? (count-25)*4 : 0)` 動態漲價。
+  - `CanAfford()` — 檢查玩家是否有足夠資源 (Coin/EXP/HP/Keys)。
+  - `ExecutePurchase()` — 遍歷 `ShopOption.effects` → `Player::ApplyEffect`，並遞增 `m_transaction_count`。
+
+## 五、背景 (`Background`)
+- 繼承 `Util::GameObject`。Z-Index = -10。
+- `NextPhase(int)` — 切換場景背景圖。
+- `SetLoadingFrame(int)` — 播放載入動畫幀 (`loading1~4.BMP`)。
+
+## 六、文字顯示 (`NumericDisplayText`)
+- 繼承 `Util::GameObject`。
+- **格式**：`Prefix` + (`Number` if `m_show_number`) + `Suffix`。
+- **髒標記**：`m_needs_update`，任何 Setter 設定後需手動呼叫 `UpdateDisplayText()` 生效。
+- 內部持有 `shared_ptr<Util::Text>` 做實際渲染。
+
+## 七、動態替換組件 (`DynamicReplacementComponent`)
+- **獨立類別**（非繼承任何基類）。
+- 持有 `ReplacementCallback = function<void(int x, int y, int id)>`。
+- `ReplaceWith(x, y, id)` — 呼叫回調，實際指向 `FloorMap::SetObject`。
+- 由 `Entity` 持有，`Door/Enemy/Item` 在 `Reaction()` 結束時使用。
+
+## 八、地圖系統 (`FloorMap`)
+- **獨立類別**，不繼承任何基類。
+- **3D 存儲**：`vector<vector<vector<shared_ptr<AllObjects>>>> m_objects`，索引 `[story][y][x]`，尺寸 `TOTAL_STORY × 11 × 11`。
+- **工廠模式**：接收 `ObjectFactory = function<shared_ptr<AllObjects>(int id)>` 建立物件。
+  - `roadObjFactory` → 生產 `MapBlock`。
+  - `thingsObjFactory` → 依 ID 範圍生產 `Item(200~299)`, `Door(300~399)`, `Enemy(400~499)`, `NPC(500~599)`, `Shop(600~699)`, `Stair(700~799)`。
+- **核心方法**：
+  - `LoadFloorData()` — 接收 CSV 解析結果，替換更新網格物件。
+  - `SwitchStory(int)` — 隱藏當前樓層物件、顯示新樓層物件。
+  - `Update()` — 遍歷當前樓層所有可見物件呼叫 `ObjectUpdate()`。
+  - `SetObject(x, y, id)` — 動態替換單格物件 (由 `DynamicReplacementComponent` 呼叫)。
+  - `FindFirstObjectPosition(id)` / `FindFirstObjectOfId(id)` — 搜尋物件座標/指標。
+- **排版校準**：取樣 ID 0 物件尺寸決定 11×11 網格間距。
+
+## 九、App (遊戲核心控制器)
+- **狀態機**：`App::STATE` (START/UPDATE/END) 控制生命週期，`AppUtil::GameState` 控制遊戲邏輯狀態。
+- **GameState 列舉**：`MAIN_MENU(0)` → `LOADING(5)` → `PLAYING(1)` ↔ `INSTRUCTIONS(2)` / `FAST_ELEVATOR(3)` / `ITEM_DIALOG(4)` / `SHOP(6)`。
+- **初始化流程** (`InitializeGame`)：
+  1. 建立 `roadObjFactory` / `thingsObjFactory`。
+  2. 從 CSV 載入所有樓層地圖數據至 `m_road_map` 與 `m_things_map`。
+  3. 初始化 `StatusUI`、`Player`、`MenuUI`。
+- **按鍵分配**：
+  - WASD / 方向鍵 → 移動 / 選單導航。
+  - F → 快速電梯 (FAST_ELEVATOR)。
+  - L → 說明書 (INSTRUCTIONS)。
+  - R → 重新開始。
+  - 8/2 → 直接切換樓層 (DEBUG)。
+  - ESC → 退出 / 關閉商店。
+- **商店流程**：`Player::Reaction` 設定 `m_pending_shop_id` → `App::Update` 偵測後呼叫 `Shop::Open` → 進入 `GameState::SHOP` → `Shop::HandleInput` 處理 → `Shop::Close` 回歸 `PLAYING`。
+- `ChangeFloor(delta)` — 切換樓層並同步玩家位置。
+- `TeleportToFloor(story, stairId)` — 傳送至指定樓層的指定樓梯座標。
+- `Restart()` — 重置所有狀態，回到 `MAIN_MENU`。
+
+## 十、UI 系統
+
+### 10.1 `StatusUI` (狀態面板)
+- **獨立類別**，持有 12 個 `NumericDisplayText` 實例。
+- 顯示：等級、HP、ATK、DEF、AGI、EXP、黃/藍/紅鑰匙、金幣、樓層、操作提示 `-Press (L)-`。
+- `Update(Player, floorNum)` — 從 `Player` 讀取所有數值並刷新文字。
+- Z-Index = -3 (StatusUI 文字)、-0.1 (提示文字)。
+
+### 10.2 `MenuUI` (選單覆蓋層)
+- **獨立類別**，管理所有模態覆蓋選單。
+- **MenuType 枚舉**：`NONE`, `NOTICE`, `FAST_ELEVATOR`, `ITEM_NOTICE`, `SHOP`。
+- **子面板**：
+  - **Notice Panel** (Z=90)：顯示 `notice.bmp` 說明書背景。
+  - **Fast Elevator Panel** (Z=90~92)：電梯背景 + 樓層數字 + 上下箭頭 + Enter/Quit 提示。箭頭依樓層範圍動態切換白/灰色。
+  - **Item Notice Panel** (Z=90~91)：`itemDialog.bmp` 背景 + 獲得物品文字 + `-Space-` 確認提示。
+  - **Shop Panel** (Z=90~92)：`ShopDialog.bmp` 背景 + 商店標題 + NPC 圖示 + 4 行對話 + 4 個選項 + 選擇箭頭。
+- `SetVisible(bool, MenuType)` — 先隱藏所有子元件，再依 MenuType 顯示對應面板。
+
+## 十一、層級控制 (Z-Index 渲染順序)
+| Z-Index | 層級 | 內容 |
+|---------|------|------|
+| 90 ~ 92 | UI 頂層選單 | `MenuUI` 背景、文字、箭頭 |
+| -0.1 | UI 提示層 | `StatusUI` 操作提示文字 |
+| -2 | Entity 預設層 | `Entity` 基底預設 Z-Index |
+| -3 | 主角層/狀態層 | `Player` 實例、`StatusUI` 數值 |
+| -4 | 物件層 | `ThingsMap` (怪物、道具、NPC、樓梯、商店) |
+| -5 | 地板層 | `RoadMap` (牆壁、地板、岩漿) |
+| -10 | 背景層 | `Background` 場景圖 |
+
+## 十二、數據驅動層 (`AppUtil::RegistryLoader`)
+- **單一事實來源**：`GlobalObjectRegistry` (`unordered_map<int, ObjectMetadata>`)。
+- **啟動加載**：`LoadAllData()` 清空並從 CSV 重新填充，支援重啟重置。
+- **分類加載**：
+  - `LoadBlocks("Block.csv")` — 牆壁、地板、岩漿等 (ID, Path, Name, Passable, Animation)。
+  - `LoadDoors("Door.csv")` — 門 + `DoorComponent` (黃/藍/紅鑰匙需求, 被動門標記)。
+  - `LoadItems("Item.csv")` — 道具 + `ItemComponent` (多效果) + `DialogComponent` (獲取對話)。
+  - `LoadStairs("Stair.csv")` — 樓梯 (ID, Path, Passable, Animation)。
+  - `LoadShops("Shop.csv")` — 商店 + `ShopComponent` (標題, 圖示, 初始交易數)。
+- **資源定位**：`GetIdResourcePath(id)` — 依 `ObjectMetadata` 動態合成路徑，區分靜態/動畫、Road/Shop 規則。
+- **多樣化效果**：支援 HP, ATK, DEF, AGI, EXP, Level, Keys, Coins, Weak, Poison。
+- **CSV 解析器 (`MapParser`)**：
+  - `ParseCsv()` → `vector<vector<MapCell>>` (整數 ID 地圖)。
+  - `ParseCsvToStrings()` → `vector<vector<string>>` (通用字串表)。
+  - `ParseCsvToRawIDs()` → `vector<vector<int>>` (原始 ID 矩陣)。
+  - `ParseShopOptions()` → `vector<ShopOption>` (商店選項與效果)。
+
+## 十三、交互觸發流程
+1. `Player::Move()` 嘗試移動。
+2. 邊界檢查 (11×11 網格)。
+3. 檢查 `RoadMap::IsPassable()` (牆壁阻擋)。
+4. 檢查 `ThingsMap` 目標物件：呼叫 `Entity::Reaction()`。
+5. **穿透與阻擋條件**：
+   - 若物件為不可通行且 Reaction 後仍為 `Visible` → 阻擋移動。
+   - 若物件 `IsPassable()` 為 `true` (樓梯、物品) → 允許重疊。
+6. 成功移動 → 更新 `m_grid_x/y` → `SyncPosition()` → 觸發走路動畫。
+
+## 十四、全域常數與工具
+| 常數 | 值 | 說明 |
+|------|----|------|
+| `WINDOW_WIDTH` | 1200 | 視窗寬度 |
+| `WINDOW_HEIGHT` | 800 | 視窗高度 |
+| `TOTAL_STORY` | 26 | 總樓層數 (0~25) |
+
+- **`TileAnimationManager::GetGlobalFrame2(ms)`** — 依全域時間回傳 1 或 2 (兩幀切換動畫)。
+- **`main.cpp`** — `Core::Context` 主迴圈驅動 `App::Start/Update/End`。
+
+## 十五、檔案清單
+
+### include/ (18 個標頭檔)
+| 檔案 | 類別 | 角色 |
+|------|------|------|
+| `AllObjects.hpp` | `AllObjects` | 所有地圖物件基類 |
+| `App.hpp` | `App` | 遊戲核心控制器 |
+| `AppUtil.hpp` | namespace `AppUtil` | 元數據、組件、工具、常數 |
+| `Background.hpp` | `Background` | 場景背景 |
+| `Door.hpp` | `Door` | 門實體 |
+| `DynamicReplacementComponent.hpp` | `DynamicReplacementComponent` | 動態替換組件 |
+| `Enemy.hpp` | `Enemy` | 怪物實體 |
+| `Entity.hpp` | `Entity` | 互動實體基類 |
+| `FloorMap.hpp` | `FloorMap` | 多樓層地圖管理 |
+| `Item.hpp` | `Item` | 道具實體 |
+| `MapBlock.hpp` | `MapBlock` | 地板/牆壁方塊 |
+| `MenuUI.hpp` | `MenuUI` | 選單覆蓋層 |
+| `NPC.hpp` | `NPC` | NPC 實體 |
+| `NumericDisplayText.hpp` | `NumericDisplayText` | 數字/文字顯示 |
+| `Player.hpp` | `Player` | 主角 |
+| `Shop.hpp` | `Shop` | 商店實體 |
+| `Stair.hpp` | `Stair` | 樓梯實體 |
+| `StatusUI.hpp` | `StatusUI` | 狀態面板 |
+
+### src/ (19 個原始檔)
+| 檔案 | 對應類別 | 說明 |
+|------|---------|------|
+| `main.cpp` | — | 程式進入點 |
+| `App.cpp` | `App` | 遊戲主迴圈、狀態機、初始化 |
+| `AppUtil.cpp` | `AppUtil` | 全域註冊表、CSV 解析器、RegistryLoader |
+| `AllObjects.cpp` | `AllObjects` | 建構子實作 |
+| `Entity.cpp` | `Entity` | 建構子、屬性更新、動畫更新 |
+| `MapBlock.cpp` | `MapBlock` | ID 切換、動畫幀同步 |
+| `FloorMap.cpp` | `FloorMap` | 地圖載入、樓層切換、物件搜尋 |
+| `Player.cpp` | `Player` | 移動、碰撞、效果套用、動畫 |
+| `Door.cpp` | `Door` | 開門動畫、鑰匙扣除、動態替換 |
+| `Enemy.cpp` | `Enemy` | 戰鬥(TODO)、動態替換 |
+| `NPC.cpp` | `NPC` | 對話(TODO) |
+| `Item.cpp` | `Item` | 效果套用、對話觸發、動態替換 |
+| `Stair.cpp` | `Stair` | 樓層切換觸發 |
+| `Shop.cpp` | `Shop` | 商店 Session 完整流程 |
+| `Background.cpp` | `Background` | 場景/載入圖切換 |
+| `NumericDisplayText.cpp` | `NumericDisplayText` | 文字渲染邏輯 |
+| `DynamicReplacementComponent.cpp` | `DynamicReplacementComponent` | 回調執行 |
+| `MenuUI.cpp` | `MenuUI` | 選單初始化、顯隱、數據綁定 |
+| `StatusUI.cpp` | `StatusUI` | 數值刷新、文字初始化 |

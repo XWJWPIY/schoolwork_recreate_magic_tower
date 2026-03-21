@@ -1,12 +1,19 @@
 #ifndef PLAYER_HPP
 #define PLAYER_HPP
 
-#include "Entity.hpp"
+#include "Actor.hpp"
 #include "FloorMap.hpp"
 #include <memory>
 
-class Player : public Entity, public std::enable_shared_from_this<Player> {
+class Player : public Actor, public std::enable_shared_from_this<Player> {
 public:
+  enum class PlayerDirection {
+    DOWN = 1,
+    UP = 2,
+    LEFT = 3,
+    RIGHT = 4
+  };
+
   Player();
 
   // Movement using grid coordinates
@@ -23,7 +30,6 @@ public:
   int GetBlueKeys() const { return m_blue_keys; }
   int GetRedKeys() const { return m_red_keys; }
 
-  void AddKey(int id);
   bool UseKey(AppUtil::Effect type, int count = 1);
 
   // Coin management
@@ -36,14 +42,12 @@ public:
   void SetPendingShop(int id) { m_pending_shop_id = id; }
   int GetPendingShop() const { return m_pending_shop_id; }
 
-public:
-  enum class PlayerDirection {
-    DOWN = 1,
-    UP = 2,
-    LEFT = 3,
-    RIGHT = 4
-  };
+  void ResetStateAfterFloorChange();
+  void SetDirection(PlayerDirection dir) { m_direction = dir; }
+  void SetIsAnimating(bool animate) { m_is_animating = animate; }
+  void SetCurrentFrame(int frame) { m_current_frame = frame; }
 
+public:
   void ObjectUpdate() override;
 
 private:

@@ -14,8 +14,6 @@ void Shop::Reaction(std::shared_ptr<Player> player) {
     player->SetPendingShop(m_object_id);
 }
 
-// ── Session lifecycle ──────────────────────────────────────────────────────
-
 void Shop::Open(std::shared_ptr<Player> player, MenuUI& ui) {
     auto it = AppUtil::GlobalObjectRegistry.find(m_object_id);
     if (it != AppUtil::GlobalObjectRegistry.end() && it->second.shop_props) {
@@ -46,7 +44,6 @@ void Shop::Close(MenuUI& ui) {
     if (m_on_close) m_on_close();
 }
 
-// ── Per-frame input ────────────────────────────────────────────────────────
 
 void Shop::HandleInput(std::shared_ptr<Player> player, MenuUI& ui) {
     if (!m_is_open || !player) return;
@@ -85,7 +82,6 @@ void Shop::HandleInput(std::shared_ptr<Player> player, MenuUI& ui) {
     }
 }
 
-// ── Protected helpers ──────────────────────────────────────────────────────
 
 bool Shop::CanAfford(const AppUtil::ShopOption& opt, const Player& player) const {
     for (const auto& eff : opt.effects) {
@@ -130,8 +126,8 @@ void Shop::BuildShopData() {
     if (m_session_data.options.empty()) m_session_data.options.push_back({"No Inventory Found", {}});
     m_session_data.options.push_back({"Exit", {}});
 
-    // Dynamic Price Scaling for Greed God (ID 602)
-    if (m_object_id == 602) {
+    // Dynamic Price Scaling for Greed God
+    if (shop.pricing_type == AppUtil::ShopPricingType::SCALING_GREED) {
         int cost = 20 + m_transaction_count + (m_transaction_count > 25 ? (m_transaction_count - 25) * 4 : 0);
         m_session_data.prompts.push_back(std::to_string(cost));
         for (auto& prompt : m_session_data.prompts) {

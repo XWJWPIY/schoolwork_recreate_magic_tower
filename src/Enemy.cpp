@@ -4,7 +4,7 @@
 #include "Util/Logger.hpp"
 
 Enemy::Enemy(int id)
-    : Entity(id, "", true) {}
+    : Actor(id, "", true) {}
 
 void Enemy::Reaction(std::shared_ptr<Player> player) {
   LOG_INFO("Entering battle! Enemy ID: {} ({})", m_object_id,

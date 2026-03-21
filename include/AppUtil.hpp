@@ -30,6 +30,17 @@ struct SubEffect {
     int value;
 };
 
+// Well-known ID mapping to avoid hardcoded literals
+enum class StairId : int {
+    UP = 701,
+    DOWN = 702
+};
+
+enum class ShopPricingType {
+    FIXED,
+    SCALING_GREED
+};
+
 // --- Components ---
 
 struct ItemComponent {
@@ -58,6 +69,10 @@ struct ShopComponent {
     std::string title = "Store Explorer";
     std::string icon_path = "";
     int transaction_count = 0;
+    ShopPricingType pricing_type = ShopPricingType::FIXED;
+};
+struct StairComponent {
+    int floor_delta = 0;
 };
 
 // --- Main Metadata ---
@@ -75,6 +90,7 @@ struct ObjectMetadata {
     std::shared_ptr<DialogComponent> dialog_props = nullptr;
     std::shared_ptr<DoorComponent>   door_props   = nullptr;
     std::shared_ptr<ShopComponent>   shop_props   = nullptr;
+    std::shared_ptr<StairComponent>  stair_props  = nullptr;
 
     // Picture Static Object (Wall, Road, NPC, etc.)
     ObjectMetadata(std::string n, std::string f, bool p)

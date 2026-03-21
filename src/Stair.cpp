@@ -11,10 +11,9 @@ void Stair::Reaction(std::shared_ptr<Player> player) {
   LOG_INFO("Using stairs... ID: {} ({})", m_object_id,
            AppUtil::GetIdString(m_object_id));
   if (m_on_trigger) {
-    if (m_object_id == 701) {
-      m_on_trigger(1); // Up
-    } else if (m_object_id == 702) {
-      m_on_trigger(-1); // Down
+    auto it = AppUtil::GlobalObjectRegistry.find(m_object_id);
+    if (it != AppUtil::GlobalObjectRegistry.end() && it->second.stair_props) {
+      m_on_trigger(it->second.stair_props->floor_delta);
     }
   }
 }

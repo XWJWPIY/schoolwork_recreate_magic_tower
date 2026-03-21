@@ -129,7 +129,7 @@ void RegistryLoader::LoadStairs(const std::string& path) {
     auto data = MapParser::ParseCsvToStrings(path);
     if (data.empty()) return;
 
-    // Header: ID,Path,Passable,Animation
+    // Header: ID,Path,Passable,Animation,floor_delta
     for (size_t i = 1; i < data.size(); ++i) {
         const auto& row = data[i];
         if (row.size() < 4) continue;
@@ -139,7 +139,17 @@ void RegistryLoader::LoadStairs(const std::string& path) {
         bool passable = (row[2] == "true");
         int frames = std::stoi(row[3]);
 
-        GlobalObjectRegistry.emplace(id, ObjectMetadata(res_name, "Stair", passable, frames));
+        ObjectMetadata meta(res_name, "Stair", passable, frames);
+        meta.stair_props = std::make_shared<StairComponent>();
+        if (row.size() >= 5 && !row[4].empty()) {
+            meta.stair_props->floor_delta = std::stoi(row[4]);
+        } else {
+            // Legacy mapping fallback during load time for stairs missing delta column
+            if (id == static_cast<int>(StairId::UP)) meta.stair_props->floor_delta = 1;
+            else if (id == static_cast<int>(StairId::DOWN)) meta.stair_props->floor_delta = -1;
+        }
+
+        GlobalObjectRegistry.emplace(id, std::move(meta));
     }
 }
 
@@ -168,6 +178,11 @@ void RegistryLoader::LoadShops(const std::string& path) {
         meta.shop_props->title = title;
         meta.shop_props->icon_path = icon_path;
         meta.shop_props->transaction_count = initial_transactions;
+
+        // Legacy mapping for Greed God
+        if (id == 602) {
+            meta.shop_props->pricing_type = ShopPricingType::SCALING_GREED;
+        }
 
         GlobalObjectRegistry.emplace(id, std::move(meta));
     }

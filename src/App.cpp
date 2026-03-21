@@ -343,6 +343,7 @@ void App::ChangeFloor(int delta) {
     m_things_map->SwitchStory(nextStory);
     LOG_INFO("Switched to story {}", nextStory);
     if (m_player) {
+      m_player->ResetStateAfterFloorChange();
       m_player->SyncPosition(m_road_map);
     }
     LOG_INFO("Player Position (Floor Switch): Floor {}, Grid({}, {})",
@@ -361,6 +362,7 @@ void App::TeleportToFloor(int targetStory, int targetStairId) {
       if (pos.x != -1) {
         m_player->SetGridPosition(pos.x, pos.y);
       }
+      m_player->ResetStateAfterFloorChange();
       m_player->SyncPosition(m_road_map);
     }
     LOG_INFO("Teleported to story {} at stair {}", targetStory, targetStairId);

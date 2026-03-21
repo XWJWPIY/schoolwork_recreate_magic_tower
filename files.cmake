@@ -1,6 +1,7 @@
 set(SRC_FILES
     App.cpp
     AppUtil.cpp
+    Actor.cpp
     Entity.cpp
     AllObjects.cpp
     Background.cpp
@@ -22,6 +23,7 @@ set(SRC_FILES
 set(INCLUDE_FILES
     App.hpp
     AppUtil.hpp
+    Actor.hpp
     Entity.hpp
     AllObjects.hpp
     Background.hpp
