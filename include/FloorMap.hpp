@@ -39,6 +39,7 @@ public:
 
   void SetAllVisible(bool visible);
   glm::ivec2 FindFirstObjectPosition(int id, int story = -1);
+  std::shared_ptr<AllObjects> FindFirstObjectOfId(int id, int story = -1);
 
   // Set the Root Renderer so FloorMap can Add/Remove objects dynamically
   void SetRenderer(Util::Renderer *root) { m_root = root; }

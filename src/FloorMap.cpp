@@ -343,6 +343,21 @@ glm::ivec2 FloorMap::FindFirstObjectPosition(int id, int story) {
   return {-1, -1};
 }
 
+std::shared_ptr<AllObjects> FloorMap::FindFirstObjectOfId(int id, int story) {
+  int targetStory = (story == -1) ? m_current_story : story;
+  if (targetStory < 0 || targetStory >= AppUtil::TOTAL_STORY)
+    return nullptr;
+
+  for (int y = 0; y < 11; ++y) {
+    for (int x = 0; x < 11; ++x) {
+      auto& obj = m_objects[targetStory][y][x];
+      if (obj && obj->GetObjectId() == id)
+        return obj;
+    }
+  }
+  return nullptr;
+}
+
 void FloorMap::AddToRenderer() {
   if (!m_root)
     return;

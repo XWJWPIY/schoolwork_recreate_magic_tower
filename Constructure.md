@@ -26,6 +26,7 @@ classDiagram
     Entity --> NPC
     Entity --> Item
     Entity --> Stair
+    Entity --> Shop
     Entity --> Player
     
     %% 重點依賴
@@ -49,6 +50,7 @@ classDiagram
     Entity --> NPC
     Entity --> Item
     Entity --> Stair
+    Entity --> Shop
     Entity --> Player
 ```
 
@@ -83,6 +85,11 @@ classDiagram
     2. **`Character` (角色/怪物/NPC)**：包含 `NPC`, `Enemy` 等。
     3. **`Item` (道具)**：包含鍵、藥水等。
     4. **`Stair` (樓梯)**：具備 `m_on_trigger` 回調函式，觸發時呼叫 `App::ChangeFloor`。設定 `m_is_passable = true`。
+    5. **`Shop` (商店系統)**：
+        - **自治 Session 模式**：將商店的 UI 驅動、數值判斷 (`CanAfford`) 與交易執行從 `App` 抽離。
+        - **按鍵處理**：直接在 `Shop::HandleInput` 處理方向鍵切換與確認交易。
+        - **動態價格範式**：透過 `BuildShopData()` 實作如「貪婪神」隨購買次數漲價的特殊邏輯。
+        - **解耦設計**：透過回調函式 (`OpenCallback` / `CloseCallback`) 與 `App` 通訊進行遊戲狀態切換。
 
 三、層級控制 (Z-Index 渲染順序)
 - **Z = 90 ~ 95 (UI 頂層選單)**：`MenuUI` 及其子物件 (說明書、電梯、怪物手冊)。
@@ -137,5 +144,5 @@ classDiagram
 - **單一事實來源 (Single Source of Truth)**：整合 ID、名稱、資源目錄、通行性、動畫幀數及各類型組件數值。
 - **多樣化效果 (`Effect`)**：支援 `HP`, `ATK`, `DEF`, `AGI`, `EXP`, `Level`, `Keys`, `Coins`, `Weak`, `Poison` 等多種道具效果。
 - **動態解析**：使用 `AppUtil::MapParser::ParseCsvToStrings` 進行複雜屬性數據的載入。
-- **擴充性**：新增遊戲物件或修改數值只需調整 `Datas/Data/` 下的 CSV 檔案，無需修改任何 C++ 代碼或重新編譯。
+- **擴充性**：新增遊戲物件 or 修改數值只需調整 `Datas/Data/` 下的 CSV 檔案，無需修改任何 C++ 代碼或重新編譯。
 - **特殊鎖定**：ID 0 (道路) 於程式碼中硬編碼保留，確保基礎地景渲染的穩定性。
