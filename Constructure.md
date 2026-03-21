@@ -14,21 +14,29 @@ classDiagram
         +SetZIndex(z)
         +SetVisible(bool)
         +GetVisible() bool
-        +GetScaledSize() vec2
     }
 
     class AllObjects {
         #int m_object_id
         #bool m_is_passable
-        #AllObjects(int initialId)
-        #AllObjects(drawable, zIndex, initialId)
         +virtual ~AllObjects()
         +virtual SetObjectId(int newId)
         +GetObjectId() int
         +virtual ObjectUpdate()
-        +GetVisible() bool
         +virtual IsPassable() bool
         +SetPassable(bool)
+    }
+
+    class DialogueManager {
+        -Mode m_mode
+        -vector~ScriptLine~ m_script
+        -shared_ptr~Entity~ m_source_entity
+        +DialogueManager(MenuUI)
+        +StartScript(name, source)
+        +ShowNotice(text)
+        +HandleInput(player)
+        +ObjectUpdate() override
+        +IsActive() bool
     }
 
     class Entity {
@@ -43,9 +51,9 @@ classDiagram
         +UpdateProperties(int)
         +virtual Reaction(shared_ptr~Player~) = 0*
         +ObjectUpdate() override
-        +SetReplacementComponent(comp)
+        +TriggerReplacement(targetId)
         +SetGridPosition(x, y)
-        +SetMovable(bool) / GetMovable() bool
+        +SetMovable(bool)
         +CanReact() bool
     }
 
@@ -57,6 +65,7 @@ classDiagram
         #int m_agility
         #int m_exp
         +Actor(id, imagePath, canReact)
+        +ApplyEffect(Effect, value)
         +Get/Set Hp, Attack, Defense, Level, Agility, Exp
     }
 
@@ -80,7 +89,6 @@ classDiagram
         -int m_blue_keys
         -int m_red_keys
         -int m_coins
-        -int m_pending_shop_id
         +Player()
         +Move(dx, dy, roadmap, thingsmap)
         +SyncPosition(roadmap)
@@ -89,21 +97,16 @@ classDiagram
         +UseKey(Effect, count) bool
         +ApplyEffect(Effect, value)
         +ResetStateAfterFloorChange()
-        +Get YellowKeys/BlueKeys/RedKeys/Coins
-        +SetPendingShop(id) / GetPendingShop()
         -UpdateSprite()
     }
 
     class Door {
-        -int MAX_ANIMATION_FRAMES$
-        -shared_ptr~Animation~ m_animation
         +Door(int id)
         +Reaction(player) override
         +ObjectUpdate() override
     }
 
     class Enemy {
-        %% (尚未實作完整戰鬥邏輯)
         +Enemy(int id)
         +Reaction(player) override
     }
@@ -138,7 +141,6 @@ classDiagram
         +Close(MenuUI)
         +HandleInput(player, MenuUI)
         +IsOpen() bool
-        +GetSelectionIndex() int
         #BuildShopData()
         #CanAfford(ShopOption, Player) bool
         #ExecutePurchase(ShopOption, player)
@@ -148,7 +150,6 @@ classDiagram
         +Background()
         +NextPhase(int phase)
         +SetLoadingFrame(int frame)
-        -ImagePath(int) string
     }
 
     class NumericDisplayText {
@@ -156,16 +157,11 @@ classDiagram
         -string m_prefix
         -string m_suffix
         -int m_number
-        -bool m_show_number
-        -bool m_show_text
         -bool m_needs_update
         +NumericDisplayText(fontPath, fontSize)
         +SetPrefix(string)
         +SetSuffix(string)
         +SetNumber(int)
-        +SetShowNumber(bool)
-        +SetShowText(bool)
-        +SetColor(Color)
         +UpdateDisplayText()
     }
 
@@ -175,6 +171,7 @@ classDiagram
     GameObject <|-- NumericDisplayText
     AllObjects <|-- MapBlock
     AllObjects <|-- Entity
+    AllObjects <|-- DialogueManager
     Entity <|-- Door
     Entity <|-- NPC
     Entity <|-- Item
@@ -201,10 +198,7 @@ classDiagram
         -shared_ptr~StatusUI~ m_status_ui
         -shared_ptr~Player~ m_player
         -shared_ptr~MenuUI~ m_menu_ui
-        -int m_preview_floor
-        -float m_item_notice_timer
-        -float m_loading_timer
-        -int m_loading_frame
+        -shared_ptr~DialogueManager~ m_dialogue_manager
         -Shop* m_active_shop
         +GetCurrentState() STATE
         +Start()
@@ -281,6 +275,18 @@ classDiagram
         +DynamicReplacementComponent(callback)
         +ReplaceWith(x, y, id)
     }
+
+    class DialogueManager {
+        -Mode m_mode
+        -vector~ScriptLine~ m_script
+        -shared_ptr~Entity~ m_source_entity
+        +DialogueManager(MenuUI)
+        +StartScript(name, source)
+        +ShowNotice(text)
+        +HandleInput(player)
+        +ObjectUpdate() override
+        +IsActive() bool
+    }
 ```
 
 ## 使用關係圖
@@ -295,6 +301,7 @@ classDiagram
     App *-- Player : m_player
     App *-- StatusUI : m_status_ui
     App *-- MenuUI : m_menu_ui
+    App *-- DialogueManager : m_dialogue_manager
     App ..> Shop : m_active_shop (non-owning)
 
     FloorMap o-- AllObjects : m_objects (3D grid)
@@ -319,12 +326,6 @@ classDiagram
 
     RegistryLoader ..> AppUtil : populates GlobalObjectRegistry
     AppUtil o-- ObjectMetadata : Registry holds
-    ObjectMetadata *-- ItemComponent : optional
-    ObjectMetadata *-- CombatComponent : optional
-    ObjectMetadata *-- DialogComponent : optional
-    ObjectMetadata *-- DoorComponent : optional
-    ObjectMetadata *-- ShopComponent : optional
-    ObjectMetadata *-- StairComponent : optional
 ```
 
 ## 資料結構與元件 (AppUtil Namespace)
@@ -342,13 +343,13 @@ classDiagram
         +shared_ptr~DialogComponent~ dialog_props
         +shared_ptr~DoorComponent~ door_props
         +shared_ptr~ShopComponent~ shop_props
-        +ObjectMetadata(n, f, p)
         +ObjectMetadata(n, f, p, frames)
-        +Item(n, f, effects)$ ObjectMetadata
     }
+
     class ItemComponent {
         +vector~SubEffect~ effects
     }
+
     class CombatComponent {
         +int hp
         +int attack
@@ -356,37 +357,39 @@ classDiagram
         +int exp_reward
         +int coin_reward
     }
+
     class DialogComponent {
         +vector~string~ lines
     }
+
     class DoorComponent {
         +int yellow_key
         +int blue_key
         +int red_key
         +bool is_passive
     }
-    struct ShopComponent {
+
+    class ShopComponent {
         +string title
         +string icon_path
         +int transaction_count
         +ShopPricingType pricing_type
     }
-    class StairId {
-        <<enumeration>>
-        UP = 701
-        DOWN = 702
-    }
-    struct StairComponent {
+
+    class StairComponent {
         +int floor_delta
     }
-    struct SubEffect {
+
+    class SubEffect {
         +Effect type
         +int value
     }
+
     class ShopOption {
         +string text
         +vector~SubEffect~ effects
     }
+
     class ShopData {
         +string title
         +string icon_path
@@ -394,6 +397,13 @@ classDiagram
         +int transaction_count
         +vector~ShopOption~ options
     }
+
+    class ScriptLine {
+        +string speaker
+        +string text
+        +vector~Command~ commands
+    }
+
     class MapCell {
         +int id
     }
@@ -570,10 +580,20 @@ classDiagram
   - **Shop Panel** (Z=90~92)：`ShopDialog.bmp` 背景 + 商店標題 + NPC 圖示 + 4 行對話 + 4 個選項 + 選擇箭頭。
 - `SetVisible(bool, MenuType)` — 先隱藏所有子元件，再依 MenuType 顯示對應面板。
 
-## 十一、層級控制 (Z-Index 渲染順序)
+## 十一、對話管理系統 (`DialogueManager`)
+- **統一介面**：繼承 `AllObjects` 並整合 `MenuUI`，集中處理所有對話、選擇與通知。
+- **模式設計**：
+  - `SCRIPT`：循序讀取全域腳本。
+  - `SELECTION`：顯示多選單（商店/對話分支）。
+  - `NOTICE`：單行獲得物品通知（自動取代原本 App 中的通知邏輯）。
+- **生命週期**：
+  - `IsActive()`：當對話進行中時回傳 `true`，引發 `App` 攔截玩家輸入。
+  - `HandleInput()`：消耗玩家的導航與確認按鍵，推動腳本或執行選擇效果。
+
+## 十二、層級控制 (Z-Index 渲染順序)
 | Z-Index | 層級 | 內容 |
 |---------|------|------|
-| 90 ~ 92 | UI 頂層選單 | `MenuUI` 背景、文字、箭頭 |
+| 90 ~ 92 | UI 頂層選單 | `MenuUI` 背景、文字、箭頭、`DialogueManager` 內容 |
 | -0.1 | UI 提示層 | `StatusUI` 操作提示文字 |
 | -2 | Entity 預設層 | `Entity` 基底預設 Z-Index |
 | -3 | 主角層/狀態層 | `Player` 實例、`StatusUI` 數值 |
@@ -581,7 +601,7 @@ classDiagram
 | -5 | 地板層 | `RoadMap` (牆壁、地板、岩漿) |
 | -10 | 背景層 | `Background` 場景圖 |
 
-## 十二、數據驅動層 (`AppUtil::RegistryLoader`)
+## 十三、數據驅動層 (`AppUtil::RegistryLoader`)
 - **單一事實來源**：`GlobalObjectRegistry` (`unordered_map<int, ObjectMetadata>`)。
 - **啟動加載**：`LoadAllData()` 清空並從 CSV 重新填充，支援重啟重置。
 - **分類加載**：
@@ -590,7 +610,7 @@ classDiagram
   - `LoadItems("Item.csv")` — 道具 + `ItemComponent` (多效果) + `DialogComponent` (獲取對話)。
   - `LoadStairs("Stair.csv")` — 樓梯 (ID, Path, Passable, Animation)。
   - `LoadShops("Shop.csv")` — 商店 + `ShopComponent` (標題, 圖示, 初始交易數)。
-- **資源定位**：`GetIdResourcePath(id)` — 依 `ObjectMetadata` 動態合成路徑，區分靜態/動畫、Road/Shop 規則。
+- **資源定位**：`GetIdResourcePath(id)` — 依 `ObjectMetadata` 動態合成路徑。`Road`、`Shop` 與 `Door` 資料夾強制使用數字後綴規則。
 - **多樣化效果**：支援 HP, ATK, DEF, AGI, EXP, Level, Keys, Coins, Weak, Poison。
 - **CSV 解析器 (`MapParser`)**：
   - `ParseCsv()` → `vector<vector<MapCell>>` (整數 ID 地圖)。
@@ -598,7 +618,7 @@ classDiagram
   - `ParseCsvToRawIDs()` → `vector<vector<int>>` (原始 ID 矩陣)。
   - `ParseShopOptions()` → `vector<ShopOption>` (商店選項與效果)。
 
-## 十三、交互觸發流程
+## 十四、交互觸發流程
 1. `Player::Move()` 嘗試移動。
 2. 邊界檢查 (11×11 網格)。
 3. 檢查 `RoadMap::IsPassable()` (牆壁阻擋)。
@@ -608,7 +628,7 @@ classDiagram
    - 若物件 `IsPassable()` 為 `true` (樓梯、物品) → 允許重疊。
 6. 成功移動 → 更新 `m_grid_x/y` → `SyncPosition()` → 觸發走路動畫。
 
-## 十四、全域常數與工具
+## 十五、全域常數與工具
 | 常數 | 值 | 說明 |
 |------|----|------|
 | `WINDOW_WIDTH` | 1200 | 視窗寬度 |
@@ -618,7 +638,7 @@ classDiagram
 - **`TileAnimationManager::GetGlobalFrame2(ms)`** — 依全域時間回傳 1 或 2 (兩幀切換動畫)。
 - **`main.cpp`** — `Core::Context` 主迴圈驅動 `App::Start/Update/End`。
 
-## 十五、檔案清單
+## 十六、檔案清單
 
 ### include/ (18 個標頭檔)
 | 檔案 | 類別 | 角色 |
@@ -641,6 +661,7 @@ classDiagram
 | `Shop.hpp` | `Shop` | 商店實體 |
 | `Stair.hpp` | `Stair` | 樓梯實體 |
 | `StatusUI.hpp` | `StatusUI` | 狀態面板 |
+| `DialogueManager.hpp` | `DialogueManager` | 統一對話與通知管理器 |
 
 ### src/ (19 個原始檔)
 | 檔案 | 對應類別 | 說明 |
@@ -664,3 +685,4 @@ classDiagram
 | `DynamicReplacementComponent.cpp` | `DynamicReplacementComponent` | 回調執行 |
 | `MenuUI.cpp` | `MenuUI` | 選單初始化、顯隱、數據綁定 |
 | `StatusUI.cpp` | `StatusUI` | 數值刷新、文字初始化 |
+| `DialogueManager.cpp` | `DialogueManager` | 腳本解析、對話流程、通知攔截 |
