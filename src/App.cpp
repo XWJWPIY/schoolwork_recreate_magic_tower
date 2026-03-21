@@ -5,6 +5,7 @@
 #include "Util/Keycode.hpp"
 #include "Util/Logger.hpp"
 
+#include "DialogueManager.hpp"
 #include "Door.hpp"
 #include "Enemy.hpp"
 #include "Entity.hpp"
@@ -128,11 +129,19 @@ void App::InitializeGame() {
   // Menu UI
   m_menu_ui = std::make_shared<MenuUI>();
   m_menu_ui->AddToRoot(m_root);
+
+  m_dialogue_manager = std::make_shared<DialogueManager>(m_menu_ui);
+  m_root.AddChild(m_dialogue_manager);
 }
 
 void App::Update() {
+  bool dialogueActive = (m_dialogue_manager && m_dialogue_manager->IsActive());
+  if (dialogueActive) {
+      m_dialogue_manager->HandleInput(m_player);
+  }
 
-  switch (m_game_state) {
+  if (!dialogueActive) {
+      switch (m_game_state) {
   case AppUtil::GameState::MAIN_MENU:
     if (Util::Input::IsKeyDown(Util::Keycode::SPACE)) {
       m_game_state = AppUtil::GameState::LOADING;
@@ -290,10 +299,12 @@ void App::Update() {
       LOG_INFO("Cancelled FAST_ELEVATOR mode");
     }
     break;
+    }
   }
 
   if (m_game_state == AppUtil::GameState::PLAYING ||
-      m_game_state == AppUtil::GameState::SHOP) {
+      m_game_state == AppUtil::GameState::SHOP ||
+      dialogueActive) {
     m_road_map->Update();
     m_things_map->Update();
   }
@@ -370,9 +381,8 @@ void App::TeleportToFloor(int targetStory, int targetStairId) {
 }
 
 void App::ShowItemNotice(const std::string& text) {
-  if (m_menu_ui) {
-    m_menu_ui->SetItemNotice(text);
-    m_game_state = AppUtil::GameState::ITEM_DIALOG;
+  if (m_dialogue_manager) {
+    m_dialogue_manager->ShowNotice(text);
   }
 }
 

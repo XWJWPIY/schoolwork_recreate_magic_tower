@@ -14,6 +14,8 @@
 #include "pch.hpp" // IWYU pragma: export
 #include <memory>
 
+class DialogueManager;
+
 class App {
 
 public:
@@ -50,6 +52,7 @@ private:
   std::shared_ptr<StatusUI>    m_status_ui;
   std::shared_ptr<Player>      m_player;
   std::shared_ptr<MenuUI>      m_menu_ui;
+  std::shared_ptr<DialogueManager> m_dialogue_manager;
 
   int   m_preview_floor  = 0;
   float m_item_notice_timer = 0.0f;

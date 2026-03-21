@@ -18,6 +18,7 @@ set(SRC_FILES
     DynamicReplacementComponent.cpp
     StatusUI.cpp
     MenuUI.cpp
+    DialogueManager.cpp
 )
 
 set(INCLUDE_FILES
@@ -40,6 +41,7 @@ set(INCLUDE_FILES
     DynamicReplacementComponent.hpp
     StatusUI.hpp
     MenuUI.hpp
+    DialogueManager.hpp
 )
 
 set(TEST_FILES

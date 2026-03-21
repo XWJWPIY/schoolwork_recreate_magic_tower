@@ -74,14 +74,14 @@ void Player::Move(int dx, int dy, std::shared_ptr<FloorMap> roadmap,
         SyncPosition(roadmap);
         
         auto stairEntity = std::dynamic_pointer_cast<Entity>(target);
-        if (stairEntity) stairEntity->Reaction(shared_from_this());
+        if (stairEntity) stairEntity->Reaction(std::static_pointer_cast<Player>(shared_from_this()));
         return;
       }
 
       auto entity = std::dynamic_pointer_cast<Entity>(target);
       if (entity && entity->GetVisible()) {
         if (entity->CanReact()) {
-          entity->Reaction(shared_from_this());
+          entity->Reaction(std::static_pointer_cast<Player>(shared_from_this()));
         }
 
         if (entity->GetVisible() && !entity->IsPassable()) {

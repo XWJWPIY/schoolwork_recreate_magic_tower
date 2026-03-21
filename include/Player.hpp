@@ -5,7 +5,7 @@
 #include "FloorMap.hpp"
 #include <memory>
 
-class Player : public Actor, public std::enable_shared_from_this<Player> {
+class Player : public Actor {
 public:
   enum class PlayerDirection {
     DOWN = 1,

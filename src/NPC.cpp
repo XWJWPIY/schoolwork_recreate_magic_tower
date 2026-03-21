@@ -9,5 +9,4 @@ NPC::NPC(int id)
 void NPC::Reaction(std::shared_ptr<Player> player) {
   LOG_INFO("Talking to NPC... ID: {} ({})", m_object_id,
            AppUtil::GetIdString(m_object_id));
-  // TODO: Trigger dialogue system
 }

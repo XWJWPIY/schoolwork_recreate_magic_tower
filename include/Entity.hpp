@@ -12,7 +12,7 @@
 
 class Player;
 
-class Entity : public AllObjects {
+class Entity : public AllObjects, public std::enable_shared_from_this<Entity> {
 public:
   Entity(int initialId, const std::string &imagePath, bool canReact = true);
   ~Entity() override = default;
@@ -29,6 +29,7 @@ public:
   void SetReplacementComponent(std::shared_ptr<DynamicReplacementComponent> comp) {
     m_replacement_comp = comp;
   }
+  void TriggerReplacement(int targetId = 0);
 
   void SetGridPosition(int x, int y) {
     m_grid_x = x;

@@ -202,8 +202,8 @@ std::string GetIdResourcePath(int id) {
     const auto& meta = it->second;
     int frame = meta.is_animated ? TileAnimationManager::GetGlobalFrame2() : 1;
 
-    // Road and Shop folders always use numbered filenames (e.g. road1.bmp, shop_1_11.bmp)
-    if (meta.folder == "Road" || meta.folder == "Shop") {
+    // Road, Shop, and Door folders always use numbered filenames (e.g. road1.bmp, blue_door1.bmp)
+    if (meta.folder == "Road" || meta.folder == "Shop" || meta.folder == "Door") {
         return "/bmp/" + meta.folder + "/" + meta.name + std::to_string(frame) + ".bmp";
     }
 

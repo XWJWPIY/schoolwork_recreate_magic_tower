@@ -1,0 +1,3 @@
+Dialog,Level,HP,ATK,DEF,EXP,yellow key,blue key,red key,Coin
+黃鑰匙($20),0,0,0,0,0,1,0,0,-20
+藍鑰匙($80),0,0,0,0,0,0,1,0,-80

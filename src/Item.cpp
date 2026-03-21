@@ -28,9 +28,5 @@ void Item::Reaction(std::shared_ptr<Player> player) {
     }
   }
 
-  if (m_replacement_comp) {
-    m_replacement_comp->ReplaceWith(m_grid_x, m_grid_y, 0); // Replace with empty floor
-  } else {
-    SetVisible(false);
-  }
+  TriggerReplacement(0); // Replace with empty floor
 }

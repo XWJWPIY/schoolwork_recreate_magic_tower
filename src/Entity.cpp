@@ -1,47 +1,59 @@
 #include "Entity.hpp"
 #include "AppUtil.hpp"
+#include "Util/Logger.hpp"
 #include "Util/Image.hpp"
-#include <memory>
-#include <filesystem>
 
-Entity::Entity(int initialId, const std::string &imagePath, bool canReact)
-    : AllObjects(std::make_shared<Util::Image>(
-                     imagePath.empty() 
-                        ? (MAGIC_TOWER_RESOURCE_DIR + AppUtil::GetIdResourcePath(initialId))
-                        : (std::filesystem::exists(imagePath)
-                           ? imagePath
-                           : MAGIC_TOWER_RESOURCE_DIR "/bmp/Door/no_door.png")),
-                 -2, initialId),
-      m_grid_x(0), m_grid_y(0), m_can_react(canReact) {
-  
-  auto it = AppUtil::GlobalObjectRegistry.find(initialId);
-  if (it != AppUtil::GlobalObjectRegistry.end()) {
-      m_is_passable = it->second.is_passable;
-  } else {
-      m_is_passable = false; // Default for unknown entities
-  }
-  // Update properties after members are initialized
-  UpdateProperties(initialId);
+Entity::Entity(int initialId, const std::string &imagePath, bool canReact) 
+    : AllObjects(initialId) {
+    SetZIndex(-4);
+    UpdateProperties(initialId);
+    m_can_react = canReact;
 }
 
 void Entity::SetObjectId(int newId) {
-  m_object_id = newId;
-  UpdateProperties(newId);
+    AllObjects::SetObjectId(newId);
+    UpdateProperties(newId);
 }
 
 void Entity::UpdateProperties(int id) {
-  // Basic shared properties (hp, attack, defense) logic could go here
-  // Currently placeholder
+    auto it = AppUtil::GlobalObjectRegistry.find(id);
+    if (it != AppUtil::GlobalObjectRegistry.end()) {
+        const auto& meta = it->second;
+        m_is_passable = meta.is_passable;
+        SetVisible(true);
+
+        if (meta.is_animated) {
+            m_current_frame = AppUtil::TileAnimationManager::GetGlobalFrame2(500);
+            std::string base = MAGIC_TOWER_RESOURCE_DIR + AppUtil::GetIdResourcePath(id);
+            std::string prefix = base.substr(0, base.length() - 5); // remove 1.bmp
+            SetDrawable(std::make_shared<Util::Image>(prefix + std::to_string(m_current_frame) + ".bmp"));
+        } else {
+            SetDrawable(std::make_shared<Util::Image>(MAGIC_TOWER_RESOURCE_DIR + AppUtil::GetIdResourcePath(id)));
+        }
+    } else if (id == 0) {
+        SetVisible(false);
+        m_is_passable = true;
+    }
 }
 
 void Entity::ObjectUpdate() {
-  auto it = AppUtil::GlobalObjectRegistry.find(m_object_id);
-  if (it != AppUtil::GlobalObjectRegistry.end() && it->second.animation_frames > 1) {
-    // Current animated path
-    std::string path = MAGIC_TOWER_RESOURCE_DIR + AppUtil::GetIdResourcePath(m_object_id);
-    
-    // Simple way to check if we need to update drawable
-    // In a more complex system, we might store the current path or frame index
-    m_Drawable = std::make_shared<Util::Image>(path);
-  }
+    auto it = AppUtil::GlobalObjectRegistry.find(m_object_id);
+    if (it != AppUtil::GlobalObjectRegistry.end() && it->second.is_animated) {
+        int global_frame = AppUtil::TileAnimationManager::GetGlobalFrame2(500);
+        if (m_current_frame != global_frame) {
+            m_current_frame = global_frame;
+            auto image = std::dynamic_pointer_cast<Util::Image>(m_Drawable);
+            if (image) {
+                std::string base = MAGIC_TOWER_RESOURCE_DIR + AppUtil::GetIdResourcePath(m_object_id);
+                std::string prefix = base.substr(0, base.length() - 5);
+                image->SetImage(prefix + std::to_string(m_current_frame) + ".bmp");
+            }
+        }
+    }
+}
+
+void Entity::TriggerReplacement(int targetId) {
+    if (m_replacement_comp) {
+        m_replacement_comp->ReplaceWith(m_grid_x, m_grid_y, targetId);
+    }
 }
