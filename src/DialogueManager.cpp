@@ -91,9 +91,12 @@ void DialogueManager::SetUIState(bool dialogueVisible) {
 
 void DialogueManager::StartScript(const std::string& name, std::shared_ptr<Entity> source, bool isShop) {
     LOG_INFO("DialogueManager: Starting script '{}' (isShop={})", name, isShop);
+    m_script_name = name;
     m_is_shop_session = isShop;
     m_source_entity = source;
     m_pending_notice = "";
+    m_on_selection = nullptr;
+    m_current_shop_data = AppUtil::ShopData(); // Reset stale data
     ParseScript(name);
     
     if (m_script.empty()) {
@@ -105,13 +108,15 @@ void DialogueManager::StartScript(const std::string& name, std::shared_ptr<Entit
         return;
     }
 
-    m_mode = Mode::SCRIPT;
-    m_current_line = 0;
-    m_last_speaker = "";
-    SetVisible(true);
-    
-    // Initial display
-    AdvanceScript(nullptr);
+    if (!isShop) {
+        m_mode = Mode::SCRIPT;
+        m_current_line = 0;
+        m_last_speaker = "";
+        SetVisible(true);
+        
+        // Initial display
+        AdvanceScript(nullptr);
+    }
 }
 
 void DialogueManager::ShowNotice(const std::string& text) {
@@ -127,9 +132,9 @@ void DialogueManager::ShowNotice(const std::string& text) {
 }
 
 void DialogueManager::StartShop(const std::string& scriptName, const AppUtil::ShopData& shopData, std::function<void(int)> onSelect, std::shared_ptr<Entity> source) {
+    StartScript(scriptName, source, true);
     m_current_shop_data = shopData;
     m_on_selection = onSelect;
-    StartScript(scriptName, source, true);
     
     // Inject a "shop" command at the end so it knows to enter SELECTION mode
     if (!m_script.empty() && m_script.back().command == "end") {
@@ -195,8 +200,15 @@ void DialogueManager::RefreshShopOptions(const AppUtil::ShopData& shopData) {
 }
 
 void DialogueManager::EndShopSelection() {
-    m_mode = Mode::INACTIVE;
-    SetUIState(false);
+    if (!m_is_shop_session && m_current_line < m_script.size()) {
+        // Continue script only if it's a regular script session (e.g. NPC with shop command)
+        m_mode = Mode::SCRIPT;
+        AdvanceScript(nullptr);
+    } else {
+        m_mode = Mode::INACTIVE;
+        SetVisible(false);
+        SetUIState(false);
+    }
 }
 
 void DialogueManager::UpdateSelection(int index) {
@@ -441,6 +453,59 @@ void DialogueManager::ExecuteCommand(const ScriptLine& line, std::shared_ptr<Pla
             m_source_entity->TriggerReplacement(0);
         }
     } else if (line.command == "shop") {
+        // If triggered from script and no data provided, load default path
+        if (m_on_selection == nullptr) {
+            std::string path = m_script_name + "_option";
+            std::string option_full_path = std::string(MAGIC_TOWER_RESOURCE_DIR) + "/Datas/Texts/" + path + ".csv";
+            m_current_shop_data.options = AppUtil::MapParser::ParseShopOptions(option_full_path);
+            if (m_current_shop_data.options.empty()) {
+                m_current_shop_data.options.push_back({"No Inventory Found", {}});
+            }
+            m_current_shop_data.options.push_back({"Exit", {}});
+            
+            // For scripts, the title should be the current NPC name
+            m_current_shop_data.title = m_name_text->GetPrefix(); 
+            
+            // For scripts, try to keep the NPC icon if possible
+            // (The icon is already set in AdvanceScript before reaching 'shop')
+            
+            m_on_selection = [this, player](int selection) {
+                if (selection < 0 || selection >= static_cast<int>(m_current_shop_data.options.size())) return;
+                const auto& opt = m_current_shop_data.options[selection];
+                
+                if (opt.text == "Exit") {
+                    m_on_selection = nullptr;
+                    m_current_shop_data.options.clear();
+                    EndShopSelection();
+                    return;
+                }
+                
+                // --- Simple Purchase Logic ---
+                bool canAfford = true;
+                if (player) {
+                    for (const auto& eff : opt.effects) {
+                        if (eff.value < 0) {
+                            int cost = -eff.value;
+                            switch (eff.type) {
+                                case AppUtil::Effect::COIN: if (player->GetCoins() < cost) canAfford = false; break;
+                                case AppUtil::Effect::EXP: if (player->GetExp() < cost) canAfford = false; break;
+                                case AppUtil::Effect::HP: if (player->GetHp() <= cost) canAfford = false; break;
+                                case AppUtil::Effect::KEY_YELLOW: if (player->GetYellowKeys() < cost) canAfford = false; break;
+                                case AppUtil::Effect::KEY_BLUE: if (player->GetBlueKeys() < cost) canAfford = false; break;
+                                case AppUtil::Effect::KEY_RED: if (player->GetRedKeys() < cost) canAfford = false; break;
+                                default: break;
+                            }
+                        }
+                    }
+                }
+
+                if (canAfford && player) {
+                    for (const auto& eff : opt.effects) player->ApplyEffect(eff.type, eff.value);
+                    RefreshShopOptions(m_current_shop_data);
+                }
+            };
+        }
+
         m_current_line++;
         m_mode = Mode::SELECTION;
         m_selection = 0;
@@ -451,6 +516,9 @@ void DialogueManager::ExecuteCommand(const ScriptLine& line, std::shared_ptr<Pla
         if (!m_current_shop_data.icon_path.empty()) {
             std::string iconPath = std::string(MAGIC_TOWER_RESOURCE_DIR) + "/bmp/Shop/" + m_current_shop_data.icon_path;
             m_npc_icon->SetDrawable(std::make_unique<Util::Image>(iconPath));
+            m_npc_icon->SetVisible(true);
+        } else if (!m_is_shop_session) {
+            // Keep the icon set by StartScript/AdvanceScript for NPC shops
             m_npc_icon->SetVisible(true);
         } else {
             m_npc_icon->SetVisible(false);

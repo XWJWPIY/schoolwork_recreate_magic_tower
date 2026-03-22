@@ -66,6 +66,7 @@ private:
 private:
     Mode m_mode = Mode::INACTIVE;
     std::shared_ptr<MenuUI> m_ui;
+    std::string m_script_name;
     bool m_is_shop_session = false;
     
     std::vector<ScriptLine> m_script;

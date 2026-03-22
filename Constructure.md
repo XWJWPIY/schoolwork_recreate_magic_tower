@@ -30,6 +30,8 @@ classDiagram
     class DialogueManager {
         -Mode m_mode
         -vector~ScriptLine~ m_script
+        -string m_script_name
+        -bool m_is_shop_session
         +DialogueManager(MenuUI)
         +StartScript(name, source, isShop)
         +StartShop(name, ShopData, onSelect, source)
@@ -38,6 +40,7 @@ classDiagram
         +ApplyShopLayout()
         +ApplyDialogueLayout()
         +ReplaceScriptText(target, replacement)
+        +EndShopSelection()
         +IsActive() bool
     }
 
@@ -285,6 +288,8 @@ classDiagram
     class DialogueManager {
         -Mode m_mode
         -vector~ScriptLine~ m_script
+        -string m_script_name
+        -bool m_is_shop_session
         +DialogueManager(MenuUI)
         +StartScript(name, source, isShop)
         +StartShop(name, ShopData, onSelect, source)
@@ -293,6 +298,7 @@ classDiagram
         +ApplyShopLayout()
         +ApplyDialogueLayout()
         +ReplaceScriptText(target, replacement)
+        +EndShopSelection()
         +IsActive() bool
     }
 ```
@@ -496,7 +502,7 @@ classDiagram
 ### 4.4 `NPC` (NPC)
 - **屬性**：`TalkCallback m_talk_callback` — 回傳觸發對話的 callback。
 - **建構**：`NPC(id, TalkCallback)` — 傳入自定義的回調函式以處理互動。
-- **`Reaction()` override** — 觸發 `m_talk_callback`，通常由外層系統 (如 `App`) 在此 callback 中調用 `DialogueManager::StartScript` 進入劇情對話。
+- **`Reaction()` override** — 觸發 `m_talk_callback`。若是商人 (如 Thief)，腳本結尾可能包含 `shop` 購買與 `hide` 銷毀指令。
 
 ### 4.5 `Item` (道具)
 - **建構**：`Item(id, NoticeCallback)` — 設定 `m_notice_callback` 處理獲得物品的單行通知。
@@ -591,20 +597,20 @@ classDiagram
 
 ## 十一、對話管理系統 (`DialogueManager`)
 - **統一介面**：由 `App` 持有，集中處理所有對話、選擇與通知。
-- **UI 組件**：包含背景圖、NPC 頭像、說話者名稱、對話內容，以及一個會閃爍的 `-Space-` 繼續提示。元件皆使用**絕對座標**定位，以確保在不同背景下位置固定。
+- **屬性**：`m_mode` (SCRIPT/SELECTION/NOTICE), `m_script`, `m_current_line`, `m_script_name` (當前腳本名), `m_on_selection` (選擇回調), `m_is_shop_session` (是否為純商店啟動)。
+- **UI 組件**：包含背景圖、NPC 頭像、說話者名稱、對話內容、動態價格 (`m_price_text`)，以及一個會閃爍的 `-Space-` 繼續提示。元件皆使用**絕對座標**定位。
 - **腳本解析功能**：
-  - **多行自動合併**：`AdvanceScript` 會自動將連續 3 行內同一個說話者的對話合併顯示，並以 `\n` 換行，提升閱讀流暢度。
+  - **多行自動合併**：`AdvanceScript` 會自動將連續 3 行內同一個說話者的對話合併顯示，並以 `\n` 換行。
   - **說話者辨識**：首欄為 `0` 表示玩家（勇者），`1` 表示 NPC。其餘則視為指令。
   - **指令標籤**：
-    - `item` (給予物品)：給予對應 ID 的道具或數值。
-    - `shop` (開啟商店)：自動連結相關 `_option.csv` 開啟交易介面。
+    - `item` (給予物品)：給予對應 ID 的道具或數值，並快取提示文字。
+    - `shop` (開啟商店)：自動連結 `<script_name>_option.csv` 開啟交易介面。支援腳本內置購買邏輯與價格同步。
     - `hide` (銷毀 NPC)：執行 `SourceEntity->TriggerReplacement(0)` 使 NPC 消失。
-- **模式設計**：
-  - `SCRIPT` / `SELECTION` / `NOTICE`：整合管理。
-- **動態佈局**：
+- **動態佈局與 Session 管理**：
   - `ApplyShopLayout()` / `ApplyDialogueLayout()`：根據內容切換 UI 元件位置。
+  - `EndShopSelection()`：若為腳本嵌入模式且仍有後續指令（如小偷腳本末尾的 `hide`），則呼叫 `AdvanceScript` 續行；否則關閉 UI 設為 `INACTIVE`。
 - **全域同步**：
-  - 接手商店對白合併、價格佔位符 (`　　　`) 替換等邏輯。
+  - 接手商店對白合併、價格佔位符 (`　　　`) 替換等邏輯，確保 Greed God 等動態價格能正確在劇情對白中顯示。
 
 ## 十二、層級控制 (Z-Index 渲染順序)
 | Z-Index | 層級 | 內容 |
