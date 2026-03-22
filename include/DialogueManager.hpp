@@ -21,9 +21,10 @@ public:
     };
 
     struct ScriptLine {
-        std::string command; // e.g., "speaker name", "item", "hide", "menu"
-        std::string content;
-        std::string extra;   // Used for item IDs or menu paths
+        int speaker = -1;    // 0: Player, 1: NPC, -1: Command
+        std::string text;    // Dialogue text
+        std::string command; // Command like "item", "hide", "shop", "notice"
+        std::string extra;   // Command parameters (e.g., item ID, shop path)
     };
 
     DialogueManager(std::shared_ptr<MenuUI> ui);

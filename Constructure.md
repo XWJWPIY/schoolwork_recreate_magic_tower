@@ -399,9 +399,10 @@ classDiagram
     }
 
     class ScriptLine {
-        +string speaker
+        +int speaker
         +string text
-        +vector~Command~ commands
+        +string command
+        +string extra
     }
 
     class MapCell {
@@ -582,6 +583,12 @@ classDiagram
 
 ## 十一、對話管理系統 (`DialogueManager`)
 - **統一介面**：繼承 `AllObjects` 並整合 `MenuUI`，集中處理所有對話、選擇與通知。
+- **腳本解析功能**：
+  - **說話者辨識**：首欄為 `0` 表示玩家（勇者），`1` 表示 NPC。其餘則視為指令。
+  - **指令標籤**：
+    - `item` (給予物品)：給予對應 ID 的道具或數值。
+    - `shop` (開啟商店)：自動連結相關 `_option.csv` 開啟交易介面。
+    - `hide` (銷毀 NPC)：執行 `SourceEntity->TriggerReplacement(0)` 使 NPC 消失。
 - **模式設計**：
   - `SCRIPT`：循序讀取全域腳本。
   - `SELECTION`：顯示多選單（商店/對話分支）。

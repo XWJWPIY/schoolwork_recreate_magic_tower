@@ -33,7 +33,7 @@ void DialogueManager::StartScript(const std::string& name, std::shared_ptr<Entit
 
 void DialogueManager::ShowNotice(const std::string& text) {
     m_script.clear();
-    m_script.push_back({"notice", text, ""});
+    m_script.push_back({-1, text, "notice", ""});
     m_mode = Mode::NOTICE;
     m_current_line = 0;
     SetVisible(true);
@@ -77,12 +77,11 @@ void DialogueManager::AdvanceScript(std::shared_ptr<Player> player) {
 
     const auto& line = m_script[m_current_line];
     
-    if (line.command == "speaker") {
-        m_last_speaker = line.content;
-        // In this simple version, we use ITEM_NOTICE UI to show script line
-        // but it might need a more specialized NPC DIALOG UI later.
+    if (line.speaker != -1) {
+        // Speaker mode (0: Player, 1: NPC)
+        std::string name = (line.speaker == 0) ? "勇者" : m_last_speaker;
         m_ui->SetVisible(true, MenuUI::MenuType::ITEM_NOTICE);
-        m_ui->SetItemNotice(m_last_speaker + ": " + line.extra);
+        m_ui->SetItemNotice(name + ": " + line.text);
         m_current_line++;
     } else if (line.command == "end") {
         m_mode = Mode::INACTIVE;
@@ -101,24 +100,30 @@ void DialogueManager::ParseScript(const std::string& name) {
     std::string path = std::string(MAGIC_TOWER_RESOURCE_DIR) + "/Datas/Texts/" + name + ".csv";
     auto rows = AppUtil::MapParser::ParseCsvToStrings(path);
 
+    bool skipHeader = true;
     for (const auto& row : rows) {
         if (row.empty()) continue;
+        if (skipHeader) { skipHeader = false; continue; }
         
         std::string first = row[0];
         if (first == ".") {
-            m_script.push_back({"end", "", ""});
+            m_script.push_back({-1, "", "end", ""});
             break;
         }
         
-        if (first == "item") {
-            if (row.size() >= 3) m_script.push_back({"item", row[1], row[2]});
+        if (first == "0" || first == "1") {
+            int speakerId = std::stoi(first);
+            m_script.push_back({speakerId, row.size() > 1 ? row[1] : "", "", ""});
+        } else if (first == "item") {
+            if (row.size() >= 3) m_script.push_back({-1, row[1], "item", row[2]});
         } else if (first == "hide") {
-            m_script.push_back({"hide", "", ""});
-        } else if (first == "0") {
-            m_script.push_back({"speaker", m_last_speaker, row.size() > 1 ? row[1] : ""});
+            m_script.push_back({-1, "", "hide", ""});
+        } else if (first == "shop") {
+            m_script.push_back({-1, "", "shop", ""});
         } else {
+            // Fallback for older format
             m_last_speaker = first;
-            m_script.push_back({"speaker", m_last_speaker, row.size() > 1 ? row[1] : ""});
+            m_script.push_back({1, row.size() > 1 ? row[1] : "", "", ""});
         }
     }
 }
@@ -133,6 +138,7 @@ void DialogueManager::ExecuteCommand(const ScriptLine& line, std::shared_ptr<Pla
         else if (line.extra == "yellow_key") effect = AppUtil::Effect::KEY_YELLOW;
         else if (line.extra == "blue_key") effect = AppUtil::Effect::KEY_BLUE;
         else if (line.extra == "red_key") effect = AppUtil::Effect::KEY_RED;
+        else if (line.extra == "fly") effect = AppUtil::Effect::NONE; // TODO: Implement fly
         
         // Apply effect (default value 1 for keys if not specified)
         if (player && effect != AppUtil::Effect::NONE) {
@@ -143,5 +149,8 @@ void DialogueManager::ExecuteCommand(const ScriptLine& line, std::shared_ptr<Pla
         if (m_source_entity) {
             m_source_entity->TriggerReplacement(0); // Replace with floor
         }
+    } else if (line.command == "shop") {
+        LOG_INFO("DialogueManager: Executing shop command");
+        // TODO: Implement shop link
     }
 }
