@@ -30,15 +30,14 @@ classDiagram
     class DialogueManager {
         -Mode m_mode
         -vector~ScriptLine~ m_script
-        -shared_ptr~Entity~ m_source_entity
-        -shared_ptr~NumericDisplayText~ m_name_text
-        -shared_ptr~NumericDisplayText~ m_content_text
-        -shared_ptr~NumericDisplayText~ m_space_prompt
         +DialogueManager(MenuUI)
-        +StartScript(name, source)
-        +ShowNotice(text)
+        +StartScript(name, source, isShop)
+        +StartShop(name, ShopData, onSelect, source)
+        +RefreshShopOptions(ShopData)
         +HandleInput(player)
-        +ObjectUpdate() override
+        +ApplyShopLayout()
+        +ApplyDialogueLayout()
+        +ReplaceScriptText(target, replacement)
         +IsActive() bool
     }
 
@@ -54,9 +53,13 @@ classDiagram
         +UpdateProperties(int)
         +virtual Reaction(shared_ptr~Player~) = 0*
         +ObjectUpdate() override
+        +SetReplacementComponent(shared_ptr)
         +TriggerReplacement(targetId)
         +SetGridPosition(x, y)
+        +GetGridX/Y() int
         +SetMovable(bool)
+        +GetMovable() bool
+        +SetCanReact(bool)
         +CanReact() bool
     }
 
@@ -68,7 +71,6 @@ classDiagram
         #int m_agility
         #int m_exp
         +Actor(id, imagePath, canReact)
-        +ApplyEffect(Effect, value)
         +Get/Set Hp, Attack, Defense, Level, Agility, Exp
     }
 
@@ -92,6 +94,7 @@ classDiagram
         -int m_blue_keys
         -int m_red_keys
         -int m_coins
+        -int m_pending_shop_id
         +Player()
         +Move(dx, dy, roadmap, thingsmap)
         +SyncPosition(roadmap)
@@ -99,7 +102,12 @@ classDiagram
         +ObjectUpdate() override
         +UseKey(Effect, count) bool
         +ApplyEffect(Effect, value)
+        +Get/Add/SetCoins()
+        +Get/SetPendingShop()
         +ResetStateAfterFloorChange()
+        +SetDirection(PlayerDirection)
+        +SetIsAnimating(bool)
+        +SetCurrentFrame(int)
         -UpdateSprite()
     }
 
@@ -115,7 +123,8 @@ classDiagram
     }
 
     class NPC {
-        +NPC(int id)
+        -TalkCallback m_talk_callback
+        +NPC(id, TalkCallback)
         +Reaction(player) override
     }
 
@@ -135,16 +144,11 @@ classDiagram
         -ShopData m_session_data
         -int m_transaction_count
         -bool m_is_open
-        -int m_selection
-        -OpenCallback m_on_open
-        -CloseCallback m_on_close
         +Shop(id, onOpen, onClose)
         +Reaction(player) override
-        +Open(player, MenuUI)
-        +Close(MenuUI)
-        +HandleInput(player, MenuUI)
-        +IsOpen() bool
-        #BuildShopData()
+        +Open(player, DialogueManager, floor)
+        +Close(DialogueManager)
+        #BuildShopData(floor)
         #CanAfford(ShopOption, Player) bool
         #ExecutePurchase(ShopOption, player)
     }
@@ -174,7 +178,6 @@ classDiagram
     GameObject <|-- NumericDisplayText
     AllObjects <|-- MapBlock
     AllObjects <|-- Entity
-    AllObjects <|-- DialogueManager
     Entity <|-- Door
     Entity <|-- NPC
     Entity <|-- Item
@@ -202,6 +205,10 @@ classDiagram
         -shared_ptr~Player~ m_player
         -shared_ptr~MenuUI~ m_menu_ui
         -shared_ptr~DialogueManager~ m_dialogue_manager
+        -int m_preview_floor
+        -float m_item_notice_timer
+        -float m_loading_timer
+        -int m_loading_frame
         -Shop* m_active_shop
         +GetCurrentState() STATE
         +Start()
@@ -244,19 +251,15 @@ classDiagram
 
     class MenuUI {
         -MenuType m_current_menu
-        -shared_ptr notice_bg / fly_bg / item_notice_bg / shop_bg
+        -shared_ptr notice_bg / fly_bg / item_notice_bg
         -shared_ptr floor_text / enter_text / quit_text
         -shared_ptr up_arrow / down_arrow
         -shared_ptr item_notice_text / item_confirm_text
-        -shared_ptr shop_icon / shop_title / shop_selector
-        -vector shop_prompts / shop_options
         +MenuUI()
         +SetVisible(bool, MenuType)
         +AddToRoot(Renderer)
         +SetTargetFloor(int)
         +SetItemNotice(string)
-        +SetShopData(ShopData)
-        +UpdateShopSelection(int)
         +UpdateArrows(int)
         -InitText(text, prefix, x, y, size)
     }
@@ -282,15 +285,14 @@ classDiagram
     class DialogueManager {
         -Mode m_mode
         -vector~ScriptLine~ m_script
-        -shared_ptr~Entity~ m_source_entity
-        -shared_ptr~NumericDisplayText~ m_name_text
-        -shared_ptr~NumericDisplayText~ m_content_text
-        -shared_ptr~NumericDisplayText~ m_space_prompt
         +DialogueManager(MenuUI)
-        +StartScript(name, source)
-        +ShowNotice(text)
+        +StartScript(name, source, isShop)
+        +StartShop(name, ShopData, onSelect, source)
+        +RefreshShopOptions(ShopData)
         +HandleInput(player)
-        +ObjectUpdate() override
+        +ApplyShopLayout()
+        +ApplyDialogueLayout()
+        +ReplaceScriptText(target, replacement)
         +IsActive() bool
     }
 ```
@@ -320,7 +322,7 @@ classDiagram
     Player ..> FloorMap : SyncPosition / Move
     Player ..> Entity : Reaction via shared_from_this
 
-    Shop ..> MenuUI : drives UI in Open/Close/HandleInput
+    Shop ..> DialogueManager : drives UI in Open/Close
     Shop ..> Player : reads & modifies stats
 
     Door ..> Player : UseKey in Reaction
@@ -402,6 +404,7 @@ classDiagram
         +vector~string~ prompts
         +int transaction_count
         +vector~ShopOption~ options
+        +string special_price_str
     }
 
     class ScriptLine {
@@ -491,16 +494,16 @@ classDiagram
 - **`Reaction()` override** — 目前記錄 Log + 透過 `DynamicReplacementComponent` 替換為空地。(TODO: 戰鬥邏輯)
 
 ### 4.4 `NPC` (NPC)
-- **建構**：`Entity(id, "", true)` — 使用自動資源路徑。
-- **`Reaction()` override** — 從 `GlobalObjectRegistry` 讀取 `DialogComponent` 獲取對話腳本檔名，並呼叫 `DialogueManager::StartScript` 啟動對話。
+- **屬性**：`TalkCallback m_talk_callback` — 回傳觸發對話的 callback。
+- **建構**：`NPC(id, TalkCallback)` — 傳入自定義的回調函式以處理互動。
+- **`Reaction()` override** — 觸發 `m_talk_callback`，通常由外層系統 (如 `App`) 在此 callback 中調用 `DialogueManager::StartScript` 進入劇情對話。
 
 ### 4.5 `Item` (道具)
-- **屬性**：`NoticeCallback m_notice_callback` — 用於觸發道具對話框。
-- **`Reaction()` override** — 從 `GlobalObjectRegistry` 讀取 `ItemComponent` 與 `DialogComponent`：
-  - 若有 `DialogComponent`，透過 callback 呼叫 `App::ShowItemNotice`。
-  - 遍歷 `ItemComponent.effects`，對每個 `SubEffect` 呼叫 `Player::ApplyEffect`。
-  - 最後透過 `DynamicReplacementComponent` 替換為空地。
-
+- **建構**：`Item(id, NoticeCallback)` — 設定 `m_notice_callback` 處理獲得物品的單行通知。
+- **`Reaction()` override** — 從 `GlobalObjectRegistry` 讀取屬性：
+  - 藉由 `meta.dialog_props->lines[0]` 觸發 `m_notice_callback` 顯示提示。
+  - 遍歷 `meta.item_props->effects`，對每個 `SubEffect` 呼叫 `Player::ApplyEffect`。
+  - 最後透過 `TriggerReplacement(0)` 將自身替換為空地 (消除圖示)。
 ### 4.6 `Stair` (樓梯)
 - **屬性**：`TriggerCallback m_on_trigger` — lambda 回調，指向 `App::ChangeFloor`。
 - **`Reaction()` override** — 從 `GlobalObjectRegistry` 讀取 `StairComponent` 的 `floor_delta`：
@@ -509,15 +512,14 @@ classDiagram
 
 ### 4.7 `Shop` (商店)
 - **屬性**：`ShopData m_session_data`、`m_transaction_count`、`m_is_open`、`m_selection`、`OpenCallback m_on_open`、`CloseCallback m_on_close`。
-- **`Reaction()` override** — 僅設定 `Player::SetPendingShop(m_object_id)`，由 `App::Update` 在下一幀觸發 `Open()`。
+- **`Reaction()` override** — 僅設定 `Player::SetPendingShop(m_object_id)`，由 `App::Update` 偵測後觸發 `Open()`。
 - **Session 生命週期**：
-  - `Open()` — 從 `GlobalObjectRegistry` 讀取 `ShopComponent` → `BuildShopData()` → 設定 `MenuUI` → 呼叫 `m_on_open` (切換 `GameState::SHOP`)。
-  - `Close()` — 隱藏 `MenuUI` → 呼叫 `m_on_close` (回歸 `GameState::PLAYING`)。
-  - `HandleInput()` — 處理 W/S/方向鍵切換選項、Space/Enter 確認購買、Esc/Q 離開。
-- **保護方法**：
-  - `BuildShopData()` — 從 CSV 載入對話與選項，ID 602 (貪婪神) 實作 `cost = 20 + count + (count > 25 ? (count-25)*4 : 0)` 動態漲價。
-  - `CanAfford()` — 檢查玩家是否有足夠資源 (Coin/EXP/HP/Keys)。
-  - `ExecutePurchase()` — 遍歷 `ShopOption.effects` → `Player::ApplyEffect`，並遞增 `m_transaction_count`。
+  - `Open()` — 從 `GlobalObjectRegistry` 讀取 `ShopComponent` → `BuildShopData()` → 組合對話與選項 → 呼叫 `DialogueManager::StartShop` 接管 UI → 觸發 `m_on_open`。
+  - `Close()` — 呼叫 `DialogueManager::EndShopSelection` 關閉介面 → 觸發 `m_on_close` (回歸 `PLAYING` 狀態)。
+- **保護 / 私有方法**：
+  - `BuildShopData(floor)` — 從 CSV 載入選項內容，且針對 `PricingType::SCALING_GREED` 計算動態價格並填充至 `special_price_str`，確保對UI上顯示精確對齊。
+  - `CanAfford()` — 檢查玩家是否有足夠資源。
+  - `ExecutePurchase()` — 呼叫 `Player::ApplyEffect` 執行購買，遞增 `m_transaction_count` 並透過 `DialogueManager::RefreshShopOptions` 同步 UI。
 
 ## 五、背景 (`Background`)
 - 繼承 `Util::GameObject`。Z-Index = -10。
@@ -564,7 +566,8 @@ classDiagram
   - R → 重新開始。
   - 8/2 → 直接切換樓層 (DEBUG)。
   - ESC → 退出 / 關閉商店。
-- **商店流程**：`Player::Reaction` 設定 `m_pending_shop_id` → `App::Update` 偵測後呼叫 `Shop::Open` → 進入 `GameState::SHOP` → `Shop::HandleInput` 處理 → `Shop::Close` 回歸 `PLAYING`。
+- **商店流程**：`Player::Reaction` 設定 `m_pending_shop_id` → `App::Update` 偵測後呼叫 `Shop::Open` → 觸發 `onOpen` 切換 `GameState::SHOP` → `DialogueManager` 接管 UI 與輸入 → `Shop::Close` 回歸 `PLAYING`。
+- **即時 UI 同步**：`App::Update` 在每幀結束前，若處於 PLAYING/SHOP/ITEM_DIALOG 狀態，會強制呼叫 `m_status_ui->Update` 確保數值即時更新。
 - `ChangeFloor(delta)` — 切換樓層並同步玩家位置。
 - `TeleportToFloor(story, stairId)` — 傳送至指定樓層的指定樓梯座標。
 - `Restart()` — 重置所有狀態，回到 `MAIN_MENU`。
@@ -579,16 +582,15 @@ classDiagram
 
 ### 10.2 `MenuUI` (選單覆蓋層)
 - **獨立類別**，管理所有模態覆蓋選單。
-- **MenuType 枚舉**：`NONE`, `NOTICE`, `FAST_ELEVATOR`, `ITEM_NOTICE`, `SHOP`。
+- **MenuType 枚舉**：`NONE`, `NOTICE`, `FAST_ELEVATOR`, `ITEM_NOTICE`。
 - **子面板**：
   - **Notice Panel** (Z=90)：顯示 `notice.bmp` 說明書背景。
-  - **Fast Elevator Panel** (Z=90~92)：電梯背景 + 樓層數字 + 上下箭頭 + Enter/Quit 提示。箭頭依樓層範圍動態切換白/灰色。
+  - **Fast Elevator Panel** (Z=90~92)：電梯背景 + 樓層數字 + 上下箭頭 + Enter/Quit 提示。
   - **Item Notice Panel** (Z=90~91)：`itemDialog.bmp` 背景 + 獲得物品文字 + `-Space-` 確認提示。
-  - **Shop Panel** (Z=90~92)：`ShopDialog.bmp` 背景 + 商店標題 + NPC 圖示 + 4 行對話 + 4 個選項 + 選擇箭頭。
 - `SetVisible(bool, MenuType)` — 先隱藏所有子元件，再依 MenuType 顯示對應面板。
 
 ## 十一、對話管理系統 (`DialogueManager`)
-- **統一介面**：繼承 `AllObjects` 並整合 `MenuUI`，集中處理所有對話、選擇與通知。
+- **統一介面**：由 `App` 持有，集中處理所有對話、選擇與通知。
 - **UI 組件**：包含背景圖、NPC 頭像、說話者名稱、對話內容，以及一個會閃爍的 `-Space-` 繼續提示。元件皆使用**絕對座標**定位，以確保在不同背景下位置固定。
 - **腳本解析功能**：
   - **多行自動合併**：`AdvanceScript` 會自動將連續 3 行內同一個說話者的對話合併顯示，並以 `\n` 換行，提升閱讀流暢度。
@@ -598,12 +600,11 @@ classDiagram
     - `shop` (開啟商店)：自動連結相關 `_option.csv` 開啟交易介面。
     - `hide` (銷毀 NPC)：執行 `SourceEntity->TriggerReplacement(0)` 使 NPC 消失。
 - **模式設計**：
-  - `SCRIPT`：循序讀取全域腳本。
-  - `SELECTION`：顯示多選單（商店/對話分支）。
-  - `NOTICE`：單行獲得物品通知（自動取代原本 App 中的通知邏輯）。
-- **生命週期**：
-  - `IsActive()`：當對話進行中時回傳 `true`，引發 `App` 攔截玩家輸入。
-  - `HandleInput()`：消耗玩家的導航與確認按鍵，推動腳本或執行選擇效果。
+  - `SCRIPT` / `SELECTION` / `NOTICE`：整合管理。
+- **動態佈局**：
+  - `ApplyShopLayout()` / `ApplyDialogueLayout()`：根據內容切換 UI 元件位置。
+- **全域同步**：
+  - 接手商店對白合併、價格佔位符 (`　　　`) 替換等邏輯。
 
 ## 十二、層級控制 (Z-Index 渲染順序)
 | Z-Index | 層級 | 內容 |

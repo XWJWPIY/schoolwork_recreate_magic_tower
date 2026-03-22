@@ -65,5 +65,9 @@ void NumericDisplayText::UpdateDisplayText() {
     result += m_suffix;
   }
 
+  if (result.empty()) {
+    result = " ";
+  }
+
   m_text_drawable->SetText(result);
 }

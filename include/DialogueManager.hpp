@@ -4,6 +4,7 @@
 #include "Util/GameObject.hpp"
 #include "Util/Renderer.hpp"
 
+#include "AppUtil.hpp"
 #include <vector>
 #include <string>
 #include <memory>
@@ -35,7 +36,11 @@ public:
     DialogueManager(std::shared_ptr<MenuUI> ui);
     virtual ~DialogueManager() = default;
 
-    void StartScript(const std::string& name, std::shared_ptr<Entity> source = nullptr);
+    void StartScript(const std::string& name, std::shared_ptr<Entity> source = nullptr, bool isShop = false);
+    void StartShop(const std::string& scriptName, const AppUtil::ShopData& shopData, std::function<void(int)> onSelect, std::shared_ptr<Entity> source = nullptr);
+    void ReplaceScriptText(const std::string& target, const std::string& replacement);
+    void RefreshShopOptions(const AppUtil::ShopData& shopData);
+    void EndShopSelection();
     void ShowNotice(const std::string& text);
     
     void AddToRoot(Util::Renderer& root);
@@ -54,24 +59,35 @@ private:
     void ParseScript(const std::string& name);
     void ExecuteCommand(const ScriptLine& line, std::shared_ptr<Player> player);
     void SetUIState(bool dialogueVisible);
+    void UpdateSelection(int index);
+    void ApplyDialogueLayout();
+    void ApplyShopLayout();
 
 private:
     Mode m_mode = Mode::INACTIVE;
     std::shared_ptr<MenuUI> m_ui;
+    bool m_is_shop_session = false;
     
     std::vector<ScriptLine> m_script;
-    int m_current_line = 0;
-    
-    std::string m_last_speaker;
+    size_t m_current_line = 0;
     std::shared_ptr<Entity> m_source_entity;
+    std::string m_last_speaker;
     std::string m_pending_notice;
 
-    // UI Components
+    // Base UI Components
     std::shared_ptr<Util::GameObject> m_background;
     std::shared_ptr<Util::GameObject> m_npc_icon;
     std::shared_ptr<NumericDisplayText> m_name_text;
     std::shared_ptr<NumericDisplayText> m_content_text;
     std::shared_ptr<NumericDisplayText> m_space_prompt;
+
+    // Shop/Selection Components
+    std::vector<std::shared_ptr<NumericDisplayText>> m_shop_options;
+    std::shared_ptr<Util::GameObject> m_shop_selector;
+    std::shared_ptr<NumericDisplayText> m_price_text;
+    int m_selection = 0;
+    AppUtil::ShopData m_current_shop_data;
+    std::function<void(int)> m_on_selection;
 };
 
 #endif // DIALOGUEMANAGER_HPP

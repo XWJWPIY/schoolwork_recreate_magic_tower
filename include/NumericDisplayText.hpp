@@ -16,6 +16,9 @@ public:
   void SetShowNumber(bool show);
   void SetShowText(bool show);
 
+  std::string GetPrefix() const { return m_prefix; }
+  int GetNumber() const { return m_number; }
+
   void SetColor(const Util::Color &color);
   void UpdateDisplayText();
 

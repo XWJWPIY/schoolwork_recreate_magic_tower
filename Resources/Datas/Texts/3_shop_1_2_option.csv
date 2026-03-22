@@ -1,0 +1,4 @@
+Dialog,Level,HP,ATK,DEF,EXP,yellow key,blue key,red key,Coin
+增加500點體力,0,500,0,0,0,0,0,0,-20
+增加3點攻擊力,0,0,3,0,0,0,0,0,-20
+增加3點防禦力,0,0,0,3,0,0,0,0,-20

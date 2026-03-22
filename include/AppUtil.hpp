@@ -147,6 +147,7 @@ struct ShopData {
     std::vector<std::string> prompts;
     int transaction_count;
     std::vector<ShopOption> options;
+    std::string special_price_str; // e.g., real-time cost for Greed God
 };
 
 std::string GetIdString(int id);

@@ -3,7 +3,7 @@
 
 #include "Entity.hpp"
 #include "AppUtil.hpp"
-#include "MenuUI.hpp"
+#include "DialogueManager.hpp"
 #include <functional>
 #include <memory>
 #include <string>
@@ -28,12 +28,9 @@ public:
     void Reaction(std::shared_ptr<Player> player) override;
 
     // ── Session lifecycle ──────────────────────────────────────────────────
-    void Open(std::shared_ptr<Player> player, MenuUI& ui);
-    void Close(MenuUI& ui);
+    void Open(std::shared_ptr<Player> player, DialogueManager& ui, int floor);
+    void Close(DialogueManager& ui);
     bool IsOpen() const { return m_is_open; }
-
-    // ── Input handling (called by App) ─────────────────────────────────────
-    void HandleInput(std::shared_ptr<Player> player, MenuUI& ui);
 
     int GetSelectionIndex() const { return m_selection; }
 
@@ -42,7 +39,7 @@ protected:
      * @brief Populate m_session_data from CSV. 
      * Handles specific scaling logic for IDs like Greed God (602).
      */
-    void BuildShopData();
+    void BuildShopData(int floor);
 
     bool CanAfford(const AppUtil::ShopOption& opt, const Player& player) const;
     void ExecutePurchase(const AppUtil::ShopOption& opt, std::shared_ptr<Player> player);

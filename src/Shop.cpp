@@ -14,7 +14,7 @@ void Shop::Reaction(std::shared_ptr<Player> player) {
     player->SetPendingShop(m_object_id);
 }
 
-void Shop::Open(std::shared_ptr<Player> player, MenuUI& ui) {
+void Shop::Open(std::shared_ptr<Player> player, DialogueManager& diag, int floor) {
     auto it = AppUtil::GlobalObjectRegistry.find(m_object_id);
     if (it != AppUtil::GlobalObjectRegistry.end() && it->second.shop_props) {
         m_transaction_count = it->second.shop_props->transaction_count;
@@ -24,64 +24,43 @@ void Shop::Open(std::shared_ptr<Player> player, MenuUI& ui) {
         }
     }
 
-    BuildShopData();
-
+    BuildShopData(floor);
     m_selection = 0;
     m_is_open = true;
 
-    ui.SetVisible(true, MenuUI::MenuType::SHOP);
-    ui.SetShopData(m_session_data);
-    ui.UpdateShopSelection(m_selection);
+    auto onSelect = [this, &diag, player, floor](int selection) {
+        if (selection < 0 || selection >= static_cast<int>(m_session_data.options.size())) return;
+        const auto& opt = m_session_data.options[selection];
+        
+        if (opt.text == "Exit") {
+            Close(diag);
+            return;
+        }
+        
+        if (CanAfford(opt, *player)) {
+            ExecutePurchase(opt, player);
+            auto registry_it = AppUtil::GlobalObjectRegistry.find(m_object_id);
+            if (registry_it != AppUtil::GlobalObjectRegistry.end() && registry_it->second.shop_props) {
+                registry_it->second.shop_props->transaction_count = m_transaction_count;
+            }
+            BuildShopData(floor);
+            diag.RefreshShopOptions(m_session_data);
+        }
+    };
+
+    std::string name = std::to_string(floor) + "_" + AppUtil::GetIdString(m_object_id);
+    diag.StartShop(name, m_session_data, onSelect, nullptr);
 
     LOG_INFO("Shop::Open id={}", m_object_id);
     if (m_on_open) m_on_open(*this);
 }
 
-void Shop::Close(MenuUI& ui) {
+void Shop::Close(DialogueManager& diag) {
     m_is_open = false;
-    ui.SetVisible(false);
+    diag.EndShopSelection();
     LOG_INFO("Shop::Close id={}", m_object_id);
     if (m_on_close) m_on_close();
 }
-
-
-void Shop::HandleInput(std::shared_ptr<Player> player, MenuUI& ui) {
-    if (!m_is_open || !player) return;
-
-    const int opt_count = static_cast<int>(m_session_data.options.size());
-
-    if (Util::Input::IsKeyDown(Util::Keycode::W) || Util::Input::IsKeyDown(Util::Keycode::UP)) {
-        m_selection = (m_selection - 1 + opt_count) % opt_count;
-        ui.UpdateShopSelection(m_selection);
-    }
-    if (Util::Input::IsKeyDown(Util::Keycode::S) || Util::Input::IsKeyDown(Util::Keycode::DOWN)) {
-        m_selection = (m_selection + 1) % opt_count;
-        ui.UpdateShopSelection(m_selection);
-    }
-    if (Util::Input::IsKeyDown(Util::Keycode::SPACE) || Util::Input::IsKeyDown(Util::Keycode::RETURN)) {
-        if (m_selection >= 0 && m_selection < opt_count) {
-            const auto& opt = m_session_data.options[m_selection];
-            if (opt.text == "Exit") {
-                Close(ui);
-                return;
-            }
-            if (CanAfford(opt, *player)) {
-                ExecutePurchase(opt, player);
-                auto it = AppUtil::GlobalObjectRegistry.find(m_object_id);
-                if (it != AppUtil::GlobalObjectRegistry.end() && it->second.shop_props) {
-                    it->second.shop_props->transaction_count = m_transaction_count;
-                }
-                BuildShopData();
-                ui.SetShopData(m_session_data);
-                ui.UpdateShopSelection(m_selection);
-            }
-        }
-    }
-    if (Util::Input::IsKeyDown(Util::Keycode::ESCAPE) || Util::Input::IsKeyDown(Util::Keycode::Q)) {
-        Close(ui);
-    }
-}
-
 
 bool Shop::CanAfford(const AppUtil::ShopOption& opt, const Player& player) const {
     for (const auto& eff : opt.effects) {
@@ -106,7 +85,7 @@ void Shop::ExecutePurchase(const AppUtil::ShopOption& opt, std::shared_ptr<Playe
     LOG_INFO("Shop purchase id={} trans={}", m_object_id, m_transaction_count);
 }
 
-void Shop::BuildShopData() {
+void Shop::BuildShopData(int floor) {
     auto it = AppUtil::GlobalObjectRegistry.find(m_object_id);
     if (it == AppUtil::GlobalObjectRegistry.end() || !it->second.shop_props) return;
 
@@ -116,33 +95,31 @@ void Shop::BuildShopData() {
     m_session_data.transaction_count = m_transaction_count;
     m_session_data.prompts.clear();
 
-    std::string name = it->second.name;
-    std::string dialogue_path = std::string(MAGIC_TOWER_RESOURCE_DIR) + "/Datas/Texts/" + name + ".csv";
-    auto rows = AppUtil::MapParser::ParseCsvToStrings(dialogue_path);
-    for (const auto& row : rows) if (!row.empty() && !row[0].empty()) m_session_data.prompts.push_back(row[0]);
-
+    std::string name = std::to_string(floor) + "_" + it->second.name;
     std::string option_path = std::string(MAGIC_TOWER_RESOURCE_DIR) + "/Datas/Texts/" + name + "_option.csv";
     m_session_data.options = AppUtil::MapParser::ParseShopOptions(option_path);
     if (m_session_data.options.empty()) m_session_data.options.push_back({"No Inventory Found", {}});
     m_session_data.options.push_back({"Exit", {}});
 
-    // Dynamic Price Scaling for Greed God
+    // Calculate Dynamic Price
     if (shop.pricing_type == AppUtil::ShopPricingType::SCALING_GREED) {
         int cost = 20 + m_transaction_count + (m_transaction_count > 25 ? (m_transaction_count - 25) * 4 : 0);
-        m_session_data.prompts.push_back(std::to_string(cost));
-        for (auto& prompt : m_session_data.prompts) {
-            size_t pos = prompt.find("　　　");
-            if (pos != std::string::npos) {
-                std::string price_str = std::to_string(cost);
-                if (price_str.length() == 2) price_str = " " + price_str;
-                prompt.replace(pos, 9, price_str);
-            }
-        }
+        
+        // Update Special Price String for Dialogue UI
+        std::string price_str = std::to_string(cost);
+        if (price_str.length() == 1) price_str = "   " + price_str;
+        else if (price_str.length() == 2) price_str = "  " + price_str;
+        else if (price_str.length() == 3) price_str = " " + price_str;
+        m_session_data.special_price_str = price_str;
+
+        // Update Option Costs
         for (auto& optr : m_session_data.options) {
             if (optr.text == "Exit") continue;
             for (auto& eff : optr.effects) if (eff.type == AppUtil::Effect::COIN) eff.value = -cost;
             size_t pos = optr.text.find('(');
             if (pos != std::string::npos) optr.text = optr.text.substr(0, pos);
         }
+    } else {
+        m_session_data.special_price_str = "";
     }
 }

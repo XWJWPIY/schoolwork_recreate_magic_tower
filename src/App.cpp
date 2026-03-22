@@ -180,12 +180,9 @@ void App::Update() {
     }
     break;
 
-  // ── SHOP: delegate all input to the active Shop session ──────────────
+  // ── SHOP: input is natively handled by DialogueManager ───────────────
   case AppUtil::GameState::SHOP:
-    if (m_active_shop && m_menu_ui) {
-      m_active_shop->HandleInput(m_player, *m_menu_ui);
-      m_status_ui->Update(m_player, m_road_map->GetCurrentStory());
-    }
+    // Input handled by DialogueManager
     break;
 
   // ── PLAYING ───────────────────────────────────────────────────────────
@@ -198,14 +195,10 @@ void App::Update() {
       // Locate the Shop entity in thingsMap and call Open()
       auto obj = m_things_map->FindFirstObjectOfId(id);
       if (auto shop = std::dynamic_pointer_cast<Shop>(obj)) {
-        shop->Open(m_player, *m_menu_ui);
+        shop->Open(m_player, *m_dialogue_manager, m_road_map->GetCurrentStory());
         // State switch is handled by the onOpen callback inside Open()
         break;
       }
-    }
-
-    if (m_status_ui) {
-      m_status_ui->Update(m_player, m_road_map->GetCurrentStory());
     }
 
     if (Util::Input::IsKeyDown(Util::Keycode::W) ||
@@ -324,6 +317,13 @@ void App::Update() {
 
   if (m_player) {
     m_player->ObjectUpdate();
+  }
+
+  // Unified UI Update (Sync stats in real-time)
+  if (m_status_ui && m_player && (m_game_state == AppUtil::GameState::PLAYING || 
+                                  m_game_state == AppUtil::GameState::SHOP ||
+                                  m_game_state == AppUtil::GameState::ITEM_DIALOG)) {
+    m_status_ui->Update(m_player, m_road_map->GetCurrentStory());
   }
 
   if (m_dialogue_manager) {
