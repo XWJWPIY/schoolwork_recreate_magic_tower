@@ -56,6 +56,8 @@ struct CombatComponent {
 };
 
 struct DialogComponent {
+    std::string title;      // Name of the speaker
+    std::string icon_path;  // Icon to show in dialogue box
     std::vector<std::string> lines;
 };
 
@@ -78,6 +80,7 @@ struct StairComponent {
 // --- Main Metadata ---
 
 struct ObjectMetadata {
+    ObjectMetadata() = default;
     std::string name;
     std::string folder;
     bool is_passable;
@@ -113,15 +116,19 @@ struct ObjectMetadata {
 };
 
 extern std::unordered_map<int, ObjectMetadata> GlobalObjectRegistry;
+extern std::unordered_map<std::string, std::string> GlobalSettings;
+std::string GetGlobalString(const std::string& key, const std::string& defaultValue = "");
 
 class RegistryLoader {
 public:
     static void LoadAllData();
+    static void LoadSettings(const std::string& path);
     static void LoadBlocks(const std::string& path);
     static void LoadDoors(const std::string& path);
     static void LoadItems(const std::string& path);
     static void LoadStairs(const std::string& path);
     static void LoadShops(const std::string& path);
+    static void LoadNPCs(const std::string& path);
 };
 
 // Global or shared utility functions and constant definitions

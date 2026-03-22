@@ -1,0 +1,4 @@
+ID,Path,Folder,Passable,Animation,Title,Icon
+501,elder,NPC,false,2,老人,elder1
+502,shopkeeper,NPC,false,2,商人,shopkeeper1
+503,thief,NPC,false,2,盜賊,thief1

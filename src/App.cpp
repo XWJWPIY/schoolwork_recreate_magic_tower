@@ -51,7 +51,11 @@ void App::InitializeGame() {
     } else if (id >= 400 && id < 500) {
       entity = std::make_shared<Enemy>(id);
     } else if (id >= 500 && id < 600) {
-      entity = std::make_shared<NPC>(id);
+      entity = std::make_shared<NPC>(
+          id, [this](std::shared_ptr<NPC> npc, const std::string& path) {
+              std::string scriptName = std::to_string(this->m_road_map->GetCurrentStory()) + "_" + path;
+              this->m_dialogue_manager->StartScript(scriptName, npc);
+          });
     } else if (id >= 600 && id < 700) {
       // Shop entity: inject open/close callbacks so it can drive state transitions
       entity = std::make_shared<Shop>(

@@ -10,22 +10,42 @@
 namespace AppUtil {
 
 // 全域物件註冊表 (Global Object Registry)
-// 格式：{ ID, {名稱, 資源資料夾, 是否可通行} }
-std::unordered_map<int, ObjectMetadata> GlobalObjectRegistry = {
-    {0, {"road", "Road", true}} // 預設為空，但參考道路的圖片大小
-};
+std::unordered_map<int, ObjectMetadata> GlobalObjectRegistry;
+std::unordered_map<std::string, std::string> GlobalSettings;
+
+std::string GetGlobalString(const std::string& key, const std::string& defaultValue) {
+    auto it = GlobalSettings.find(key);
+    if (it != GlobalSettings.end()) return it->second;
+    return defaultValue;
+}
 
 void RegistryLoader::LoadAllData() {
     LOG_INFO("Cleaning and Loading Game Object Registry from CSV...");
     // Clear old data to ensure re-entry/restart resets transaction counts
     GlobalObjectRegistry.clear();
     GlobalObjectRegistry.emplace(0, ObjectMetadata("road", "Road", true));
+    LoadSettings(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Settings.csv");
     LoadBlocks(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Block.csv");
     LoadDoors(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Door.csv");
     LoadItems(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Item.csv");
     LoadStairs(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Stair.csv");
     LoadShops(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Shop.csv");
+    LoadNPCs(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/NPC.csv");
     LOG_INFO("Object Registry loaded. Total objects: {}", GlobalObjectRegistry.size());
+}
+
+void RegistryLoader::LoadSettings(const std::string& path) {
+    auto data = MapParser::ParseCsvToStrings(path);
+    if (data.empty()) return;
+
+    GlobalSettings.clear();
+    // Header: Key,Value
+    for (size_t i = 1; i < data.size(); ++i) {
+        const auto& row = data[i];
+        if (row.size() < 2) continue;
+        GlobalSettings[row[0]] = row[1];
+    }
+    LOG_INFO("RegistryLoader: Loaded {} settings.", GlobalSettings.size());
 }
 
 void RegistryLoader::LoadBlocks(const std::string& path) {
@@ -160,7 +180,7 @@ void RegistryLoader::LoadShops(const std::string& path) {
     // Header: ID,Path,Folder,Passable,Animation,Title,Icon,Initial_Transactions
     for (size_t i = 1; i < data.size(); ++i) {
         const auto& row = data[i];
-        if (row.size() < 8) continue;
+        if (row.size() < 7) continue;
 
         int id = std::stoi(row[0]);
         std::string res_name = row[1];
@@ -169,20 +189,41 @@ void RegistryLoader::LoadShops(const std::string& path) {
         int frames = std::stoi(row[4]);
 
         ObjectMetadata meta(res_name, folder, passable, frames);
-        
-        std::string title = row[5];
-        std::string icon_path = (row.size() >= 7) ? row[6] : "";
-        int initial_transactions = (row.size() >= 8) ? std::stoi(row[7]) : 0;
-
         meta.shop_props = std::make_shared<ShopComponent>();
-        meta.shop_props->title = title;
-        meta.shop_props->icon_path = icon_path;
-        meta.shop_props->transaction_count = initial_transactions;
+        meta.shop_props->title = row[5];
+        meta.shop_props->icon_path = row[6];
+        if (row.size() >= 8 && !row[7].empty()) {
+            meta.shop_props->transaction_count = std::stoi(row[7]);
+        }
 
         // Legacy mapping for Greed God
         if (id == 602) {
             meta.shop_props->pricing_type = ShopPricingType::SCALING_GREED;
         }
+
+        GlobalObjectRegistry.emplace(id, std::move(meta));
+    }
+}
+
+void RegistryLoader::LoadNPCs(const std::string& path) {
+    auto data = MapParser::ParseCsvToStrings(path);
+    if (data.empty()) return;
+
+    // Header: ID,Path,Folder,Passable,Animation,Title,Icon
+    for (size_t i = 1; i < data.size(); ++i) {
+        const auto& row = data[i];
+        if (row.size() < 7) continue;
+
+        int id = std::stoi(row[0]);
+        std::string res_name = row[1];
+        std::string folder = row[2];
+        bool passable = (row[3] == "true");
+        int frames = std::stoi(row[4]);
+
+        ObjectMetadata meta(res_name, folder, passable, frames);
+        meta.dialog_props = std::make_shared<DialogComponent>();
+        meta.dialog_props->title = row[5];
+        meta.dialog_props->icon_path = row[6];
 
         GlobalObjectRegistry.emplace(id, std::move(meta));
     }

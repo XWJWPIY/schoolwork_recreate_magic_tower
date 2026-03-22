@@ -7,6 +7,9 @@
 #include <memory>
 #include <functional>
 
+#include "NumericDisplayText.hpp"
+#include "Util/Image.hpp"
+
 class MenuUI;
 class Player;
 class Entity;
@@ -45,6 +48,7 @@ private:
     void AdvanceScript(std::shared_ptr<Player> player);
     void ParseScript(const std::string& name);
     void ExecuteCommand(const ScriptLine& line, std::shared_ptr<Player> player);
+    void SetUIState(bool dialogueVisible);
 
 private:
     Mode m_mode = Mode::INACTIVE;
@@ -55,6 +59,14 @@ private:
     
     std::string m_last_speaker;
     std::shared_ptr<Entity> m_source_entity;
+    std::string m_pending_notice;
+
+    // UI Components
+    std::shared_ptr<Util::GameObject> m_background;
+    std::shared_ptr<Util::GameObject> m_npc_icon;
+    std::shared_ptr<NumericDisplayText> m_name_text;
+    std::shared_ptr<NumericDisplayText> m_content_text;
+    std::shared_ptr<NumericDisplayText> m_space_prompt;
 };
 
 #endif // DIALOGUEMANAGER_HPP

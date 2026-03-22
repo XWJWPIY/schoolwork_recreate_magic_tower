@@ -31,6 +31,9 @@ classDiagram
         -Mode m_mode
         -vector~ScriptLine~ m_script
         -shared_ptr~Entity~ m_source_entity
+        -shared_ptr~NumericDisplayText~ m_name_text
+        -shared_ptr~NumericDisplayText~ m_content_text
+        -shared_ptr~NumericDisplayText~ m_space_prompt
         +DialogueManager(MenuUI)
         +StartScript(name, source)
         +ShowNotice(text)
@@ -280,6 +283,9 @@ classDiagram
         -Mode m_mode
         -vector~ScriptLine~ m_script
         -shared_ptr~Entity~ m_source_entity
+        -shared_ptr~NumericDisplayText~ m_name_text
+        -shared_ptr~NumericDisplayText~ m_content_text
+        -shared_ptr~NumericDisplayText~ m_space_prompt
         +DialogueManager(MenuUI)
         +StartScript(name, source)
         +ShowNotice(text)
@@ -486,7 +492,7 @@ classDiagram
 
 ### 4.4 `NPC` (NPC)
 - **建構**：`Entity(id, "", true)` — 使用自動資源路徑。
-- **`Reaction()` override** — 目前記錄 Log。(TODO: 對話系統)
+- **`Reaction()` override** — 從 `GlobalObjectRegistry` 讀取 `DialogComponent` 獲取對話腳本檔名，並呼叫 `DialogueManager::StartScript` 啟動對話。
 
 ### 4.5 `Item` (道具)
 - **屬性**：`NoticeCallback m_notice_callback` — 用於觸發道具對話框。
@@ -583,7 +589,9 @@ classDiagram
 
 ## 十一、對話管理系統 (`DialogueManager`)
 - **統一介面**：繼承 `AllObjects` 並整合 `MenuUI`，集中處理所有對話、選擇與通知。
+- **UI 組件**：包含背景圖、NPC 頭像、說話者名稱、對話內容，以及一個會閃爍的 `-Space-` 繼續提示。元件皆使用**絕對座標**定位，以確保在不同背景下位置固定。
 - **腳本解析功能**：
+  - **多行自動合併**：`AdvanceScript` 會自動將連續 3 行內同一個說話者的對話合併顯示，並以 `\n` 換行，提升閱讀流暢度。
   - **說話者辨識**：首欄為 `0` 表示玩家（勇者），`1` 表示 NPC。其餘則視為指令。
   - **指令標籤**：
     - `item` (給予物品)：給予對應 ID 的道具或數值。
@@ -615,6 +623,7 @@ classDiagram
   - `LoadBlocks("Block.csv")` — 牆壁、地板、岩漿等 (ID, Path, Name, Passable, Animation)。
   - `LoadDoors("Door.csv")` — 門 + `DoorComponent` (黃/藍/紅鑰匙需求, 被動門標記)。
   - `LoadItems("Item.csv")` — 道具 + `ItemComponent` (多效果) + `DialogComponent` (獲取對話)。
+  - `LoadNPCs("NPC.csv")` — NPC + `DialogComponent` (標題, 頭像路徑)。
   - `LoadStairs("Stair.csv")` — 樓梯 (ID, Path, Passable, Animation)。
   - `LoadShops("Shop.csv")` — 商店 + `ShopComponent` (標題, 圖示, 初始交易數)。
 - **資源定位**：`GetIdResourcePath(id)` — 依 `ObjectMetadata` 動態合成路徑。`Road`、`Shop` 與 `Door` 資料夾強制使用數字後綴規則。
