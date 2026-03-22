@@ -135,7 +135,7 @@ void App::InitializeGame() {
   m_menu_ui->AddToRoot(m_root);
 
   m_dialogue_manager = std::make_shared<DialogueManager>(m_menu_ui);
-  m_root.AddChild(m_dialogue_manager);
+  m_dialogue_manager->AddToRoot(m_root);
 }
 
 void App::Update() {
@@ -324,6 +324,10 @@ void App::Update() {
 
   if (m_player) {
     m_player->ObjectUpdate();
+  }
+
+  if (m_dialogue_manager) {
+    m_dialogue_manager->Update();
   }
 
   m_root.Update();

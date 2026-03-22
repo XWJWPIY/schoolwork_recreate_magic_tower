@@ -1,7 +1,9 @@
 #ifndef DIALOGUEMANAGER_HPP
 #define DIALOGUEMANAGER_HPP
 
-#include "AllObjects.hpp"
+#include "Util/GameObject.hpp"
+#include "Util/Renderer.hpp"
+
 #include <vector>
 #include <string>
 #include <memory>
@@ -14,7 +16,7 @@ class MenuUI;
 class Player;
 class Entity;
 
-class DialogueManager : public AllObjects {
+class DialogueManager {
 public:
     enum class Mode {
         INACTIVE,
@@ -36,9 +38,12 @@ public:
     void StartScript(const std::string& name, std::shared_ptr<Entity> source = nullptr);
     void ShowNotice(const std::string& text);
     
+    void AddToRoot(Util::Renderer& root);
+    void SetVisible(bool visible);
+    
     // Core lifecycle
     void HandleInput(std::shared_ptr<Player> player);
-    void ObjectUpdate() override;
+    void Update();
     
     // Status
     bool IsActive() const { return m_mode != Mode::INACTIVE; }

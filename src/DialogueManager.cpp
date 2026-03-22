@@ -8,8 +8,7 @@
 #include "Util/Logger.hpp"
 
 DialogueManager::DialogueManager(std::shared_ptr<MenuUI> ui) 
-    : AllObjects(nullptr, 100.0f, -100), m_ui(ui) {
-    SetVisible(false);
+    : m_ui(ui) {
 
     // Initialize UI Components
     const std::string fontPath = MAGIC_TOWER_RESOURCE_DIR "/font/Cubic_11.ttf"; 
@@ -18,25 +17,21 @@ DialogueManager::DialogueManager(std::shared_ptr<MenuUI> ui)
         std::make_unique<Util::Image>(MAGIC_TOWER_RESOURCE_DIR "/bmp/NPC/NPCDialog.bmp"), 10.0f);
     m_background->m_Transform.scale = {0.735f, 0.735f};
     m_background->m_Transform.translation = {141.0f, 150.0f}; 
-    AddChild(m_background);
 
     m_npc_icon = std::make_shared<Util::GameObject>(
         std::make_unique<Util::Image>(MAGIC_TOWER_RESOURCE_DIR "/bmp/NPC/elder1.bmp"), 11.0f);
     m_npc_icon->m_Transform.translation = {-28.0f, 207.0f}; // Absolute position
     m_npc_icon->m_Transform.scale = {0.735f, 0.735f}; 
-    AddChild(m_npc_icon);
 
     m_name_text = std::make_shared<NumericDisplayText>(fontPath, 24);
     m_name_text->SetZIndex(12.0f);
     m_name_text->m_Transform.translation = {60.0f, 205.0f}; // Absolute position
     m_name_text->SetShowNumber(false);
-    AddChild(m_name_text);
 
     m_content_text = std::make_shared<NumericDisplayText>(fontPath, 24);
     m_content_text->SetZIndex(12.0f);
     m_content_text->m_Transform.translation = {141.0f, 125.0f}; // Absolute position
     m_content_text->SetShowNumber(false);
-    AddChild(m_content_text);
 
     m_space_prompt = std::make_shared<NumericDisplayText>(fontPath, 22);
     m_space_prompt->SetZIndex(13.0f);
@@ -44,9 +39,20 @@ DialogueManager::DialogueManager(std::shared_ptr<MenuUI> ui)
     m_space_prompt->SetPrefix("-Space-");
     m_space_prompt->SetShowNumber(false);
     m_space_prompt->UpdateDisplayText();
-    AddChild(m_space_prompt);
 
     SetUIState(false);
+}
+
+void DialogueManager::AddToRoot(Util::Renderer& root) {
+    if (m_background) root.AddChild(m_background);
+    if (m_npc_icon) root.AddChild(m_npc_icon);
+    if (m_name_text) root.AddChild(m_name_text);
+    if (m_content_text) root.AddChild(m_content_text);
+    if (m_space_prompt) root.AddChild(m_space_prompt);
+}
+
+void DialogueManager::SetVisible(bool visible) {
+    SetUIState(visible);
 }
 
 void DialogueManager::SetUIState(bool dialogueVisible) {
@@ -107,7 +113,7 @@ void DialogueManager::HandleInput(std::shared_ptr<Player> player) {
     // TODO: Handle selection W/S/ENTER if mode is SELECTION
 }
 
-void DialogueManager::ObjectUpdate() {
+void DialogueManager::Update() {
     if (!IsActive()) return;
 
     // Blink Space Prompt
