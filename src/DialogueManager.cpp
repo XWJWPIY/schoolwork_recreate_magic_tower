@@ -486,7 +486,8 @@ void DialogueManager::ExecuteCommand(const ScriptLine& line, std::shared_ptr<Pla
                     for (const auto& eff : opt.effects) {
                         if (eff.value < 0) {
                             int cost = -eff.value;
-                            switch (eff.type) {
+                            AppUtil::Effect type = AppUtil::AttributeRegistry::ToEffect(eff.type_id);
+                            switch (type) {
                                 case AppUtil::Effect::COIN: if (player->GetAttr(AppUtil::Effect::COIN) < cost) canAfford = false; break;
                                 case AppUtil::Effect::EXP: if (player->GetAttr(AppUtil::Effect::EXP) < cost) canAfford = false; break;
                                 case AppUtil::Effect::HP: if (player->GetAttr(AppUtil::Effect::HP) <= cost) canAfford = false; break;
@@ -500,7 +501,9 @@ void DialogueManager::ExecuteCommand(const ScriptLine& line, std::shared_ptr<Pla
                 }
 
                 if (canAfford && player) {
-                    for (const auto& eff : opt.effects) player->ApplyEffect(eff.type, eff.value);
+                    for (const auto& eff : opt.effects) {
+                        player->ApplyEffect(AppUtil::AttributeRegistry::ToEffect(eff.type_id), eff.value);
+                    }
                     RefreshShopOptions(m_current_shop_data);
                 }
             };

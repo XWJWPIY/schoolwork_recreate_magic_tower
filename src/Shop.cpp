@@ -66,7 +66,8 @@ bool Shop::CanAfford(const AppUtil::ShopOption& opt, const Player& player) const
     for (const auto& eff : opt.effects) {
         if (eff.value >= 0) continue;
         int cost = -eff.value;
-        switch (eff.type) {
+        AppUtil::Effect type = AppUtil::AttributeRegistry::ToEffect(eff.type_id);
+        switch (type) {
             case AppUtil::Effect::COIN: if (player.GetAttr(AppUtil::Effect::COIN) < cost) return false; break;
             case AppUtil::Effect::EXP: if (player.GetAttr(AppUtil::Effect::EXP) < cost) return false; break;
             case AppUtil::Effect::HP: if (player.GetAttr(AppUtil::Effect::HP) <= cost) return false; break;
@@ -80,7 +81,9 @@ bool Shop::CanAfford(const AppUtil::ShopOption& opt, const Player& player) const
 }
 
 void Shop::ExecutePurchase(const AppUtil::ShopOption& opt, std::shared_ptr<Player> player) {
-    for (const auto& eff : opt.effects) player->ApplyEffect(eff.type, eff.value);
+    for (const auto& eff : opt.effects) {
+        player->ApplyEffect(AppUtil::AttributeRegistry::ToEffect(eff.type_id), eff.value);
+    }
     m_transaction_count++;
     LOG_INFO("Shop purchase id={} trans={}", m_object_id, m_transaction_count);
 }
@@ -115,7 +118,9 @@ void Shop::BuildShopData(int floor) {
         // Update Option Costs
         for (auto& optr : m_session_data.options) {
             if (optr.text == "Exit") continue;
-            for (auto& eff : optr.effects) if (eff.type == AppUtil::Effect::COIN) eff.value = -cost;
+            for (auto& eff : optr.effects) {
+                if (AppUtil::AttributeRegistry::ToEffect(eff.type_id) == AppUtil::Effect::COIN) eff.value = -cost;
+            }
             size_t pos = optr.text.find('(');
             if (pos != std::string::npos) optr.text = optr.text.substr(0, pos);
         }

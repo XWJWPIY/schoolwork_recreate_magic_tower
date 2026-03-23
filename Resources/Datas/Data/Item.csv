@@ -1,4 +1,4 @@
-﻿ID,Path,Passable,Animation,Level,HP,ATK,DEF,AGI,EXP,yellow key,blue key,red key,Coin,Weak,Poison,Dialog
+﻿ID,Path,Passable,Animation,Level,HP,ATK,DEF,AGI,EXP,yellow_key,blue_key,red_key,Coin,Weak,Poison,Dialog
 201,yellow_key,FALSE,1,0,0,0,0,0,0,1,0,0,0,0,0,黃鑰匙
 202,blue_key,FALSE,1,0,0,0,0,0,0,0,1,0,0,0,0,藍鑰匙
 203,red_key,FALSE,1,0,0,0,0,0,0,0,0,1,0,0,0,紅鑰匙

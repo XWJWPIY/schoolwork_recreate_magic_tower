@@ -14,17 +14,18 @@ Player::Player()
   m_grid_y = 10;
 
   // Initial Stats from reference UI
+  // Initial stats are now consistently set via SetAttr
   SetAttr(AppUtil::Effect::HP, 1000);
   SetAttr(AppUtil::Effect::ATTACK, 10);
   SetAttr(AppUtil::Effect::DEFENSE, 10);
   SetAttr(AppUtil::Effect::AGILITY, 2);
-  SetAttr(AppUtil::Effect::EXP, 0);
+  SetAttr(AppUtil::Effect::EXP, 1000);
   SetAttr(AppUtil::Effect::LEVEL, 1);
 
   SetAttr(AppUtil::Effect::KEY_YELLOW, 1);
   SetAttr(AppUtil::Effect::KEY_BLUE, 1);
   SetAttr(AppUtil::Effect::KEY_RED, 1);
-  SetAttr(AppUtil::Effect::COIN, 0);
+  SetAttr(AppUtil::Effect::COIN, 1000);
 
   UpdateSprite();
 }

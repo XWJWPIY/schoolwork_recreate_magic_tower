@@ -26,8 +26,51 @@ enum class Effect {
     FLY
 };
 
+namespace Attr {
+    const std::string ID           = "ID";
+    const std::string PATH         = "Path";
+    const std::string FOLDER       = "Folder";
+    const std::string PASSABLE     = "Passable";
+    const std::string ANIMATION    = "Animation";
+    const std::string TITLE        = "Title";
+    const std::string ICON         = "Icon";
+    const std::string HP           = "HP";
+    const std::string ATTACK       = "ATK";
+    const std::string DEFENSE      = "DEF";
+    const std::string AGILITY      = "AGI";
+    const std::string EXP          = "EXP";
+    const std::string LEVEL        = "Level";
+    const std::string YELLOW_KEY   = "yellow_key";
+    const std::string BLUE_KEY     = "blue_key";
+    const std::string RED_KEY      = "red_key";
+    const std::string COIN         = "Coin";
+    const std::string WEAK         = "Weak";
+    const std::string POISON       = "Poison";
+    const std::string IS_PASSIVE   = "is_passive";
+    const std::string FLOOR_DELTA  = "floor_delta";
+    const std::string TRANSACTIONS = "Initial_Transactions";
+    const std::string DIALOG       = "Dialog";
+}
+
+class AttributeRegistry {
+public:
+    static int GetId(const std::string& name);
+    static std::string GetName(int id);
+    static Effect ToEffect(int id);
+    static int FromEffect(Effect effect);
+    static void Initialize();
+    static bool IsAttribute(const std::string& name);
+
+private:
+    static std::unordered_map<std::string, int> m_nameToId;
+    static std::unordered_map<int, std::string> m_idToName;
+    static std::unordered_map<int, Effect> m_idToEffect;
+    static std::unordered_map<Effect, int> m_effectToId;
+    static int m_nextDynamicId;
+};
+
 struct SubEffect {
-    Effect type;
+    int type_id; // Using dynamic ID instead of enum
     int value;
 };
 
@@ -96,6 +139,9 @@ struct ObjectMetadata {
     std::shared_ptr<ShopComponent>   shop_props   = nullptr;
     std::shared_ptr<StairComponent>  stair_props  = nullptr;
 
+    // Initial attributes for actor construction
+    std::unordered_map<int, int> initial_attributes;
+
     // Picture Static Object (Wall, Road, NPC, etc.)
     ObjectMetadata(std::string n, std::string f, bool p)
         : name(std::move(n)), folder(std::move(f)), is_passable(p), 
@@ -119,6 +165,24 @@ struct ObjectMetadata {
 extern std::unordered_map<int, ObjectMetadata> GlobalObjectRegistry;
 extern std::unordered_map<std::string, std::string> GlobalSettings;
 std::string GetGlobalString(const std::string& key, const std::string& defaultValue = "");
+
+class CSVLoader {
+public:
+    bool Load(const std::string& path);
+    size_t GetRowCount() const { return m_data.size(); }
+    
+    std::string GetString(size_t rowIndex, const std::string& colName, const std::string& def = "") const;
+    int GetInt(size_t rowIndex, const std::string& colName, int def = 0) const;
+    bool GetBool(size_t rowIndex, const std::string& colName, bool def = false) const;
+
+    // Get all attributes found in this row that are registered in AttributeRegistry
+    std::vector<SubEffect> GetRowEffects(size_t rowIndex) const;
+
+private:
+    std::unordered_map<std::string, int> m_headerMap;
+    std::vector<std::vector<std::string>> m_data;
+    std::vector<int> m_attributeCols; // Indices of columns that are attributes
+};
 
 class RegistryLoader {
 public:

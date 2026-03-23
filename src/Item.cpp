@@ -22,7 +22,7 @@ void Item::Reaction(std::shared_ptr<Player> player) {
 
       if (meta.item_props) {
         for (const auto &effect : meta.item_props->effects) {
-          player->ApplyEffect(effect.type, effect.value);
+          player->ApplyEffect(AppUtil::AttributeRegistry::ToEffect(effect.type_id), effect.value);
         }
       }
     }

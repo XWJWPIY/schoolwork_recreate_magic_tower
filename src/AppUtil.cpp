@@ -13,6 +13,84 @@ namespace AppUtil {
 std::unordered_map<int, ObjectMetadata> GlobalObjectRegistry;
 std::unordered_map<std::string, std::string> GlobalSettings;
 
+// AttributeRegistry static members
+std::unordered_map<std::string, int> AttributeRegistry::m_nameToId;
+std::unordered_map<int, std::string> AttributeRegistry::m_idToName;
+std::unordered_map<int, Effect> AttributeRegistry::m_idToEffect;
+std::unordered_map<Effect, int> AttributeRegistry::m_effectToId;
+int AttributeRegistry::m_nextDynamicId = 2000;
+
+void AttributeRegistry::Initialize() {
+    m_nameToId.clear();
+    m_idToName.clear();
+    m_idToEffect.clear();
+    m_effectToId.clear();
+    m_nextDynamicId = 2000;
+
+    auto reg = [](const std::string& name, int id, Effect e = Effect::NONE) {
+        m_nameToId[name] = id;
+        m_idToName[id] = name;
+        if (e != Effect::NONE) {
+            m_idToEffect[id] = e;
+            m_effectToId[e] = id;
+        }
+    };
+
+    // Standard attributes matching Effect enum
+    reg(Attr::HP,         1, Effect::HP);
+    reg(Attr::ATTACK,     2, Effect::ATTACK);
+    reg(Attr::DEFENSE,    3, Effect::DEFENSE);
+    reg(Attr::AGILITY,    4, Effect::AGILITY);
+    reg(Attr::EXP,        5, Effect::EXP);
+    reg(Attr::LEVEL,      6, Effect::LEVEL);
+    reg(Attr::YELLOW_KEY, 7, Effect::KEY_YELLOW);
+    reg(Attr::BLUE_KEY,   8, Effect::KEY_BLUE);
+    reg(Attr::RED_KEY,    9, Effect::KEY_RED);
+    reg(Attr::COIN,       10, Effect::COIN);
+    reg(Attr::WEAK,       11, Effect::WEAK);
+    reg(Attr::POISON,     12, Effect::POISON);
+    reg("Fly",            13, Effect::FLY);
+}
+
+bool AttributeRegistry::IsAttribute(const std::string& name) {
+    // Explicitly ignore structural fields
+    if (name == Attr::ID || name == Attr::PATH || name == Attr::FOLDER || 
+        name == Attr::PASSABLE || name == Attr::ANIMATION || name == Attr::TITLE || 
+        name == Attr::ICON || name == Attr::DIALOG || name == Attr::IS_PASSIVE || 
+        name == Attr::FLOOR_DELTA || name == Attr::TRANSACTIONS) {
+        return false;
+    }
+    // Anything else in a CSV row that isn't structural is treated as a potential attribute
+    return true;
+}
+
+int AttributeRegistry::GetId(const std::string& name) {
+    auto it = m_nameToId.find(name);
+    if (it != m_nameToId.end()) return it->second;
+
+    // Register new dynamic attribute
+    int newId = m_nextDynamicId++;
+    m_nameToId[name] = newId;
+    m_idToName[newId] = name;
+    LOG_INFO("AttributeRegistry: Registered new dynamic attribute '{}' with ID {}", name, newId);
+    return newId;
+}
+
+std::string AttributeRegistry::GetName(int id) {
+    auto it = m_idToName.find(id);
+    return (it != m_idToName.end()) ? it->second : "UnknownAttr";
+}
+
+Effect AttributeRegistry::ToEffect(int id) {
+    auto it = m_idToEffect.find(id);
+    return (it != m_idToEffect.end()) ? it->second : Effect::NONE;
+}
+
+int AttributeRegistry::FromEffect(Effect effect) {
+    auto it = m_effectToId.find(effect);
+    return (it != m_effectToId.end()) ? it->second : 0;
+}
+
 std::string GetGlobalString(const std::string& key, const std::string& defaultValue) {
     auto it = GlobalSettings.find(key);
     if (it != GlobalSettings.end()) return it->second;
@@ -20,6 +98,9 @@ std::string GetGlobalString(const std::string& key, const std::string& defaultVa
 }
 
 void RegistryLoader::LoadAllData() {
+    LOG_INFO("RegistryLoader: Initializing Attribute Registry...");
+    AttributeRegistry::Initialize();
+
     LOG_INFO("Cleaning and Loading Game Object Registry from CSV...");
     // Clear old data to ensure re-entry/restart resets transaction counts
     GlobalObjectRegistry.clear();
@@ -32,7 +113,7 @@ void RegistryLoader::LoadAllData() {
     LoadShops(std::string(MAGIC_TOWER_RESOURCE_DIR) + "/Datas/Data/Shop.csv");
     LoadNPCs(std::string(MAGIC_TOWER_RESOURCE_DIR) + "/Datas/Data/NPC.csv");
     LoadTriggers(std::string(MAGIC_TOWER_RESOURCE_DIR) + "/Datas/Data/Trigger.csv");
-    LOG_INFO("RegistryLoader: Loaded {} object types into registry.", GlobalObjectRegistry.size());
+    LOG_INFO("RegistryLoader: Total {} object types in registry.", GlobalObjectRegistry.size());
 }
 
 void RegistryLoader::LoadSettings(const std::string& path) {
@@ -50,122 +131,100 @@ void RegistryLoader::LoadSettings(const std::string& path) {
 }
 
 void RegistryLoader::LoadBlocks(const std::string& path) {
-    auto data = MapParser::ParseCsvToStrings(path);
-    if (data.empty()) return;
+    CSVLoader loader;
+    if (!loader.Load(path)) return;
 
-    // Header: ID,Path,Name,Passable,Animation
-    for (size_t i = 1; i < data.size(); ++i) {
-        const auto& row = data[i];
-        if (row.size() < 5) continue;
-
-        int id = std::stoi(row[0]);
-        std::string res_name = row[1];
-        std::string folder = "Road"; // Blocks are usually in Road folder
-        bool passable = (row[3] == "true");
-        int frames = std::stoi(row[4]);
+    for (size_t i = 0; i < loader.GetRowCount(); ++i) {
+        int id = loader.GetInt(i, Attr::ID);
+        std::string res_name = loader.GetString(i, Attr::PATH);
+        std::string folder = loader.GetString(i, Attr::FOLDER, "Road");
+        bool passable = loader.GetBool(i, Attr::PASSABLE, true);
+        int frames = loader.GetInt(i, Attr::ANIMATION, 1);
 
         GlobalObjectRegistry.emplace(id, ObjectMetadata(res_name, folder, passable, frames));
     }
 }
 
 void RegistryLoader::LoadDoors(const std::string& path) {
-    auto data = MapParser::ParseCsvToStrings(path);
-    if (data.empty()) return;
+    CSVLoader loader;
+    if (!loader.Load(path)) return;
 
-    // Header: ID,Path,Passable,Animation,yellow_key,blue_key,red_key
-    for (size_t i = 1; i < data.size(); ++i) {
-        const auto& row = data[i];
-        if (row.size() < 7) continue;
-
-        int id = std::stoi(row[0]);
-        std::string res_name = row[1];
-        bool passable = (row[2] == "true");
-        int frames = std::stoi(row[3]); // Doors usually have 5 frames for open animation, but now from CSV
+    for (size_t i = 0; i < loader.GetRowCount(); ++i) {
+        int id = loader.GetInt(i, Attr::ID);
+        std::string res_name = loader.GetString(i, Attr::PATH);
+        bool passable = loader.GetBool(i, Attr::PASSABLE, false);
+        int frames = loader.GetInt(i, Attr::ANIMATION, 1);
 
         ObjectMetadata meta(res_name, "Door", passable, frames);
         meta.door_props = std::make_shared<DoorComponent>();
-        meta.door_props->yellow_key = std::stoi(row[4]);
-        meta.door_props->blue_key = std::stoi(row[5]);
-        meta.door_props->red_key = std::stoi(row[6]);
-        if (row.size() >= 8) {
-            meta.door_props->is_passive = (row[7] == "true");
-        }
+        meta.door_props->yellow_key = loader.GetInt(i, Attr::YELLOW_KEY);
+        meta.door_props->blue_key = loader.GetInt(i, Attr::BLUE_KEY);
+        meta.door_props->red_key = loader.GetInt(i, Attr::RED_KEY);
+        meta.door_props->is_passive = loader.GetBool(i, Attr::IS_PASSIVE, false);
 
         GlobalObjectRegistry.emplace(id, std::move(meta));
     }
 }
 
 void RegistryLoader::LoadItems(const std::string& path) {
-    auto data = MapParser::ParseCsvToStrings(path);
-    if (data.empty()) return;
+    CSVLoader loader;
+    if (!loader.Load(path)) {
+        LOG_ERROR("RegistryLoader: FAILED to load Item CSV: {}", path);
+        return;
+    }
 
-    // Header: ID,Path,Passable,Animation,Level,HP,ATK,DEF,AGI,EXP,yellow key,blue key,red key,Coin,Weak,Poison,Dialog
-    const auto& header = data[0];
-    std::unordered_map<std::string, size_t> col_map;
-    for (size_t j = 0; j < header.size(); ++j) col_map[header[j]] = j;
+    LOG_INFO("RegistryLoader: Starting Item processing... Row count: {}", loader.GetRowCount());
 
-    for (size_t i = 1; i < data.size(); ++i) {
-        const auto& row = data[i];
-        if (row.size() < header.size()) continue;
+    for (size_t i = 0; i < loader.GetRowCount(); ++i) {
+        int id = loader.GetInt(i, Attr::ID);
+        if (id == 0) continue;
 
-        int id = std::stoi(row[0]);
-        std::string res_name = row[1];
-        bool passable = (row[2] == "true");
-        int frames = std::stoi(row[3]);
+        std::string res_name = loader.GetString(i, Attr::PATH);
+        bool passable = loader.GetBool(i, Attr::PASSABLE, false);
+        int frames = loader.GetInt(i, Attr::ANIMATION, 1);
+
+        LOG_INFO("RegistryLoader: Processing Item Row {} -> ID: {}, Name: {}", i, id, res_name);
 
         ObjectMetadata meta(res_name, "Item", passable, frames);
         meta.item_props = std::make_shared<ItemComponent>();
-
-        // Map column values to effects
-        auto add_effect = [&](const std::string& col, Effect type) {
-            if (col_map.count(col)) {
-                int val = std::stoi(row[col_map[col]]);
-                if (val != 0) meta.item_props->effects.push_back({type, val});
-            }
-        };
-
-        add_effect("Level", Effect::LEVEL);
-        add_effect("HP", Effect::HP);
-        add_effect("ATK", Effect::ATTACK);
-        add_effect("DEF", Effect::DEFENSE);
-        add_effect("AGI", Effect::AGILITY);
-        add_effect("EXP", Effect::EXP);
-        add_effect("yellow key", Effect::KEY_YELLOW);
-        add_effect("blue key", Effect::KEY_BLUE);
-        add_effect("red key", Effect::KEY_RED);
-        add_effect("Coin", Effect::COIN);
-        add_effect("Weak", Effect::WEAK);
-        add_effect("Poison", Effect::POISON);
-
-        if (col_map.count("Dialog") && !row[col_map["Dialog"]].empty()) {
-            meta.dialog_props = std::make_shared<DialogComponent>();
-            meta.dialog_props->lines.push_back(row[col_map["Dialog"]]);
+        
+        auto effects = loader.GetRowEffects(i);
+        for (const auto& eff : effects) {
+            meta.item_props->effects.push_back(eff);
+            meta.initial_attributes[eff.type_id] = eff.value;
         }
 
-        GlobalObjectRegistry.emplace(id, std::move(meta));
+        if (effects.empty()) {
+            LOG_WARN("RegistryLoader: Item ID {} has NO attributes loaded!", id);
+        }
+
+        std::string dialog = loader.GetString(i, Attr::DIALOG);
+        if (!dialog.empty()) {
+            meta.dialog_props = std::make_shared<DialogComponent>();
+            meta.dialog_props->lines.push_back(dialog);
+        }
+
+        GlobalObjectRegistry[id] = std::move(meta);
     }
+    LOG_INFO("RegistryLoader: Finished loading items. Registry size now: {}", GlobalObjectRegistry.size());
 }
 
 void RegistryLoader::LoadStairs(const std::string& path) {
-    auto data = MapParser::ParseCsvToStrings(path);
-    if (data.empty()) return;
+    CSVLoader loader;
+    if (!loader.Load(path)) return;
 
-    // Header: ID,Path,Passable,Animation,floor_delta
-    for (size_t i = 1; i < data.size(); ++i) {
-        const auto& row = data[i];
-        if (row.size() < 4) continue;
-
-        int id = std::stoi(row[0]);
-        std::string res_name = row[1];
-        bool passable = (row[2] == "true");
-        int frames = std::stoi(row[3]);
+    for (size_t i = 0; i < loader.GetRowCount(); ++i) {
+        int id = loader.GetInt(i, Attr::ID);
+        std::string res_name = loader.GetString(i, Attr::PATH);
+        bool passable = loader.GetBool(i, Attr::PASSABLE, true);
+        int frames = loader.GetInt(i, Attr::ANIMATION, 1);
 
         ObjectMetadata meta(res_name, "Stair", passable, frames);
         meta.stair_props = std::make_shared<StairComponent>();
-        if (row.size() >= 5 && !row[4].empty()) {
-            meta.stair_props->floor_delta = std::stoi(row[4]);
-        } else {
-            // Legacy mapping fallback during load time for stairs missing delta column
+        meta.stair_props->floor_delta = loader.GetInt(i, Attr::FLOOR_DELTA, 0);
+
+        // Fallback for legacy stair IDs if delta is not provided
+        if (meta.stair_props->floor_delta == 0) {
             if (id == static_cast<int>(StairId::UP)) meta.stair_props->floor_delta = 1;
             else if (id == static_cast<int>(StairId::DOWN)) meta.stair_props->floor_delta = -1;
         }
@@ -175,29 +234,23 @@ void RegistryLoader::LoadStairs(const std::string& path) {
 }
 
 void RegistryLoader::LoadShops(const std::string& path) {
-    auto data = MapParser::ParseCsvToStrings(path);
-    if (data.empty()) return;
+    CSVLoader loader;
+    if (!loader.Load(path)) return;
 
-    // Header: ID,Path,Folder,Passable,Animation,Title,Icon,Initial_Transactions
-    for (size_t i = 1; i < data.size(); ++i) {
-        const auto& row = data[i];
-        if (row.size() < 7) continue;
-
-        int id = std::stoi(row[0]);
-        std::string res_name = row[1];
-        std::string folder = row[2];
-        bool passable = (row[3] == "true");
-        int frames = std::stoi(row[4]);
+    for (size_t i = 0; i < loader.GetRowCount(); ++i) {
+        int id = loader.GetInt(i, Attr::ID);
+        std::string res_name = loader.GetString(i, Attr::PATH);
+        std::string folder = loader.GetString(i, Attr::FOLDER, "Shop");
+        bool passable = loader.GetBool(i, Attr::PASSABLE, false);
+        int frames = loader.GetInt(i, Attr::ANIMATION, 1);
 
         ObjectMetadata meta(res_name, folder, passable, frames);
         meta.shop_props = std::make_shared<ShopComponent>();
-        meta.shop_props->title = row[5];
-        meta.shop_props->icon_path = row[6];
-        if (row.size() >= 8 && !row[7].empty()) {
-            meta.shop_props->transaction_count = std::stoi(row[7]);
-        }
+        meta.shop_props->title = loader.GetString(i, Attr::TITLE);
+        meta.shop_props->icon_path = loader.GetString(i, Attr::ICON);
+        meta.shop_props->transaction_count = loader.GetInt(i, Attr::TRANSACTIONS, 0);
 
-        // Legacy mapping for Greed God
+        // Special pricing for Greed God
         if (id == 602) {
             meta.shop_props->pricing_type = ShopPricingType::SCALING_GREED;
         }
@@ -207,48 +260,40 @@ void RegistryLoader::LoadShops(const std::string& path) {
 }
 
 void RegistryLoader::LoadNPCs(const std::string& path) {
-    auto data = MapParser::ParseCsvToStrings(path);
-    if (data.empty()) return;
+    CSVLoader loader;
+    if (!loader.Load(path)) return;
 
-    // Header: ID,Path,Folder,Passable,Animation,Title,Icon
-    for (size_t i = 1; i < data.size(); ++i) {
-        const auto& row = data[i];
-        if (row.size() < 7) continue;
-
-        int id = std::stoi(row[0]);
-        std::string res_name = row[1];
-        std::string folder = row[2];
-        bool passable = (row[3] == "true");
-        int frames = std::stoi(row[4]);
+    for (size_t i = 0; i < loader.GetRowCount(); ++i) {
+        int id = loader.GetInt(i, Attr::ID);
+        std::string res_name = loader.GetString(i, Attr::PATH);
+        std::string folder = loader.GetString(i, Attr::FOLDER, "Road");
+        bool passable = loader.GetBool(i, Attr::PASSABLE, false);
+        int frames = loader.GetInt(i, Attr::ANIMATION, 1);
 
         ObjectMetadata meta(res_name, folder, passable, frames);
         meta.dialog_props = std::make_shared<DialogComponent>();
-        meta.dialog_props->title = row[5];
-        meta.dialog_props->icon_path = row[6];
+        meta.dialog_props->title = loader.GetString(i, Attr::TITLE);
+        meta.dialog_props->icon_path = loader.GetString(i, Attr::ICON);
 
         GlobalObjectRegistry.emplace(id, std::move(meta));
     }
 }
 
 void RegistryLoader::LoadTriggers(const std::string& path) {
-    auto data = MapParser::ParseCsvToStrings(path);
-    if (data.empty()) return;
+    CSVLoader loader;
+    if (!loader.Load(path)) return;
 
-    // Header: ID,Path,Folder,Passable,Animation,Title,Icon
-    for (size_t i = 1; i < data.size(); ++i) {
-        const auto& row = data[i];
-        if (row.size() < 7) continue;
-
-        int id = std::stoi(row[0]);
-        std::string res_name = row[1];
-        std::string folder = row[2];
-        bool passable = (row[3] == "true");
-        int frames = std::stoi(row[4]);
+    for (size_t i = 0; i < loader.GetRowCount(); ++i) {
+        int id = loader.GetInt(i, Attr::ID);
+        std::string res_name = loader.GetString(i, Attr::PATH);
+        std::string folder = loader.GetString(i, Attr::FOLDER, "Trigger");
+        bool passable = loader.GetBool(i, Attr::PASSABLE, true);
+        int frames = loader.GetInt(i, Attr::ANIMATION, 1);
 
         ObjectMetadata meta(res_name, folder, passable, frames);
         meta.dialog_props = std::make_shared<DialogComponent>();
-        meta.dialog_props->title = row[5];
-        meta.dialog_props->icon_path = row[6];
+        meta.dialog_props->title = loader.GetString(i, Attr::TITLE);
+        meta.dialog_props->icon_path = loader.GetString(i, Attr::ICON);
 
         GlobalObjectRegistry.emplace(id, std::move(meta));
     }
@@ -396,39 +441,131 @@ MapParser::ParseCsvToRawIDs(const std::string &filepath) {
 
 std::vector<ShopOption> MapParser::ParseShopOptions(const std::string& filepath) {
     std::vector<ShopOption> options;
-    auto data = ParseCsvToStrings(filepath);
-    if (data.empty()) return options;
+    CSVLoader loader;
+    if (!loader.Load(filepath)) return options;
 
-    // Header: Dialog,Level,HP,ATK,DEF,EXP,yellow key,blue key,red key,Coin
-    for (size_t i = 1; i < data.size(); ++i) {
-        const auto& row = data[i];
-        if (row.size() < 10) continue;
-
+    for (size_t i = 0; i < loader.GetRowCount(); ++i) {
         ShopOption opt;
-        opt.text = row[0];
-
-        auto add_effect = [&](size_t idx, Effect type) {
-            if (idx < row.size() && !row[idx].empty()) {
-                int val = std::stoi(row[idx]);
-                if (val != 0) opt.effects.push_back({type, val});
-            }
-        };
-
-        add_effect(1, Effect::LEVEL);
-        add_effect(2, Effect::HP);
-        add_effect(3, Effect::ATTACK);
-        add_effect(4, Effect::DEFENSE);
-        add_effect(5, Effect::EXP);
-        add_effect(6, Effect::KEY_YELLOW);
-        add_effect(7, Effect::KEY_BLUE);
-        add_effect(8, Effect::KEY_RED);
-        add_effect(9, Effect::COIN);
+        opt.text = loader.GetString(i, Attr::DIALOG);
+        opt.effects = loader.GetRowEffects(i);
 
         if (!opt.effects.empty() || !opt.text.empty()) {
             options.push_back(std::move(opt));
         }
     }
     return options;
+}
+
+// --- CSVLoader Implementation ---
+
+bool CSVLoader::Load(const std::string& path) {
+    m_data.clear();
+    m_headerMap.clear();
+    m_attributeCols.clear();
+
+    std::ifstream file(path);
+    if (!file.is_open()) {
+        LOG_ERROR("CSVLoader: Failed to open file {}", path);
+        return false;
+    }
+
+    std::string line;
+    if (std::getline(file, line)) {
+        if (!line.empty() && (line.back() == '\r' || line.back() == '\n')) line.pop_back();
+        if (!line.empty() && (line.back() == '\r' || line.back() == '\n')) line.pop_back();
+
+        std::stringstream ss(line);
+        std::string cell;
+        int colIdx = 0;
+        while (std::getline(ss, cell, ',')) {
+            cell.erase(0, cell.find_first_not_of(" \t\r\n\xEF\xBB\xBF")); // Trim BOM
+            cell.erase(cell.find_last_not_of(" \t\r\n") + 1);
+            m_headerMap[cell] = colIdx;
+            LOG_INFO("CSVLoader: Header -> '{}' at index {}", cell, colIdx);
+            
+            if (AttributeRegistry::IsAttribute(cell)) {
+                m_attributeCols.push_back(colIdx);
+            }
+            colIdx++;
+        }
+    }
+
+    LOG_INFO("CSVLoader: Parsing file {} (found {} columns, {} attributes)", path, m_headerMap.size(), m_attributeCols.size());
+
+    while (std::getline(file, line)) {
+        if (line.empty()) continue;
+        if (line.back() == '\r') line.pop_back();
+        std::stringstream ss(line);
+        std::string cell;
+        std::vector<std::string> row;
+        while (std::getline(ss, cell, ',')) {
+            cell.erase(0, cell.find_first_not_of(" \t\r\n"));
+            cell.erase(cell.find_last_not_of(" \t\r\n") + 1);
+            row.push_back(cell);
+        }
+        if (!row.empty()) m_data.push_back(std::move(row));
+    }
+    LOG_INFO("CSVLoader: Total rows loaded: {}", m_data.size());
+    return true;
+}
+
+std::string CSVLoader::GetString(size_t rowIndex, const std::string& colName, const std::string& def) const {
+    auto it = m_headerMap.find(colName);
+    if (it == m_headerMap.end() || rowIndex >= m_data.size()) return def;
+    const auto& row = m_data[rowIndex];
+    if (it->second >= row.size()) return def;
+    return row[it->second];
+}
+
+int CSVLoader::GetInt(size_t rowIndex, const std::string& colName, int def) const {
+    std::string val = GetString(rowIndex, colName, "");
+    if (val.empty()) return def;
+    try {
+        return std::stoi(val);
+    } catch (...) {
+        return def;
+    }
+}
+
+bool CSVLoader::GetBool(size_t rowIndex, const std::string& colName, bool def) const {
+    std::string val = GetString(rowIndex, colName, "");
+    if (val.empty()) return def;
+
+    // Convert to lowercase for case-insensitive comparison
+    std::string lowerVal = val;
+    for (auto &c : lowerVal) c = (char)std::tolower((unsigned char)c);
+
+    if (lowerVal == "true") return true;
+    if (lowerVal == "false") return false;
+    return def;
+}
+
+std::vector<SubEffect> CSVLoader::GetRowEffects(size_t rowIndex) const {
+    std::vector<SubEffect> effects;
+    if (rowIndex >= m_data.size()) return effects;
+    const auto& row = m_data[rowIndex];
+
+    for (int colIdx : m_attributeCols) {
+        if (colIdx < (int)row.size() && !row[colIdx].empty()) {
+            int val = 0;
+            try { val = std::stoi(row[colIdx]); } catch (...) { continue; }
+            if (val != 0) {
+                // Determine column name from index by searching m_headerMap
+                std::string colName;
+                for (const auto& pair : m_headerMap) {
+                    if (pair.second == colIdx) {
+                        colName = pair.first;
+                        break;
+                    }
+                }
+                
+                if (!colName.empty()) {
+                    effects.push_back({AttributeRegistry::GetId(colName), val});
+                }
+            }
+        }
+    }
+    return effects;
 }
 
 
