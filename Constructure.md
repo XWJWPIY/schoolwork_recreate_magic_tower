@@ -350,52 +350,23 @@ classDiagram
         +string name
         +string folder
         +bool is_passable
-        +bool is_animated
-        +int animation_frames
-        +shared_ptr~ItemComponent~ item_props
-        +shared_ptr~CombatComponent~ combat_props
-        +shared_ptr~DialogComponent~ dialog_props
-        +shared_ptr~DoorComponent~ door_props
-        +shared_ptr~ShopComponent~ shop_props
+        +int frames
+        +unordered_map~int, string~ attributes
         +ObjectMetadata(n, f, p, frames)
+        +GetInt(key, def) int
+        +GetString(key, def) string
+        +GetBool(key, def) bool
     }
 
-    class ItemComponent {
-        +vector~SubEffect~ effects
-    }
-
-    class CombatComponent {
-        +int hp
-        +int attack
-        +int defense
-        +int exp_reward
-        +int coin_reward
-    }
-
-    class DialogComponent {
-        +vector~string~ lines
-    }
-
-    class DoorComponent {
-        +int yellow_key
-        +int blue_key
-        +int red_key
-        +bool is_passive
-    }
-
-    class ShopComponent {
-        +string title
-        +string icon_path
-        +int transaction_count
-        +ShopPricingType pricing_type
-    }
-
-    class StairComponent {
-        +int floor_delta
+    class AttributeRegistry {
+        +GetId(name) int
+        +GetName(id) string
+        +ToEffect(id) Effect
+        +FromEffect(Effect) int
     }
 
     class SubEffect {
-        +Effect type
+        +int type_id
         +int value
     }
 
@@ -424,13 +395,6 @@ classDiagram
         +int id
     }
 
-    ObjectMetadata *-- ItemComponent
-    ObjectMetadata *-- CombatComponent
-    ObjectMetadata *-- DialogComponent
-    ObjectMetadata *-- DoorComponent
-    ObjectMetadata *-- ShopComponent
-    ObjectMetadata *-- StairComponent
-    ItemComponent *-- SubEffect
     ShopOption *-- SubEffect
     ShopData *-- ShopOption
 ```
@@ -474,7 +438,7 @@ classDiagram
   - `SetAttr(Effect, value)`: 強制設定屬性數值。
   - `ApplyEffect(Effect, delta)`: 增量/減量修改屬性（自動調用 `OnAttributeChanged`）。
 - **掛鉤**：`virtual OnAttributeChanged(Effect)` — 供子類別監聽屬性變動。
-- **建構**：從 `GlobalObjectRegistry` 的 `CombatComponent` 讀取並初始化預設數值。
+- **建構**：從 `GlobalObjectRegistry` 遍歷 `attributes`，並透過 `AttributeRegistry` 轉換並初始化預設數值。
 
 ### 4.1 `Player` (主角)
 - 繼承 `Actor` 與 `std::enable_shared_from_this<Player>`。
@@ -492,7 +456,7 @@ classDiagram
 ### 4.2 `Door` (門)
 - **屬性**：`MAX_ANIMATION_FRAMES=5`、`shared_ptr<Util::Animation> m_animation`。
 - **建構**：載入 5 帧開門動畫圖片，建立 `Util::Animation` (non-looping, 100ms)。
-- **`Reaction()` override** — 從 `GlobalObjectRegistry` 查詢 `DoorComponent`：
+- **`Reaction()` override** — 從 `GlobalObjectRegistry` 讀取通關條件 (`yellow_key, blue_key, red_key` 與 `is_passive`)：
   - 被動門 (`is_passive`) 直接返回。
   - 無需鑰匙的門直接播放開門動畫。
   - 需要鑰匙的門呼叫 `Player::UseKey` 逐一扣除，成功則播放動畫。
@@ -511,12 +475,12 @@ classDiagram
 ### 4.5 `Item` (道具)
 - **建構**：`Item(id, NoticeCallback)` — 設定 `m_notice_callback` 處理獲得物品的單行通知。
 - **`Reaction()` override** — 從 `GlobalObjectRegistry` 讀取屬性：
-  - 藉由 `meta.dialog_props->lines[0]` 觸發 `m_notice_callback` 顯示提示。
-  - 遍歷 `meta.item_props->effects`，對每個 `SubEffect` 呼叫 `Player::ApplyEffect`。
+  - 藉由 `GetString("Dialog")` 觸發 `m_notice_callback` 顯示提示。
+  - 解析所有動態屬性欄位並轉換為 `SubEffect`，對每個效果呼叫 `Player::ApplyEffect`。
   - 最後透過 `TriggerReplacement(0)` 將自身替換為空地 (消除圖示)。
 ### 4.6 `Stair` (樓梯)
 - **屬性**：`TriggerCallback m_on_trigger` — lambda 回調，指向 `App::ChangeFloor`。
-- **`Reaction()` override** — 從 `GlobalObjectRegistry` 讀取 `StairComponent` 的 `floor_delta`：
+- **`Reaction()` override** — 從 `GlobalObjectRegistry` 讀取屬性 (`floor_delta`)：
   - 呼叫 `m_on_trigger(floor_delta)`。
 - **設定**：`m_is_passable = true` (由 CSV 定義)。
 
@@ -524,7 +488,7 @@ classDiagram
 - **屬性**：`ShopData m_session_data`、`m_transaction_count`、`m_is_open`、`m_selection`、`OpenCallback m_on_open`、`CloseCallback m_on_close`。
 - **`Reaction()` override** — 僅設定 `Player::SetPendingShop(m_object_id)`，由 `App::Update` 偵測後觸發 `Open()`。
 - **Session 生命週期**：
-  - `Open()` — 從 `GlobalObjectRegistry` 讀取 `ShopComponent` → `BuildShopData()` → 組合對話與選項 → 呼叫 `DialogueManager::StartShop` 接管 UI → 觸發 `m_on_open`。
+  - `Open()` — 從 `GlobalObjectRegistry` 讀取商店屬性 → `BuildShopData()` → 組合對話與選項 → 呼叫 `DialogueManager::StartShop` 接管 UI → 觸發 `m_on_open`。
   - `Close()` — 呼叫 `DialogueManager::EndShopSelection` 關閉介面 → 觸發 `m_on_close` (回歸 `PLAYING` 狀態)。
 - **保護 / 私有方法**：
   - `BuildShopData(floor)` — 從 CSV 載入選項內容，且針對 `PricingType::SCALING_GREED` 計算動態價格並填充至 `special_price_str`，確保對UI上顯示精確對齊。
@@ -634,21 +598,16 @@ classDiagram
 
 ## 十三、數據驅動層 (`AppUtil::RegistryLoader`)
 - **單一事實來源**：`GlobalObjectRegistry` (`unordered_map<int, ObjectMetadata>`)。
-- **啟動加載**：`LoadAllData()` 清空並從 CSV 重新填充，支援重啟重置。
-- **分類加載**：
-  - `LoadBlocks("Block.csv")` — 牆壁、地板、岩漿等 (ID, Path, Name, Passable, Animation)。
-  - `LoadDoors("Door.csv")` — 門 + `DoorComponent` (黃/藍/紅鑰匙需求, 被動門標記)。
-  - `LoadItems("Item.csv")` — 道具 + `ItemComponent` (多效果) + `DialogComponent` (獲取對話)。
-  - `LoadNPCs("NPC.csv")` — NPC + `DialogComponent` (標題, 頭像路徑)。
-  - `LoadStairs("Stair.csv")` — 樓梯 (ID, Path, Passable, Animation)。
-  - `LoadShops("Shop.csv")` — 商店 + `ShopComponent` (標題, 圖示, 初始交易數)。
-  - `LoadTriggers("Trigger.csv")` — 隱藏事件塊 (對應特定腳本)。
-- **資源定位**：`GetIdResourcePath(id)` — 依 `ObjectMetadata` 動態合成路徑。`Road`、`Shop` 與 `Door` 資料夾強制使用數字後綴規則。`Trigger` 強制使用佔位透明圖形。
-- **多樣化效果**：支援 HP, ATK, DEF, AGI, EXP, Level, Keys, Coins, Weak, Poison。
-- **CSV 解析器 (`MapParser`)**：
+- **啟動加載**：`LoadAllData()` 清空並透過 `LoadObjectCSV` 從 CSV 重填，支援動態重啟重置。
+- **通用加載機制**：
+  - `AttributeRegistry`：動態分配並緩存以字串為主鍵的屬性 ID，取代舊有寫死的 Enum 結構。
+  - 統一透過 `LoadObjectCSV` 將 CSV 表格標頭作為 Key，儲存至 `ObjectMetadata::attributes`。
+- **資源定位**：`GetIdResourcePath(id)` — 依 `ObjectMetadata` 動態合成路徑。根據 `frames` 判定單幀/多幀後綴，`Trigger` 強制使用佔位透明圖形。
+- **多樣化效果**：利用 `AttributeRegistry` 彈性支援 HP, ATK, DEF, AGI, EXP, Level, Keys, Coins, Weak, Poison，擴充不再需要修改程式碼。
+- **CSV 解析器 (`MapParser` 與 `CSVLoader`)**：
+  - `CSVLoader::Load()` → 載入為帶有標頭屬性對應表的動態結構。
+  - `CSVLoader::GetRowEffects()` → 自動篩選非結構欄位並轉換為 `SubEffect`。
   - `ParseCsv()` → `vector<vector<MapCell>>` (整數 ID 地圖)。
-  - `ParseCsvToStrings()` → `vector<vector<string>>` (通用字串表)。
-  - `ParseCsvToRawIDs()` → `vector<vector<int>>` (原始 ID 矩陣)。
   - `ParseShopOptions()` → `vector<ShopOption>` (商店選項與效果)。
 
 ## 十四、交互觸發流程
