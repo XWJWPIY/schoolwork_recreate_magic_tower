@@ -41,6 +41,8 @@ public:
 
   void SetPendingShop(int id) { m_pending_shop_id = id; }
   int GetPendingShop() const { return m_pending_shop_id; }
+  
+  bool HasFly() const { return m_has_fly; }
 
   void ResetStateAfterFloorChange();
   void SetDirection(PlayerDirection dir) { m_direction = dir; }
@@ -64,6 +66,7 @@ private:
   int m_red_keys = 0;
   int m_coins = 0;
   int m_pending_shop_id = -1;
+  bool m_has_fly = false;
 };
 
 #endif // PLAYER_HPP

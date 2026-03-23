@@ -98,6 +98,7 @@ classDiagram
         -int m_red_keys
         -int m_coins
         -int m_pending_shop_id
+        -bool m_has_fly
         +Player()
         +Move(dx, dy, roadmap, thingsmap)
         +SyncPosition(roadmap)
@@ -107,6 +108,7 @@ classDiagram
         +ApplyEffect(Effect, value)
         +Get/Add/SetCoins()
         +Get/SetPendingShop()
+        +HasFly() bool
         +ResetStateAfterFloorChange()
         +SetDirection(PlayerDirection)
         +SetIsAnimating(bool)
@@ -474,12 +476,13 @@ classDiagram
 ### 4.1 `Player` (主角)
 - 繼承 `Actor` 與 `std::enable_shared_from_this<Player>`。
 - **Z-Index**：-3。初始位置 (5, 9)。
-- **屬性**：方向 (`PlayerDirection` 枚舉: DOWN/UP/LEFT/RIGHT)、動畫狀態 (`m_is_animating`, `m_animation_timer`, `m_current_frame`, `FRAME_INTERVAL=0.05f`)、鑰匙 (`m_yellow/blue/red_keys`)、金幣 (`m_coins`)、`m_pending_shop_id`。
+- **屬性**：方向 (`PlayerDirection` 枚舉: DOWN/UP/LEFT/RIGHT)、動畫狀態 (`m_is_animating`, `m_animation_timer`, `m_current_frame`, `FRAME_INTERVAL=0.05f`)、鑰匙 (`m_yellow/blue/red_keys`)、金幣 (`m_coins`)、`m_pending_shop_id`、`m_has_fly` (飛行道具開關)。
 - **方法**：
   - `Move(dx, dy, roadmap, thingsmap)` — 邊界檢查 → `RoadMap::IsPassable` → `ThingsMap` 實體互動 → 移動/阻擋判斷 → 動畫觸發。
   - `SyncPosition(roadmap)` — 從 `FloorMap` 借用同位置物件的 `m_Transform`。
   - `UseKey(Effect, count)` — 扣除鑰匙並回傳是否成功。
-  - `ApplyEffect(Effect, value)` — 套用道具效果至角色數值 (支援 HP/ATK/DEF/AGI/EXP/Level/Keys/Coin/Weak/Poison)。
+  - `ApplyEffect(Effect, value)` — 套用道具效果至角色數值 (支援 HP/ATK/DEF/AGI/EXP/Level/Keys/Coin/Weak/Poison/Fly)。
+  - `HasFly()` — 回傳玩家是否已取得飛行道具 (黃金色羽根)。
   - `ResetStateAfterFloorChange()` — 強制重置方向為 DOWN、停止動畫並切換為 `player_1.png`（用於上下樓後的視覺重置）。
   - `ObjectUpdate()` override — 驅動 4 幀走路動畫循環。
   - `Reaction()` override — 空實作 (Log 提示)。
@@ -567,10 +570,10 @@ classDiagram
   3. 初始化 `StatusUI`、`Player`、`MenuUI`。
 - **按鍵分配**：
   - WASD / 方向鍵 → 移動 / 選單導航。
-  - F → 快速電梯 (FAST_ELEVATOR)。
+  - F → 快速電梯 (`FAST_ELEVATOR`)，需具備 `m_player->HasFly()` 條件。
+  - G → 快速電梯 (`FAST_ELEVATOR`)，無條件除錯專用。
   - L → 說明書 (INSTRUCTIONS)。
   - R → 重新開始。
-  - 8/2 → 直接切換樓層 (DEBUG)。
   - ESC → 退出 / 關閉商店。
 - **商店流程**：`Player::Reaction` 設定 `m_pending_shop_id` → `App::Update` 偵測後呼叫 `Shop::Open` → 觸發 `onOpen` 切換 `GameState::SHOP` → `DialogueManager` 接管 UI 與輸入 → `Shop::Close` 回歸 `PLAYING`。
 - **即時 UI 同步**：`App::Update` 在每幀結束前，若處於 PLAYING/SHOP/ITEM_DIALOG 狀態，會強制呼叫 `m_status_ui->Update` 確保數值即時更新。

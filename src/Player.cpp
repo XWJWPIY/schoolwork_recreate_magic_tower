@@ -200,6 +200,10 @@ void Player::ApplyEffect(AppUtil::Effect type, int value) {
     // TODO: Implement poison status logic
     LOG_INFO("Player current poison status: {}", value);
     break;
+  case AppUtil::Effect::FLY:
+    m_has_fly = true;
+    LOG_INFO("Player acquired FLY effect");
+    break;
   case AppUtil::Effect::NONE:
   default:
     break;

@@ -240,12 +240,20 @@ void App::Update() {
       ChangeFloor(-1);
     }
 
-    if (Util::Input::IsKeyDown(Util::Keycode::F)) {
+    if (Util::Input::IsKeyDown(Util::Keycode::F) && m_player->HasFly()) {
       m_game_state = AppUtil::GameState::FAST_ELEVATOR;
       m_preview_floor = m_road_map->GetCurrentStory();
       m_menu_ui->SetTargetFloor(m_preview_floor);
       m_menu_ui->SetVisible(true, MenuUI::MenuType::FAST_ELEVATOR);
       LOG_INFO("Entered FAST_ELEVATOR mode at floor {}", m_preview_floor);
+    }
+
+    if (Util::Input::IsKeyDown(Util::Keycode::G)) {
+      m_game_state = AppUtil::GameState::FAST_ELEVATOR;
+      m_preview_floor = m_road_map->GetCurrentStory();
+      m_menu_ui->SetTargetFloor(m_preview_floor);
+      m_menu_ui->SetVisible(true, MenuUI::MenuType::FAST_ELEVATOR);
+      LOG_INFO("Entered FAST_ELEVATOR mode at floor {} (Debug)", m_preview_floor);
     }
 
     if (Util::Input::IsKeyDown(Util::Keycode::L)) {

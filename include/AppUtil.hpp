@@ -22,7 +22,8 @@ enum class Effect {
     LEVEL,
     EXP,
     WEAK,
-    POISON
+    POISON,
+    FLY
 };
 
 struct SubEffect {

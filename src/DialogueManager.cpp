@@ -442,7 +442,7 @@ void DialogueManager::ExecuteCommand(const ScriptLine& line, std::shared_ptr<Pla
         else if (line.extra == "yellow_key") effect = AppUtil::Effect::KEY_YELLOW;
         else if (line.extra == "blue_key") effect = AppUtil::Effect::KEY_BLUE;
         else if (line.extra == "red_key") effect = AppUtil::Effect::KEY_RED;
-        else if (line.extra == "fly") effect = AppUtil::Effect::NONE; // TODO
+        else if (line.extra == "fly") effect = AppUtil::Effect::FLY;
         
         if (player && effect != AppUtil::Effect::NONE) {
             player->ApplyEffect(effect, 1);
