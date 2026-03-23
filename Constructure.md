@@ -133,6 +133,12 @@ classDiagram
         +Reaction(player) override
     }
 
+    class Trigger {
+        -TriggerCallback m_trigger_callback
+        +Trigger(id, TriggerCallback)
+        +Reaction(player) override
+    }
+
     class Item {
         -NoticeCallback m_notice_callback
         +Item(int id, NoticeCallback)
@@ -188,6 +194,7 @@ classDiagram
     Entity <|-- Item
     Entity <|-- Stair
     Entity <|-- Shop
+    Entity <|-- Trigger
     Entity <|-- Actor
     Actor <|-- Player
     Actor <|-- Enemy
@@ -475,7 +482,7 @@ classDiagram
 
 ### 4.1 `Player` (主角)
 - 繼承 `Actor` 與 `std::enable_shared_from_this<Player>`。
-- **Z-Index**：-3。初始位置 (5, 9)。
+- **Z-Index**：-3。初始位置 (5, 10)。
 - **屬性**：方向 (`PlayerDirection` 枚舉: DOWN/UP/LEFT/RIGHT)、動畫狀態 (`m_is_animating`, `m_animation_timer`, `m_current_frame`, `FRAME_INTERVAL=0.05f`)、鑰匙 (`m_yellow/blue/red_keys`)、金幣 (`m_coins`)、`m_pending_shop_id`、`m_has_fly` (飛行道具開關)。
 - **方法**：
   - `Move(dx, dy, roadmap, thingsmap)` — 邊界檢查 → `RoadMap::IsPassable` → `ThingsMap` 實體互動 → 移動/阻擋判斷 → 動畫觸發。
@@ -530,6 +537,11 @@ classDiagram
   - `CanAfford()` — 檢查玩家是否有足夠資源。
   - `ExecutePurchase()` — 呼叫 `Player::ApplyEffect` 執行購買，遞增 `m_transaction_count` 並透過 `DialogueManager::RefreshShopOptions` 同步 UI。
 
+### 4.8 `Trigger` (事件觸發塊)
+- **屬性**：`TriggerCallback m_trigger_callback`。
+- **建構**：`Trigger(id, TriggerCallback)` — 預設套用 `no_door.png` 隱藏外觀，且圖示會強制透過 `AppUtil` 對應為隱身。
+- **`Reaction()` override** — 自動發布觸發 `m_trigger_callback`，接續對話腳本解析。
+
 ## 五、背景 (`Background`)
 - 繼承 `Util::GameObject`。Z-Index = -10。
 - `NextPhase(int)` — 切換場景背景圖。
@@ -552,7 +564,7 @@ classDiagram
 - **3D 存儲**：`vector<vector<vector<shared_ptr<AllObjects>>>> m_objects`，索引 `[story][y][x]`，尺寸 `TOTAL_STORY × 11 × 11`。
 - **工廠模式**：接收 `ObjectFactory = function<shared_ptr<AllObjects>(int id)>` 建立物件。
   - `roadObjFactory` → 生產 `MapBlock`。
-  - `thingsObjFactory` → 依 ID 範圍生產 `Item(200~299)`, `Door(300~399)`, `Enemy(400~499)`, `NPC(500~599)`, `Shop(600~699)`, `Stair(700~799)`。
+  - `thingsObjFactory` → 依 ID 範圍生產 `Item(200~299)`, `Door(300~399)`, `Enemy(400~499)`, `NPC(500~599)`, `Shop(600~699)`, `Stair(700~799)`, `Trigger(800~899)`。
 - **核心方法**：
   - `LoadFloorData()` — 接收 CSV 解析結果，替換更新網格物件。
   - `SwitchStory(int)` — 隱藏當前樓層物件、顯示新樓層物件。
@@ -636,7 +648,8 @@ classDiagram
   - `LoadNPCs("NPC.csv")` — NPC + `DialogComponent` (標題, 頭像路徑)。
   - `LoadStairs("Stair.csv")` — 樓梯 (ID, Path, Passable, Animation)。
   - `LoadShops("Shop.csv")` — 商店 + `ShopComponent` (標題, 圖示, 初始交易數)。
-- **資源定位**：`GetIdResourcePath(id)` — 依 `ObjectMetadata` 動態合成路徑。`Road`、`Shop` 與 `Door` 資料夾強制使用數字後綴規則。
+  - `LoadTriggers("Trigger.csv")` — 隱藏事件塊 (對應特定腳本)。
+- **資源定位**：`GetIdResourcePath(id)` — 依 `ObjectMetadata` 動態合成路徑。`Road`、`Shop` 與 `Door` 資料夾強制使用數字後綴規則。`Trigger` 強制使用佔位透明圖形。
 - **多樣化效果**：支援 HP, ATK, DEF, AGI, EXP, Level, Keys, Coins, Weak, Poison。
 - **CSV 解析器 (`MapParser`)**：
   - `ParseCsv()` → `vector<vector<MapCell>>` (整數 ID 地圖)。
@@ -688,8 +701,9 @@ classDiagram
 | `Stair.hpp` | `Stair` | 樓梯實體 |
 | `StatusUI.hpp` | `StatusUI` | 狀態面板 |
 | `DialogueManager.hpp` | `DialogueManager` | 統一對話與通知管理器 |
+| `Trigger.hpp` | `Trigger` | 隱形事件觸發塊 |
 
-### src/ (19 個原始檔)
+### src/ (20 個原始檔)
 | 檔案 | 對應類別 | 說明 |
 |------|---------|------|
 | `main.cpp` | — | 程式進入點 |
@@ -712,3 +726,5 @@ classDiagram
 | `MenuUI.cpp` | `MenuUI` | 選單初始化、顯隱、數據綁定 |
 | `StatusUI.cpp` | `StatusUI` | 數值刷新、文字初始化 |
 | `DialogueManager.cpp` | `DialogueManager` | 腳本解析、對話流程、通知攔截 |
+| `Trigger.cpp` | `Trigger` | 自動觸發回調邏輯 |
+
