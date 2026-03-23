@@ -16,9 +16,9 @@ void Shop::Reaction(std::shared_ptr<Player> player) {
 
 void Shop::Open(std::shared_ptr<Player> player, DialogueManager& diag, int floor) {
     auto it = AppUtil::GlobalObjectRegistry.find(m_object_id);
-    if (it != AppUtil::GlobalObjectRegistry.end() && it->second.shop_props) {
-        m_transaction_count = it->second.shop_props->transaction_count;
-        if (it->second.shop_props->title == "None") {
+    if (it != AppUtil::GlobalObjectRegistry.end()) {
+        m_transaction_count = it->second.GetInt(AppUtil::Attr::TRANSACTIONS);
+        if (it->second.GetString(AppUtil::Attr::TITLE) == "None") {
             LOG_INFO("Shop::Open: shop {} title=None, skipping UI.", m_object_id);
             return;
         }
@@ -40,8 +40,8 @@ void Shop::Open(std::shared_ptr<Player> player, DialogueManager& diag, int floor
         if (CanAfford(opt, *player)) {
             ExecutePurchase(opt, player);
             auto registry_it = AppUtil::GlobalObjectRegistry.find(m_object_id);
-            if (registry_it != AppUtil::GlobalObjectRegistry.end() && registry_it->second.shop_props) {
-                registry_it->second.shop_props->transaction_count = m_transaction_count;
+            if (registry_it != AppUtil::GlobalObjectRegistry.end()) {
+                registry_it->second.attributes[AppUtil::AttributeRegistry::GetId(AppUtil::Attr::TRANSACTIONS)] = std::to_string(m_transaction_count);
             }
             BuildShopData(floor);
             diag.RefreshShopOptions(m_session_data);
@@ -90,22 +90,22 @@ void Shop::ExecutePurchase(const AppUtil::ShopOption& opt, std::shared_ptr<Playe
 
 void Shop::BuildShopData(int floor) {
     auto it = AppUtil::GlobalObjectRegistry.find(m_object_id);
-    if (it == AppUtil::GlobalObjectRegistry.end() || !it->second.shop_props) return;
+    if (it == AppUtil::GlobalObjectRegistry.end()) return;
 
-    const auto& shop = *it->second.shop_props;
-    m_session_data.title = shop.title;
-    m_session_data.icon_path = shop.icon_path;
+    const auto& meta = it->second;
+    m_session_data.title = meta.GetString(AppUtil::Attr::TITLE, "Store Explorer");
+    m_session_data.icon_path = meta.GetString(AppUtil::Attr::ICON);
     m_session_data.transaction_count = m_transaction_count;
     m_session_data.prompts.clear();
 
-    std::string name = std::to_string(floor) + "_" + it->second.name;
+    std::string name = std::to_string(floor) + "_" + meta.name;
     std::string option_path = std::string(MAGIC_TOWER_RESOURCE_DIR) + "/Datas/Texts/" + name + "_option.csv";
     m_session_data.options = AppUtil::MapParser::ParseShopOptions(option_path);
     if (m_session_data.options.empty()) m_session_data.options.push_back({"No Inventory Found", {}});
     m_session_data.options.push_back({"Exit", {}});
 
     // Calculate Dynamic Price
-    if (shop.pricing_type == AppUtil::ShopPricingType::SCALING_GREED) {
+    if (m_object_id == 602) { // Scaling Greed check
         int cost = 20 + m_transaction_count + (m_transaction_count > 25 ? (m_transaction_count - 25) * 4 : 0);
         
         // Update Special Price String for Dialogue UI

@@ -48,6 +48,7 @@ namespace Attr {
     const std::string POISON       = "Poison";
     const std::string IS_PASSIVE   = "is_passive";
     const std::string FLOOR_DELTA  = "floor_delta";
+    const std::string RELATION     = "relation";
     const std::string TRANSACTIONS = "Initial_Transactions";
     const std::string DIALOG       = "Dialog";
 }
@@ -87,79 +88,25 @@ enum class ShopPricingType {
 
 // --- Components ---
 
-struct ItemComponent {
-    std::vector<SubEffect> effects;
-};
-
-struct CombatComponent {
-    int hp = 0;
-    int attack = 0;
-    int defense = 0;
-    int exp_reward = 0;
-    int coin_reward = 0;
-};
-
-struct DialogComponent {
-    std::string title;      // Name of the speaker
-    std::string icon_path;  // Icon to show in dialogue box
-    std::vector<std::string> lines;
-};
-
-struct DoorComponent {
-    int yellow_key = 0;
-    int blue_key = 0;
-    int red_key = 0;
-    bool is_passive = false;
-};
-struct ShopComponent {
-    std::string title = "Store Explorer";
-    std::string icon_path = "";
-    int transaction_count = 0;
-    ShopPricingType pricing_type = ShopPricingType::FIXED;
-};
-struct StairComponent {
-    int floor_delta = 0;
-};
-
 // --- Main Metadata ---
 
 struct ObjectMetadata {
-    ObjectMetadata() = default;
     std::string name;
     std::string folder;
     bool is_passable;
-    bool is_animated;
-    int animation_frames = 1;
+    int frames; // frame count
 
-    // Optional Components
-    std::shared_ptr<ItemComponent>   item_props   = nullptr;
-    std::shared_ptr<CombatComponent> combat_props = nullptr;
-    std::shared_ptr<DialogComponent> dialog_props = nullptr;
-    std::shared_ptr<DoorComponent>   door_props   = nullptr;
-    std::shared_ptr<ShopComponent>   shop_props   = nullptr;
-    std::shared_ptr<StairComponent>  stair_props  = nullptr;
+    // All raw data from CSV row Map<AttrID, ValueString>
+    std::unordered_map<int, std::string> attributes;
 
-    // Initial attributes for actor construction
-    std::unordered_map<int, int> initial_attributes;
+    ObjectMetadata() : is_passable(true), frames(1) {}
+    ObjectMetadata(const std::string& n, const std::string& f, bool p, int fr = 1)
+        : name(n), folder(f), is_passable(p), frames(fr) {}
 
-    // Picture Static Object (Wall, Road, NPC, etc.)
-    ObjectMetadata(std::string n, std::string f, bool p)
-        : name(std::move(n)), folder(std::move(f)), is_passable(p), 
-          is_animated(false), animation_frames(1) {}
-
-    // Picture Animated Object (Lava, Doors)
-    ObjectMetadata(std::string n, std::string f, bool p, int frames)
-        : name(std::move(n)), folder(std::move(f)), is_passable(p), 
-          is_animated(frames > 1), animation_frames(frames) {}
-
-    // Item Object (Implicitly passable, static)
-    // We add a helper to attach items
-    static ObjectMetadata Item(std::string n, std::string f, std::vector<SubEffect> e) {
-        ObjectMetadata meta(std::move(n), std::move(f), true);
-        meta.item_props = std::make_shared<ItemComponent>();
-        meta.item_props->effects = std::move(e);
-        return meta;
-    }
+    // Helpers to extract data based on column name (via AttributeRegistry)
+    int GetInt(const std::string& key, int def = 0) const;
+    std::string GetString(const std::string& key, const std::string& def = "") const;
+    bool GetBool(const std::string& key, bool def = false) const;
 };
 
 extern std::unordered_map<int, ObjectMetadata> GlobalObjectRegistry;
@@ -177,6 +124,7 @@ public:
 
     // Get all attributes found in this row that are registered in AttributeRegistry
     std::vector<SubEffect> GetRowEffects(size_t rowIndex) const;
+    const std::unordered_map<std::string, int>& GetHeaderMap() const { return m_headerMap; }
 
 private:
     std::unordered_map<std::string, int> m_headerMap;
@@ -188,6 +136,12 @@ class RegistryLoader {
 public:
     static void LoadAllData();
     static void LoadSettings(const std::string& path);
+    
+    // Universal loader for all object types (Blocks, Items, NPCs, etc.)
+    static void LoadObjectCSV(const std::string& path, const std::string& defaultFolder = "Road", bool defaultPassable = true);
+
+private:
+    // Deprecated specialized loaders (will be removed after refactoring)
     static void LoadBlocks(const std::string& path);
     static void LoadDoors(const std::string& path);
     static void LoadItems(const std::string& path);

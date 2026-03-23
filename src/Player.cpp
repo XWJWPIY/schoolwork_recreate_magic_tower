@@ -66,7 +66,7 @@ void Player::Move(int dx, int dy, std::shared_ptr<FloorMap> roadmap,
     auto target = thingsmap->GetObject(next_x, next_y);
     if (target) {
       auto it = AppUtil::GlobalObjectRegistry.find(target->GetObjectId());
-      if (it != AppUtil::GlobalObjectRegistry.end() && it->second.stair_props) {
+      if (it != AppUtil::GlobalObjectRegistry.end() && it->second.GetInt(AppUtil::Attr::RELATION) != 0) {
         // It's a stair! Move but don't animate according to requirement.
         m_grid_x = next_x;
         m_grid_y = next_y;

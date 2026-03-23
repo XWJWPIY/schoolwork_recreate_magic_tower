@@ -306,10 +306,12 @@ void DialogueManager::AdvanceScript(std::shared_ptr<Player> player) {
             iconPath = MAGIC_TOWER_RESOURCE_DIR "/bmp/Player/player_1.png";
         } else if (m_source_entity) {
             auto it = AppUtil::GlobalObjectRegistry.find(m_source_entity->GetObjectId());
-            if (it != AppUtil::GlobalObjectRegistry.end() && it->second.dialog_props) {
-                name = it->second.dialog_props->title;
-                if (!it->second.dialog_props->icon_path.empty()) {
-                    iconPath = std::string(MAGIC_TOWER_RESOURCE_DIR) + "/bmp/NPC/" + it->second.dialog_props->icon_path + ".bmp";
+            if (it != AppUtil::GlobalObjectRegistry.end()) {
+                const auto& meta = it->second;
+                name = meta.GetString(AppUtil::Attr::TITLE, m_last_speaker);
+                std::string icon = meta.GetString(AppUtil::Attr::ICON);
+                if (!icon.empty()) {
+                    iconPath = std::string(MAGIC_TOWER_RESOURCE_DIR) + "/bmp/NPC/" + icon + ".bmp";
                 }
             } else {
                 name = m_last_speaker;

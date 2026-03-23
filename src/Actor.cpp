@@ -7,8 +7,16 @@ Actor::Actor(int initialId, const std::string &imagePath, bool canReact)
   // Load initial attributes from the registry
   auto it = AppUtil::GlobalObjectRegistry.find(initialId);
   if (it != AppUtil::GlobalObjectRegistry.end()) {
-      for (const auto& [attrId, value] : it->second.initial_attributes) {
-          SetAttr(AppUtil::AttributeRegistry::ToEffect(attrId), value);
+      const auto& meta = it->second;
+      for (const auto& [attrId, valStr] : meta.attributes) {
+          if (valStr.empty()) continue;
+          AppUtil::Effect eff = AppUtil::AttributeRegistry::ToEffect(attrId);
+          if (eff != AppUtil::Effect::NONE) {
+              try {
+                  int val = std::stoi(valStr);
+                  if (val != 0) SetAttr(eff, val);
+              } catch (...) {}
+          }
       }
   }
 }

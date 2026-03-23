@@ -16,14 +16,21 @@ void Item::Reaction(std::shared_ptr<Player> player) {
       const auto &meta = it->second;
       
       // Trigger dialog notice if available
-      if (m_notice_callback && meta.dialog_props && !meta.dialog_props->lines.empty()) {
-        m_notice_callback(meta.dialog_props->lines[0]);
+      std::string dialog = meta.GetString(AppUtil::Attr::DIALOG);
+      if (m_notice_callback && !dialog.empty()) {
+        m_notice_callback(dialog);
       }
 
-      if (meta.item_props) {
-        for (const auto &effect : meta.item_props->effects) {
-          player->ApplyEffect(AppUtil::AttributeRegistry::ToEffect(effect.type_id), effect.value);
-        }
+      // Apply all discovered attributes (Except structural ones)
+      for (const auto& [attrId, valStr] : meta.attributes) {
+          if (valStr.empty()) continue;
+          AppUtil::Effect eff = AppUtil::AttributeRegistry::ToEffect(attrId);
+          if (eff != AppUtil::Effect::NONE) {
+              try {
+                  int val = std::stoi(valStr);
+                  if (val != 0) player->ApplyEffect(eff, val);
+              } catch (...) {}
+          }
       }
     }
   }

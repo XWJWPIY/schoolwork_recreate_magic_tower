@@ -12,8 +12,8 @@ void Stair::Reaction(std::shared_ptr<Player> player) {
            AppUtil::GetIdString(m_object_id));
   if (m_on_trigger) {
     auto it = AppUtil::GlobalObjectRegistry.find(m_object_id);
-    if (it != AppUtil::GlobalObjectRegistry.end() && it->second.stair_props) {
-      m_on_trigger(it->second.stair_props->floor_delta);
+    if (it != AppUtil::GlobalObjectRegistry.end()) {
+      m_on_trigger(it->second.GetInt(AppUtil::Attr::FLOOR_DELTA));
     }
   }
 }

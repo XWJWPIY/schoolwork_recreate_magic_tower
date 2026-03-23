@@ -23,7 +23,7 @@ public:
   void SetObjectId(int newId) override;
   void UpdateProperties(int id);
 
-  virtual void Reaction(std::shared_ptr<Player> player) = 0;
+  virtual void Reaction(std::shared_ptr<Player> player);
   void ObjectUpdate() override;
 
   void SetReplacementComponent(std::shared_ptr<DynamicReplacementComponent> comp) {

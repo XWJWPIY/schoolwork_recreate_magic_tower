@@ -20,7 +20,7 @@ void MapBlock::SetObjectId(int newId) {
 
 void MapBlock::ObjectUpdate() {
   auto it = AppUtil::GlobalObjectRegistry.find(m_object_id);
-  if (it != AppUtil::GlobalObjectRegistry.end() && it->second.is_animated) {
+  if (it != AppUtil::GlobalObjectRegistry.end() && it->second.frames > 1) {
     int global_frame = AppUtil::TileAnimationManager::GetGlobalFrame2(500);
     if (m_current_local_frame != global_frame) {
       m_current_local_frame = global_frame;
@@ -36,11 +36,11 @@ void MapBlock::ObjectUpdate() {
 }
 
 void MapBlock::UpdateProperties(int id) {
-  // ID 0 is now reserved for "Empty/Transparent"
   if (id == 0) {
     SetVisible(false);
     m_is_passable = true;
-    SetDrawable(std::make_shared<Util::Image>(MAGIC_TOWER_RESOURCE_DIR + AppUtil::GetIdResourcePath(0)));
+    // Load a standard tile (road) as size template for ID 0 but keep it hidden
+    SetDrawable(std::make_shared<Util::Image>(std::string(MAGIC_TOWER_RESOURCE_DIR) + "/bmp/Road/road1.bmp"));
     return;
   }
 
@@ -54,16 +54,16 @@ void MapBlock::UpdateProperties(int id) {
   m_is_passable = meta.is_passable;
   
   // Use current global frame to initialize if it's an animated tile
-  if (meta.is_animated) {
+  if (meta.frames > 1) {
     m_current_local_frame = AppUtil::TileAnimationManager::GetGlobalFrame2(500);
-    std::string base = MAGIC_TOWER_RESOURCE_DIR + AppUtil::GetIdResourcePath(id);
+    std::string base = std::string(MAGIC_TOWER_RESOURCE_DIR) + "/" + AppUtil::GetIdResourcePath(id);
     std::string prefix = base.substr(0, base.length() - 5);
     SetDrawable(std::make_shared<Util::Image>(prefix + std::to_string(m_current_local_frame) + ".bmp"));
   } else {
-    SetDrawable(std::make_shared<Util::Image>(MAGIC_TOWER_RESOURCE_DIR + AppUtil::GetIdResourcePath(id)));
+    SetDrawable(std::make_shared<Util::Image>(std::string(MAGIC_TOWER_RESOURCE_DIR) + "/" + AppUtil::GetIdResourcePath(id)));
   }
 }
 
 std::string MapBlock::GetImagePath(int id) const {
-    return MAGIC_TOWER_RESOURCE_DIR + AppUtil::GetIdResourcePath(id);
+    return std::string(MAGIC_TOWER_RESOURCE_DIR) + "/" + AppUtil::GetIdResourcePath(id);
 }

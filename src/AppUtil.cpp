@@ -50,6 +50,10 @@ void AttributeRegistry::Initialize() {
     reg(Attr::WEAK,       11, Effect::WEAK);
     reg(Attr::POISON,     12, Effect::POISON);
     reg("Fly",            13, Effect::FLY);
+    
+    // Aliases or special structural attributes
+    reg(Attr::FLOOR_DELTA, 100);
+    reg(Attr::RELATION, 100); // Same ID as FLOOR_DELTA
 }
 
 bool AttributeRegistry::IsAttribute(const std::string& name) {
@@ -57,7 +61,7 @@ bool AttributeRegistry::IsAttribute(const std::string& name) {
     if (name == Attr::ID || name == Attr::PATH || name == Attr::FOLDER || 
         name == Attr::PASSABLE || name == Attr::ANIMATION || name == Attr::TITLE || 
         name == Attr::ICON || name == Attr::DIALOG || name == Attr::IS_PASSIVE || 
-        name == Attr::FLOOR_DELTA || name == Attr::TRANSACTIONS) {
+        name == Attr::FLOOR_DELTA || name == Attr::RELATION || name == Attr::TRANSACTIONS) {
         return false;
     }
     // Anything else in a CSV row that isn't structural is treated as a potential attribute
@@ -102,18 +106,76 @@ void RegistryLoader::LoadAllData() {
     AttributeRegistry::Initialize();
 
     LOG_INFO("Cleaning and Loading Game Object Registry from CSV...");
-    // Clear old data to ensure re-entry/restart resets transaction counts
     GlobalObjectRegistry.clear();
     GlobalObjectRegistry.emplace(0, ObjectMetadata("road", "Road", true));
+
     LoadSettings(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Settings.csv");
-    LoadBlocks(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Block.csv");
-    LoadDoors(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Door.csv");
-    LoadItems(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Item.csv");
-    LoadStairs(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Stair.csv");
-    LoadShops(std::string(MAGIC_TOWER_RESOURCE_DIR) + "/Datas/Data/Shop.csv");
-    LoadNPCs(std::string(MAGIC_TOWER_RESOURCE_DIR) + "/Datas/Data/NPC.csv");
-    LoadTriggers(std::string(MAGIC_TOWER_RESOURCE_DIR) + "/Datas/Data/Trigger.csv");
+    
+    // Using the Universal Flattened Loader
+    LoadObjectCSV(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Block.csv", "Road", true);
+    LoadObjectCSV(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Door.csv", "Door", false);
+    LoadObjectCSV(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Item.csv", "Item", false);
+    LoadObjectCSV(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Stair.csv", "Stair", true);
+    LoadObjectCSV(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Shop.csv", "Shop", false);
+    LoadObjectCSV(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/NPC.csv", "Road", false);
+    LoadObjectCSV(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Trigger.csv", "Trigger", true);
+
     LOG_INFO("RegistryLoader: Total {} object types in registry.", GlobalObjectRegistry.size());
+}
+
+void RegistryLoader::LoadObjectCSV(const std::string& path, const std::string& defaultFolder, bool defaultPassable) {
+    CSVLoader loader;
+    if (!loader.Load(path)) {
+        LOG_ERROR("RegistryLoader: FAILED to load CSV: {}", path);
+        return;
+    }
+
+    LOG_INFO("RegistryLoader: Loading object CSV: {} (rows: {})", path, loader.GetRowCount());
+
+    for (size_t i = 0; i < loader.GetRowCount(); ++i) {
+        int id = loader.GetInt(i, Attr::ID);
+        if (id <= 0) continue;
+
+        std::string name = loader.GetString(i, Attr::PATH);
+        std::string folder = loader.GetString(i, Attr::FOLDER);
+        if (folder.empty()) folder = defaultFolder;
+        
+        bool passable = loader.GetBool(i, Attr::PASSABLE, defaultPassable);
+        int frames = loader.GetInt(i, Attr::ANIMATION, 1);
+
+        ObjectMetadata meta(name, folder, passable, frames);
+        
+        // Store EVERY column into the raw attributes map
+        for (auto const& [colName, colIdx] : loader.GetHeaderMap()) {
+            meta.attributes[AttributeRegistry::GetId(colName)] = loader.GetString(i, colName);
+        }
+
+        GlobalObjectRegistry[id] = std::move(meta);
+    }
+}
+
+// --- ObjectMetadata Helpers ---
+
+int ObjectMetadata::GetInt(const std::string& key, int def) const {
+    auto it = attributes.find(AttributeRegistry::GetId(key));
+    if (it == attributes.end() || it->second.empty()) return def;
+    try { return std::stoi(it->second); } catch (...) { return def; }
+}
+
+std::string ObjectMetadata::GetString(const std::string& key, const std::string& def) const {
+    auto it = attributes.find(AttributeRegistry::GetId(key));
+    if (it == attributes.end()) return def;
+    return it->second;
+}
+
+bool ObjectMetadata::GetBool(const std::string& key, bool def) const {
+    std::string val = GetString(key, "");
+    if (val.empty()) return def;
+    std::string lowerVal = val;
+    for (auto &c : lowerVal) c = (char)std::tolower((unsigned char)c);
+    if (lowerVal == "true") return true;
+    if (lowerVal == "false") return false;
+    return def;
 }
 
 void RegistryLoader::LoadSettings(const std::string& path) {
@@ -130,174 +192,13 @@ void RegistryLoader::LoadSettings(const std::string& path) {
     LOG_INFO("RegistryLoader: Loaded {} settings.", GlobalSettings.size());
 }
 
-void RegistryLoader::LoadBlocks(const std::string& path) {
-    CSVLoader loader;
-    if (!loader.Load(path)) return;
-
-    for (size_t i = 0; i < loader.GetRowCount(); ++i) {
-        int id = loader.GetInt(i, Attr::ID);
-        std::string res_name = loader.GetString(i, Attr::PATH);
-        std::string folder = loader.GetString(i, Attr::FOLDER, "Road");
-        bool passable = loader.GetBool(i, Attr::PASSABLE, true);
-        int frames = loader.GetInt(i, Attr::ANIMATION, 1);
-
-        GlobalObjectRegistry.emplace(id, ObjectMetadata(res_name, folder, passable, frames));
-    }
-}
-
-void RegistryLoader::LoadDoors(const std::string& path) {
-    CSVLoader loader;
-    if (!loader.Load(path)) return;
-
-    for (size_t i = 0; i < loader.GetRowCount(); ++i) {
-        int id = loader.GetInt(i, Attr::ID);
-        std::string res_name = loader.GetString(i, Attr::PATH);
-        bool passable = loader.GetBool(i, Attr::PASSABLE, false);
-        int frames = loader.GetInt(i, Attr::ANIMATION, 1);
-
-        ObjectMetadata meta(res_name, "Door", passable, frames);
-        meta.door_props = std::make_shared<DoorComponent>();
-        meta.door_props->yellow_key = loader.GetInt(i, Attr::YELLOW_KEY);
-        meta.door_props->blue_key = loader.GetInt(i, Attr::BLUE_KEY);
-        meta.door_props->red_key = loader.GetInt(i, Attr::RED_KEY);
-        meta.door_props->is_passive = loader.GetBool(i, Attr::IS_PASSIVE, false);
-
-        GlobalObjectRegistry.emplace(id, std::move(meta));
-    }
-}
-
-void RegistryLoader::LoadItems(const std::string& path) {
-    CSVLoader loader;
-    if (!loader.Load(path)) {
-        LOG_ERROR("RegistryLoader: FAILED to load Item CSV: {}", path);
-        return;
-    }
-
-    LOG_INFO("RegistryLoader: Starting Item processing... Row count: {}", loader.GetRowCount());
-
-    for (size_t i = 0; i < loader.GetRowCount(); ++i) {
-        int id = loader.GetInt(i, Attr::ID);
-        if (id == 0) continue;
-
-        std::string res_name = loader.GetString(i, Attr::PATH);
-        bool passable = loader.GetBool(i, Attr::PASSABLE, false);
-        int frames = loader.GetInt(i, Attr::ANIMATION, 1);
-
-        LOG_INFO("RegistryLoader: Processing Item Row {} -> ID: {}, Name: {}", i, id, res_name);
-
-        ObjectMetadata meta(res_name, "Item", passable, frames);
-        meta.item_props = std::make_shared<ItemComponent>();
-        
-        auto effects = loader.GetRowEffects(i);
-        for (const auto& eff : effects) {
-            meta.item_props->effects.push_back(eff);
-            meta.initial_attributes[eff.type_id] = eff.value;
-        }
-
-        if (effects.empty()) {
-            LOG_WARN("RegistryLoader: Item ID {} has NO attributes loaded!", id);
-        }
-
-        std::string dialog = loader.GetString(i, Attr::DIALOG);
-        if (!dialog.empty()) {
-            meta.dialog_props = std::make_shared<DialogComponent>();
-            meta.dialog_props->lines.push_back(dialog);
-        }
-
-        GlobalObjectRegistry[id] = std::move(meta);
-    }
-    LOG_INFO("RegistryLoader: Finished loading items. Registry size now: {}", GlobalObjectRegistry.size());
-}
-
-void RegistryLoader::LoadStairs(const std::string& path) {
-    CSVLoader loader;
-    if (!loader.Load(path)) return;
-
-    for (size_t i = 0; i < loader.GetRowCount(); ++i) {
-        int id = loader.GetInt(i, Attr::ID);
-        std::string res_name = loader.GetString(i, Attr::PATH);
-        bool passable = loader.GetBool(i, Attr::PASSABLE, true);
-        int frames = loader.GetInt(i, Attr::ANIMATION, 1);
-
-        ObjectMetadata meta(res_name, "Stair", passable, frames);
-        meta.stair_props = std::make_shared<StairComponent>();
-        meta.stair_props->floor_delta = loader.GetInt(i, Attr::FLOOR_DELTA, 0);
-
-        // Fallback for legacy stair IDs if delta is not provided
-        if (meta.stair_props->floor_delta == 0) {
-            if (id == static_cast<int>(StairId::UP)) meta.stair_props->floor_delta = 1;
-            else if (id == static_cast<int>(StairId::DOWN)) meta.stair_props->floor_delta = -1;
-        }
-
-        GlobalObjectRegistry.emplace(id, std::move(meta));
-    }
-}
-
-void RegistryLoader::LoadShops(const std::string& path) {
-    CSVLoader loader;
-    if (!loader.Load(path)) return;
-
-    for (size_t i = 0; i < loader.GetRowCount(); ++i) {
-        int id = loader.GetInt(i, Attr::ID);
-        std::string res_name = loader.GetString(i, Attr::PATH);
-        std::string folder = loader.GetString(i, Attr::FOLDER, "Shop");
-        bool passable = loader.GetBool(i, Attr::PASSABLE, false);
-        int frames = loader.GetInt(i, Attr::ANIMATION, 1);
-
-        ObjectMetadata meta(res_name, folder, passable, frames);
-        meta.shop_props = std::make_shared<ShopComponent>();
-        meta.shop_props->title = loader.GetString(i, Attr::TITLE);
-        meta.shop_props->icon_path = loader.GetString(i, Attr::ICON);
-        meta.shop_props->transaction_count = loader.GetInt(i, Attr::TRANSACTIONS, 0);
-
-        // Special pricing for Greed God
-        if (id == 602) {
-            meta.shop_props->pricing_type = ShopPricingType::SCALING_GREED;
-        }
-
-        GlobalObjectRegistry.emplace(id, std::move(meta));
-    }
-}
-
-void RegistryLoader::LoadNPCs(const std::string& path) {
-    CSVLoader loader;
-    if (!loader.Load(path)) return;
-
-    for (size_t i = 0; i < loader.GetRowCount(); ++i) {
-        int id = loader.GetInt(i, Attr::ID);
-        std::string res_name = loader.GetString(i, Attr::PATH);
-        std::string folder = loader.GetString(i, Attr::FOLDER, "Road");
-        bool passable = loader.GetBool(i, Attr::PASSABLE, false);
-        int frames = loader.GetInt(i, Attr::ANIMATION, 1);
-
-        ObjectMetadata meta(res_name, folder, passable, frames);
-        meta.dialog_props = std::make_shared<DialogComponent>();
-        meta.dialog_props->title = loader.GetString(i, Attr::TITLE);
-        meta.dialog_props->icon_path = loader.GetString(i, Attr::ICON);
-
-        GlobalObjectRegistry.emplace(id, std::move(meta));
-    }
-}
-
-void RegistryLoader::LoadTriggers(const std::string& path) {
-    CSVLoader loader;
-    if (!loader.Load(path)) return;
-
-    for (size_t i = 0; i < loader.GetRowCount(); ++i) {
-        int id = loader.GetInt(i, Attr::ID);
-        std::string res_name = loader.GetString(i, Attr::PATH);
-        std::string folder = loader.GetString(i, Attr::FOLDER, "Trigger");
-        bool passable = loader.GetBool(i, Attr::PASSABLE, true);
-        int frames = loader.GetInt(i, Attr::ANIMATION, 1);
-
-        ObjectMetadata meta(res_name, folder, passable, frames);
-        meta.dialog_props = std::make_shared<DialogComponent>();
-        meta.dialog_props->title = loader.GetString(i, Attr::TITLE);
-        meta.dialog_props->icon_path = loader.GetString(i, Attr::ICON);
-
-        GlobalObjectRegistry.emplace(id, std::move(meta));
-    }
-}
+void RegistryLoader::LoadStairs(const std::string& path) { LoadObjectCSV(path, "Stair", true); }
+void RegistryLoader::LoadShops(const std::string& path) { LoadObjectCSV(path, "Shop", false); }
+void RegistryLoader::LoadNPCs(const std::string& path) { LoadObjectCSV(path, "Road", false); }
+void RegistryLoader::LoadTriggers(const std::string& path) { LoadObjectCSV(path, "Trigger", true); }
+void RegistryLoader::LoadBlocks(const std::string& path) { LoadObjectCSV(path, "Road", true); }
+void RegistryLoader::LoadDoors(const std::string& path) { LoadObjectCSV(path, "Door", false); }
+void RegistryLoader::LoadItems(const std::string& path) { LoadObjectCSV(path, "Item", false); }
 
 std::string GetIdString(int id) {
   auto it = GlobalObjectRegistry.find(id);
@@ -309,27 +210,36 @@ std::string GetIdString(int id) {
 
 std::string GetIdResourcePath(int id) {
   auto it = GlobalObjectRegistry.find(id);
-  if (it != GlobalObjectRegistry.end()) {
-    const auto& meta = it->second;
-    int frame = meta.is_animated ? TileAnimationManager::GetGlobalFrame2() : 1;
+  if (it == GlobalObjectRegistry.end()) return "";
 
-    // Road, Shop, and Door folders always use numbered filenames (e.g. road1.bmp, blue_door1.bmp)
-    if (meta.folder == "Road" || meta.folder == "Shop" || meta.folder == "Door") {
-        return "/bmp/" + meta.folder + "/" + meta.name + std::to_string(frame) + ".bmp";
-    }
+  const auto& meta = it->second;
+  std::string folder = meta.GetString(Attr::FOLDER);
+  std::string path = meta.GetString(Attr::PATH);
+  
+  if (path.empty()) return "";
 
-    if (meta.folder == "Trigger") {
-        // Triggers are meant to be invisible by default but logically active
-        return "/bmp/Trigger/no_door.png";
-    }
+  int totalFrames = meta.frames;
+  int currentFrame = (totalFrames > 1) ? TileAnimationManager::GetGlobalFrame2() : 1;
 
-    // Other folders (Item, Door, etc.) only use numbers if animated
-    if (meta.is_animated) {
-        return "/bmp/" + meta.folder + "/" + meta.name + std::to_string(frame) + ".bmp";
-    }
-    return "/bmp/" + meta.folder + "/" + meta.name + ".bmp";
+  std::string frameSuffix = "";
+  if (totalFrames > 1) {
+      frameSuffix = std::to_string(currentFrame);
+  } else if (folder == "Road" || folder == "Shop" || folder == "Door" || folder == "Stair") {
+      frameSuffix = "1"; 
   }
-  return "";
+
+  if (folder == "Trigger") {
+      return "bmp/Trigger/no_door.png";
+  }
+
+  // Build relative path (no leading slash)
+  std::string relativePath = "bmp/";
+  if (!folder.empty()) {
+      relativePath += folder + "/";
+  }
+  relativePath += path + frameSuffix + ".bmp";
+  
+  return relativePath;
 }
 std::vector<std::vector<MapCell>>
 MapParser::ParseCsv(const std::string &filepath) {

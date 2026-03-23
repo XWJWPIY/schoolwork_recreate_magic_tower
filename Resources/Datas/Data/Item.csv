@@ -1,21 +1,21 @@
-﻿ID,Path,Passable,Animation,Level,HP,ATK,DEF,AGI,EXP,yellow_key,blue_key,red_key,Coin,Weak,Poison,Dialog
-201,yellow_key,FALSE,1,0,0,0,0,0,0,1,0,0,0,0,0,黃鑰匙
-202,blue_key,FALSE,1,0,0,0,0,0,0,0,1,0,0,0,0,藍鑰匙
-203,red_key,FALSE,1,0,0,0,0,0,0,0,0,1,0,0,0,紅鑰匙
-204,magic_key,FALSE,1,0,0,0,0,0,0,1,1,1,0,0,0,魔法之匙 所有鑰匙數+1
-205,coin,FALSE,1,0,0,0,0,0,0,0,0,0,200,0,0,金幣200塊
-206,red_potion,FALSE,1,0,150,0,0,0,0,0,0,0,0,0,0,傷藥 體力+150
-207,blue_potion,FALSE,1,0,400,0,0,0,0,0,0,0,0,0,0,高級傷藥 體力+400
-211,emerald,FALSE,1,0,0,0,0,1,0,0,0,0,0,0,0,綠寶石 敏捷+1
-212,sapphire,FALSE,1,0,0,0,2,0,0,0,0,0,0,0,0,藍寶石 防禦力+2
-213,ruby,FALSE,1,0,0,2,0,0,0,0,0,0,0,0,0,紅寶石 攻擊力+2
-216,fire_drink,FALSE,1,0,0,0,0,0,0,0,0,0,0,1,0,火酒 回復衰弱狀態
-217,anti_poison,FALSE,1,0,0,0,0,0,0,0,0,0,0,0,1,抗毒劑 回復毒狀態
-218,jump_wing,FALSE,1,0,0,0,0,0,0,0,0,0,0,0,0,躍進之翼 等級提升一
-221,sword_e,FALSE,1,0,0,8,0,0,0,0,0,0,0,0,0,鐵劍 攻擊力+8
-222,shield_d,FALSE,1,0,0,0,7,0,0,0,0,0,0,0,0,皮革之盾 防禦力+7
-223,gem_digger,FALSE,1,0,0,5,0,0,0,0,0,0,0,0,0,鋤頭 攻擊力+5
-224,shield_c,FALSE,1,0,0,0,13,0,0,0,0,0,0,0,0,鐵盾 防禦力+13
-225,light_shiled,FALSE,1,0,0,0,20,0,0,0,0,0,0,0,0,高級盾牌 防禦力+20
-226,sword_d,FALSE,1,0,0,16,0,0,0,0,0,0,0,0,0,長劍 攻擊力+16
-227,gem_hoe,FALSE,1,0,0,7,0,0,0,0,0,0,0,0,0,寶石鋤頭 攻擊力+7
+﻿ID,Path,Folder,Passable,Animation,Level,HP,ATK,DEF,AGI,EXP,yellow_key,blue_key,red_key,Coin,Weak,Poison,Dialog
+201,yellow_key,Item,FALSE,1,0,0,0,0,0,0,1,0,0,0,0,0,黃鑰匙
+202,blue_key,Item,FALSE,1,0,0,0,0,0,0,0,1,0,0,0,0,藍鑰匙
+203,red_key,Item,FALSE,1,0,0,0,0,0,0,0,0,1,0,0,0,紅鑰匙
+204,magic_key,Item,FALSE,1,0,0,0,0,0,0,1,1,1,0,0,0,魔法之匙 所有鑰匙數+1
+205,coin,Item,FALSE,1,0,0,0,0,0,0,0,0,0,200,0,0,金幣200塊
+206,red_potion,Item,FALSE,1,0,150,0,0,0,0,0,0,0,0,0,0,傷藥 體力+150
+207,blue_potion,Item,FALSE,1,0,400,0,0,0,0,0,0,0,0,0,0,高級傷藥 體力+400
+211,emerald,Item,FALSE,1,0,0,0,0,1,0,0,0,0,0,0,0,綠寶石 敏捷+1
+212,sapphire,Item,FALSE,1,0,0,0,2,0,0,0,0,0,0,0,0,藍寶石 防禦力+2
+213,ruby,Item,FALSE,1,0,0,2,0,0,0,0,0,0,0,0,0,紅寶石 攻擊力+2
+216,fire_drink,Item,FALSE,1,0,0,0,0,0,0,0,0,0,0,1,0,火酒 回復衰弱狀態
+217,anti_poison,Item,FALSE,1,0,0,0,0,0,0,0,0,0,0,0,1,抗毒劑 回復毒狀態
+218,jump_wing,Item,FALSE,1,0,0,0,0,0,0,0,0,0,0,0,0,躍進之翼 等級提升一
+221,sword_e,Item,FALSE,1,0,0,8,0,0,0,0,0,0,0,0,0,鐵劍 攻擊力+8
+222,shield_d,Item,FALSE,1,0,0,0,7,0,0,0,0,0,0,0,0,皮革之盾 防禦力+7
+223,gem_digger,Item,FALSE,1,0,0,5,0,0,0,0,0,0,0,0,0,鋤頭 攻擊力+5
+224,shield_c,Item,FALSE,1,0,0,0,13,0,0,0,0,0,0,0,0,鐵盾 防禦力+13
+225,light_shiled,Item,FALSE,1,0,0,0,20,0,0,0,0,0,0,0,0,高級盾牌 防禦力+20
+226,sword_d,Item,FALSE,1,0,0,16,0,0,0,0,0,0,0,0,0,長劍 攻擊力+16
+227,gem_hoe,Item,FALSE,1,0,0,7,0,0,0,0,0,0,0,0,0,寶石鋤頭 攻擊力+7

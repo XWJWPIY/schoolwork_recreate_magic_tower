@@ -81,18 +81,9 @@ void App::InitializeGame() {
               this->m_dialogue_manager->StartScript(scriptName, t);
           });
     } else {
-      // Fallback for ID 0 or unknown
-      class UnknownEntity : public Entity {
-      public:
-        UnknownEntity(int i)
-            : Entity(i, MAGIC_TOWER_RESOURCE_DIR "/bmp/Door/no_door.png", false) {
-          if (i == 0) SetVisible(false);
-        }
-        void Reaction(std::shared_ptr<Player> player) override {
-          LOG_DEBUG("Unknown entity Reaction");
-        }
-      };
-      entity = std::make_shared<UnknownEntity>(id);
+      // Fallback for unknown or ID 0 (now handled by Entity itself for size templating)
+      entity = std::make_shared<Entity>(id, std::string(MAGIC_TOWER_RESOURCE_DIR) + "/bmp/Road/road1.bmp", true);
+      if (id == 0) entity->SetVisible(false);
     }
 
     if (entity) {

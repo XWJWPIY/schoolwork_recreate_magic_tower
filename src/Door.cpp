@@ -34,22 +34,20 @@ void Door::Reaction(std::shared_ptr<Player> player) {
     return;
 
   auto it = AppUtil::GlobalObjectRegistry.find(m_object_id);
-  if (it == AppUtil::GlobalObjectRegistry.end() || !it->second.door_props) {
-    LOG_INFO("No door metadata for ID {}", m_object_id);
-    return;
-  }
-
   const auto &meta = it->second;
-  const auto &props = *meta.door_props;
 
-  if (props.is_passive) {
+  if (meta.GetBool(AppUtil::Attr::IS_PASSIVE, false)) {
     LOG_INFO("Door {} is passive and requires a special condition to open.",
              meta.name);
     return;
   }
 
+  int yellow_key = meta.GetInt(AppUtil::Attr::YELLOW_KEY);
+  int blue_key = meta.GetInt(AppUtil::Attr::BLUE_KEY);
+  int red_key = meta.GetInt(AppUtil::Attr::RED_KEY);
+
   // Open immediately if no keys are required
-  if (props.yellow_key == 0 && props.blue_key == 0 && props.red_key == 0) {
+  if (yellow_key == 0 && blue_key == 0 && red_key == 0) {
     LOG_INFO("Opening {} (requires no keys)!", meta.name);
     m_animation->Play();
     m_can_react = false;
@@ -57,23 +55,23 @@ void Door::Reaction(std::shared_ptr<Player> player) {
   }
 
   bool can_open = true;
-  if (props.yellow_key > 0) {
-      if (player->GetAttr(AppUtil::Effect::KEY_YELLOW) >= props.yellow_key) {
-          player->ApplyEffect(AppUtil::Effect::KEY_YELLOW, -props.yellow_key);
+  if (yellow_key > 0) {
+      if (player->GetAttr(AppUtil::Effect::KEY_YELLOW) >= yellow_key) {
+          player->ApplyEffect(AppUtil::Effect::KEY_YELLOW, -yellow_key);
       } else {
           can_open = false;
       }
   }
-  if (can_open && props.blue_key > 0) {
-      if (player->GetAttr(AppUtil::Effect::KEY_BLUE) >= props.blue_key) {
-          player->ApplyEffect(AppUtil::Effect::KEY_BLUE, -props.blue_key);
+  if (can_open && blue_key > 0) {
+      if (player->GetAttr(AppUtil::Effect::KEY_BLUE) >= blue_key) {
+          player->ApplyEffect(AppUtil::Effect::KEY_BLUE, -blue_key);
       } else {
           can_open = false;
       }
   }
-  if (can_open && props.red_key > 0) {
-      if (player->GetAttr(AppUtil::Effect::KEY_RED) >= props.red_key) {
-          player->ApplyEffect(AppUtil::Effect::KEY_RED, -props.red_key);
+  if (can_open && red_key > 0) {
+      if (player->GetAttr(AppUtil::Effect::KEY_RED) >= red_key) {
+          player->ApplyEffect(AppUtil::Effect::KEY_RED, -red_key);
       } else {
           can_open = false;
       }

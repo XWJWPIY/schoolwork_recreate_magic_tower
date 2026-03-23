@@ -1,6 +1,6 @@
-ID,Path,Passable,Animation,yellow_key,blue_key,red_key,is_passive
-301,yellow_door,false,1,1,0,0,false
-302,blue_door,false,1,0,1,0,false
-303,red_door,false,1,0,0,1,false
-304,iron_fence,false,1,0,0,0,false
-305,green_door,false,1,0,0,0,true
+ID,Path,Folder,Name,Passable,Animation,yellow_key,blue_key,red_key,is_passive
+301,yellow_door,Door,yellow_door,false,1,1,0,0,false
+302,blue_door,Door,blue_door,false,1,0,1,0,false
+303,red_door,Door,red_door,false,1,0,0,1,false
+304,iron_fence,Door,iron_fence,false,1,0,0,0,false
+305,green_door,Door,green_door,false,1,0,0,0,true
