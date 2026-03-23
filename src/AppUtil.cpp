@@ -210,28 +210,38 @@ std::string GetIdResourcePath(int id) {
   
   if (path.empty()) return "";
 
-  int totalFrames = meta.frames;
-  int currentFrame = (totalFrames > 1) ? TileAnimationManager::GetGlobalFrame2() : 1;
-
-  std::string frameSuffix = "";
-  if (totalFrames > 1) {
-      frameSuffix = std::to_string(currentFrame);
-  } else if (folder == "Road" || folder == "Shop" || folder == "Door" || folder == "Stair") {
-      frameSuffix = "1"; 
-  }
-
   if (folder == "Trigger") {
       return "bmp/Trigger/no_door.png";
   }
 
-  // Build relative path (no leading slash)
-  std::string relativePath = "bmp/";
+  int totalFrames = meta.frames;
+  int currentFrame = (totalFrames > 1) ? TileAnimationManager::GetGlobalFrame2() : 1;
+  std::string frameStr = std::to_string(currentFrame);
+
+  // Unified logic: bmp/Folder/Path[Frame].ext
+  // We need to handle case-sensitivity and multiple extensions (bmp/png)
+  std::string baseDir = "bmp/";
   if (!folder.empty()) {
-      relativePath += folder + "/";
+      baseDir += folder + "/";
   }
-  relativePath += path + frameSuffix + ".bmp";
-  
-  return relativePath;
+  std::string fullBasePath = baseDir + path + frameStr;
+
+  auto fileExists = [](const std::string& p) {
+      std::string fullPath = "Resources/" + p;
+      std::ifstream f(fullPath);
+      return f.good();
+  };
+
+  // Try common extensions in both cases
+  std::vector<std::string> variations = { ".bmp", ".BMP", ".png", ".png" };
+  for (const auto& ext : variations) {
+      if (fileExists(fullBasePath + ext)) {
+          return fullBasePath + ext;
+      }
+  }
+
+  // Fallback to legacy default if nothing found
+  return fullBasePath + ".bmp";
 }
 std::vector<std::vector<MapCell>>
 MapParser::ParseCsv(const std::string &filepath) {

@@ -602,7 +602,10 @@ classDiagram
 - **通用加載機制**：
   - `AttributeRegistry`：動態分配並緩存以字串為主鍵的屬性 ID，取代舊有寫死的 Enum 結構。
   - 統一透過 `LoadObjectCSV` 將 CSV 表格標頭作為 Key，儲存至 `ObjectMetadata::attributes`。
-- **資源定位**：`GetIdResourcePath(id)` — 依 `ObjectMetadata` 動態合成路徑。根據 `frames` 判定單幀/多幀後綴，`Trigger` 強制使用佔位透明圖形。
+- **資源定位**：`GetIdResourcePath(id)` — 依 `ObjectMetadata` 動態合成路徑。
+  - **自動修復**：實作自動後綴 (`1` 為預設) 與多格式偵測 (`.bmp`, `.BMP`, `.png`)。
+  - **優先級**：優先尋找帶後綴的 `.bmp`，若找不到則嘗試原始檔名或其他格式。
+  - **特殊處理**：`Trigger` 強制使用佔位透明圖形。
 - **多樣化效果**：利用 `AttributeRegistry` 彈性支援 HP, ATK, DEF, AGI, EXP, Level, Keys, Coins, Weak, Poison，擴充不再需要修改程式碼。
 - **CSV 解析器 (`MapParser` 與 `CSVLoader`)**：
   - `CSVLoader::Load()` → 載入為帶有標頭屬性對應表的動態結構。
