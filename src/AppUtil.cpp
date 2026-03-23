@@ -29,9 +29,10 @@ void RegistryLoader::LoadAllData() {
     LoadDoors(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Door.csv");
     LoadItems(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Item.csv");
     LoadStairs(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Stair.csv");
-    LoadShops(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Shop.csv");
-    LoadNPCs(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/NPC.csv");
-    LOG_INFO("Object Registry loaded. Total objects: {}", GlobalObjectRegistry.size());
+    LoadShops(std::string(MAGIC_TOWER_RESOURCE_DIR) + "/Datas/Data/Shop.csv");
+    LoadNPCs(std::string(MAGIC_TOWER_RESOURCE_DIR) + "/Datas/Data/NPC.csv");
+    LoadTriggers(std::string(MAGIC_TOWER_RESOURCE_DIR) + "/Datas/Data/Trigger.csv");
+    LOG_INFO("RegistryLoader: Loaded {} object types into registry.", GlobalObjectRegistry.size());
 }
 
 void RegistryLoader::LoadSettings(const std::string& path) {
@@ -229,6 +230,30 @@ void RegistryLoader::LoadNPCs(const std::string& path) {
     }
 }
 
+void RegistryLoader::LoadTriggers(const std::string& path) {
+    auto data = MapParser::ParseCsvToStrings(path);
+    if (data.empty()) return;
+
+    // Header: ID,Path,Folder,Passable,Animation,Title,Icon
+    for (size_t i = 1; i < data.size(); ++i) {
+        const auto& row = data[i];
+        if (row.size() < 7) continue;
+
+        int id = std::stoi(row[0]);
+        std::string res_name = row[1];
+        std::string folder = row[2];
+        bool passable = (row[3] == "true");
+        int frames = std::stoi(row[4]);
+
+        ObjectMetadata meta(res_name, folder, passable, frames);
+        meta.dialog_props = std::make_shared<DialogComponent>();
+        meta.dialog_props->title = row[5];
+        meta.dialog_props->icon_path = row[6];
+
+        GlobalObjectRegistry.emplace(id, std::move(meta));
+    }
+}
+
 std::string GetIdString(int id) {
   auto it = GlobalObjectRegistry.find(id);
   if (it != GlobalObjectRegistry.end()) {
@@ -246,6 +271,11 @@ std::string GetIdResourcePath(int id) {
     // Road, Shop, and Door folders always use numbered filenames (e.g. road1.bmp, blue_door1.bmp)
     if (meta.folder == "Road" || meta.folder == "Shop" || meta.folder == "Door") {
         return "/bmp/" + meta.folder + "/" + meta.name + std::to_string(frame) + ".bmp";
+    }
+
+    if (meta.folder == "Trigger") {
+        // Triggers are meant to be invisible by default but logically active
+        return "/bmp/Trigger/no_door.png";
     }
 
     // Other folders (Item, Door, etc.) only use numbers if animated

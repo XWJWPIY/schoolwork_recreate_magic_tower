@@ -130,6 +130,7 @@ public:
     static void LoadStairs(const std::string& path);
     static void LoadShops(const std::string& path);
     static void LoadNPCs(const std::string& path);
+    static void LoadTriggers(const std::string& path);
 };
 
 // Global or shared utility functions and constant definitions

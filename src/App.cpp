@@ -17,6 +17,7 @@
 #include "Shop.hpp"
 #include "Stair.hpp"
 #include "StatusUI.hpp"
+#include "Trigger.hpp"
 
 void App::Start() {
   m_current_state = STATE::UPDATE;
@@ -73,6 +74,12 @@ void App::InitializeGame() {
     } else if (id >= 700 && id < 800) {
       entity = std::make_shared<Stair>(
           id, [this](int delta) { this->ChangeFloor(delta); });
+    } else if (id >= 800 && id < 900) {
+      entity = std::make_shared<Trigger>(
+          id, [this](std::shared_ptr<Trigger> t, const std::string& path) {
+              std::string scriptName = std::to_string(this->m_road_map->GetCurrentStory()) + "_" + path;
+              this->m_dialogue_manager->StartScript(scriptName, t);
+          });
     } else {
       // Fallback for ID 0 or unknown
       class UnknownEntity : public Entity {

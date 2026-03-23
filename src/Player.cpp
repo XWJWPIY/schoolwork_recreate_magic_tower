@@ -11,7 +11,7 @@ Player::Player()
 
   // Initial grid position
   m_grid_x = 5;
-  m_grid_y = 9;
+  m_grid_y = 10;
 
   // Initial Stats from reference UI
   m_hp = 1000;

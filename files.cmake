@@ -19,6 +19,7 @@ set(SRC_FILES
     StatusUI.cpp
     MenuUI.cpp
     DialogueManager.cpp
+    Trigger.cpp
 )
 
 set(INCLUDE_FILES
@@ -42,6 +43,7 @@ set(INCLUDE_FILES
     StatusUI.hpp
     MenuUI.hpp
     DialogueManager.hpp
+    Trigger.hpp
 )
 
 set(TEST_FILES
