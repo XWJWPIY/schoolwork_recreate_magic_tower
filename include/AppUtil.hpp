@@ -139,16 +139,6 @@ public:
     
     // Universal loader for all object types (Blocks, Items, NPCs, etc.)
     static void LoadObjectCSV(const std::string& path, const std::string& defaultFolder = "Road", bool defaultPassable = true);
-
-private:
-    // Deprecated specialized loaders (will be removed after refactoring)
-    static void LoadBlocks(const std::string& path);
-    static void LoadDoors(const std::string& path);
-    static void LoadItems(const std::string& path);
-    static void LoadStairs(const std::string& path);
-    static void LoadShops(const std::string& path);
-    static void LoadNPCs(const std::string& path);
-    static void LoadTriggers(const std::string& path);
 };
 
 // Global or shared utility functions and constant definitions

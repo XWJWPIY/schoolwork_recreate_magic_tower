@@ -192,14 +192,6 @@ void RegistryLoader::LoadSettings(const std::string& path) {
     LOG_INFO("RegistryLoader: Loaded {} settings.", GlobalSettings.size());
 }
 
-void RegistryLoader::LoadStairs(const std::string& path) { LoadObjectCSV(path, "Stair", true); }
-void RegistryLoader::LoadShops(const std::string& path) { LoadObjectCSV(path, "Shop", false); }
-void RegistryLoader::LoadNPCs(const std::string& path) { LoadObjectCSV(path, "Road", false); }
-void RegistryLoader::LoadTriggers(const std::string& path) { LoadObjectCSV(path, "Trigger", true); }
-void RegistryLoader::LoadBlocks(const std::string& path) { LoadObjectCSV(path, "Road", true); }
-void RegistryLoader::LoadDoors(const std::string& path) { LoadObjectCSV(path, "Door", false); }
-void RegistryLoader::LoadItems(const std::string& path) { LoadObjectCSV(path, "Item", false); }
-
 std::string GetIdString(int id) {
   auto it = GlobalObjectRegistry.find(id);
   if (it != GlobalObjectRegistry.end()) {
