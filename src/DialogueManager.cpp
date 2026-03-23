@@ -487,12 +487,12 @@ void DialogueManager::ExecuteCommand(const ScriptLine& line, std::shared_ptr<Pla
                         if (eff.value < 0) {
                             int cost = -eff.value;
                             switch (eff.type) {
-                                case AppUtil::Effect::COIN: if (player->GetCoins() < cost) canAfford = false; break;
-                                case AppUtil::Effect::EXP: if (player->GetExp() < cost) canAfford = false; break;
-                                case AppUtil::Effect::HP: if (player->GetHp() <= cost) canAfford = false; break;
-                                case AppUtil::Effect::KEY_YELLOW: if (player->GetYellowKeys() < cost) canAfford = false; break;
-                                case AppUtil::Effect::KEY_BLUE: if (player->GetBlueKeys() < cost) canAfford = false; break;
-                                case AppUtil::Effect::KEY_RED: if (player->GetRedKeys() < cost) canAfford = false; break;
+                                case AppUtil::Effect::COIN: if (player->GetAttr(AppUtil::Effect::COIN) < cost) canAfford = false; break;
+                                case AppUtil::Effect::EXP: if (player->GetAttr(AppUtil::Effect::EXP) < cost) canAfford = false; break;
+                                case AppUtil::Effect::HP: if (player->GetAttr(AppUtil::Effect::HP) <= cost) canAfford = false; break;
+                                case AppUtil::Effect::KEY_YELLOW: if (player->GetAttr(AppUtil::Effect::KEY_YELLOW) < cost) canAfford = false; break;
+                                case AppUtil::Effect::KEY_BLUE: if (player->GetAttr(AppUtil::Effect::KEY_BLUE) < cost) canAfford = false; break;
+                                case AppUtil::Effect::KEY_RED: if (player->GetAttr(AppUtil::Effect::KEY_RED) < cost) canAfford = false; break;
                                 default: break;
                             }
                         }

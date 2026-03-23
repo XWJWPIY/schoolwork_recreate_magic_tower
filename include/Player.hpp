@@ -25,29 +25,15 @@ public:
 
   void Reaction(std::shared_ptr<Player> player) override;
 
-  // Key management
-  int GetYellowKeys() const { return m_yellow_keys; }
-  int GetBlueKeys() const { return m_blue_keys; }
-  int GetRedKeys() const { return m_red_keys; }
-
-  bool UseKey(AppUtil::Effect type, int count = 1);
-
-  // Coin management
-  int GetCoins() const { return m_coins; }
-  void AddCoins(int amount) { m_coins += amount; }
-  void SetCoins(int count) { m_coins = count; }
-
-  void ApplyEffect(AppUtil::Effect type, int value);
-
   void SetPendingShop(int id) { m_pending_shop_id = id; }
   int GetPendingShop() const { return m_pending_shop_id; }
   
-  bool HasFly() const { return m_has_fly; }
-
   void ResetStateAfterFloorChange();
   void SetDirection(PlayerDirection dir) { m_direction = dir; }
   void SetIsAnimating(bool animate) { m_is_animating = animate; }
   void SetCurrentFrame(int frame) { m_current_frame = frame; }
+
+  void OnAttributeChanged(AppUtil::Effect type) override;
 
 public:
   void ObjectUpdate() override;
@@ -61,12 +47,8 @@ private:
   float m_animation_timer = 0.0f;
   const float FRAME_INTERVAL = 0.05f; // 50ms per frame for a fast movement feel
 
-  int m_yellow_keys = 0;
-  int m_blue_keys = 0;
-  int m_red_keys = 0;
-  int m_coins = 0;
   int m_pending_shop_id = -1;
-  bool m_has_fly = false;
 };
+
 
 #endif // PLAYER_HPP

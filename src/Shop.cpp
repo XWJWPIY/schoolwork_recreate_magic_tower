@@ -67,12 +67,12 @@ bool Shop::CanAfford(const AppUtil::ShopOption& opt, const Player& player) const
         if (eff.value >= 0) continue;
         int cost = -eff.value;
         switch (eff.type) {
-            case AppUtil::Effect::COIN: if (player.GetCoins() < cost) return false; break;
-            case AppUtil::Effect::EXP: if (player.GetExp() < cost) return false; break;
-            case AppUtil::Effect::HP: if (player.GetHp() <= cost) return false; break;
-            case AppUtil::Effect::KEY_YELLOW: if (player.GetYellowKeys() < cost) return false; break;
-            case AppUtil::Effect::KEY_BLUE: if (player.GetBlueKeys() < cost) return false; break;
-            case AppUtil::Effect::KEY_RED: if (player.GetRedKeys() < cost) return false; break;
+            case AppUtil::Effect::COIN: if (player.GetAttr(AppUtil::Effect::COIN) < cost) return false; break;
+            case AppUtil::Effect::EXP: if (player.GetAttr(AppUtil::Effect::EXP) < cost) return false; break;
+            case AppUtil::Effect::HP: if (player.GetAttr(AppUtil::Effect::HP) <= cost) return false; break;
+            case AppUtil::Effect::KEY_YELLOW: if (player.GetAttr(AppUtil::Effect::KEY_YELLOW) < cost) return false; break;
+            case AppUtil::Effect::KEY_BLUE: if (player.GetAttr(AppUtil::Effect::KEY_BLUE) < cost) return false; break;
+            case AppUtil::Effect::KEY_RED: if (player.GetAttr(AppUtil::Effect::KEY_RED) < cost) return false; break;
             default: break;
         }
     }

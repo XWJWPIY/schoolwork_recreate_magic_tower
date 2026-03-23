@@ -247,7 +247,7 @@ void App::Update() {
       ChangeFloor(-1);
     }
 
-    if (Util::Input::IsKeyDown(Util::Keycode::F) && m_player->HasFly()) {
+    if (Util::Input::IsKeyDown(Util::Keycode::F) && m_player->GetAttr(AppUtil::Effect::FLY) > 0) {
       m_game_state = AppUtil::GameState::FAST_ELEVATOR;
       m_preview_floor = m_road_map->GetCurrentStory();
       m_menu_ui->SetTargetFloor(m_preview_floor);

@@ -45,17 +45,17 @@ void StatusUI::InitNumericText(std::shared_ptr<NumericDisplayText>& text,
 
 void StatusUI::Update(const std::shared_ptr<Player>& player, int floorNum) {
     if (player) {
-        m_yellow_key_text->SetNumber(player->GetYellowKeys());
-        m_blue_key_text->SetNumber(player->GetBlueKeys());
-        m_red_key_text->SetNumber(player->GetRedKeys());
-        m_coin_text->SetNumber(player->GetCoins());
+        m_yellow_key_text->SetNumber(player->GetAttr(AppUtil::Effect::KEY_YELLOW));
+        m_blue_key_text->SetNumber(player->GetAttr(AppUtil::Effect::KEY_BLUE));
+        m_red_key_text->SetNumber(player->GetAttr(AppUtil::Effect::KEY_RED));
+        m_coin_text->SetNumber(player->GetAttr(AppUtil::Effect::COIN));
         
-        m_level_text->SetNumber(player->GetLevel());
-        m_hp_text->SetNumber(player->GetHp());
-        m_attack_text->SetNumber(player->GetAttack());
-        m_defense_text->SetNumber(player->GetDefense());
-        m_agility_text->SetNumber(player->GetAgility());
-        m_exp_text->SetNumber(player->GetExp());
+        m_level_text->SetNumber(player->GetAttr(AppUtil::Effect::LEVEL));
+        m_hp_text->SetNumber(player->GetAttr(AppUtil::Effect::HP));
+        m_attack_text->SetNumber(player->GetAttr(AppUtil::Effect::ATTACK));
+        m_defense_text->SetNumber(player->GetAttr(AppUtil::Effect::DEFENSE));
+        m_agility_text->SetNumber(player->GetAttr(AppUtil::Effect::AGILITY));
+        m_exp_text->SetNumber(player->GetAttr(AppUtil::Effect::EXP));
 
         m_yellow_key_text->UpdateDisplayText();
         m_blue_key_text->UpdateDisplayText();

@@ -14,16 +14,17 @@ Player::Player()
   m_grid_y = 10;
 
   // Initial Stats from reference UI
-  m_hp = 1000;
-  m_attack = 10;
-  m_defense = 10;
-  m_agility = 2;
-  m_exp = 0;
+  SetAttr(AppUtil::Effect::HP, 1000);
+  SetAttr(AppUtil::Effect::ATTACK, 10);
+  SetAttr(AppUtil::Effect::DEFENSE, 10);
+  SetAttr(AppUtil::Effect::AGILITY, 2);
+  SetAttr(AppUtil::Effect::EXP, 0);
+  SetAttr(AppUtil::Effect::LEVEL, 1);
 
-  m_yellow_keys = 1;
-  m_blue_keys = 1;
-  m_red_keys = 1;  
-  m_coins = 0;
+  SetAttr(AppUtil::Effect::KEY_YELLOW, 1);
+  SetAttr(AppUtil::Effect::KEY_BLUE, 1);
+  SetAttr(AppUtil::Effect::KEY_RED, 1);
+  SetAttr(AppUtil::Effect::COIN, 0);
 
   UpdateSprite();
 }
@@ -110,33 +111,6 @@ void Player::Reaction(std::shared_ptr<Player> player) {
   LOG_INFO("Player triggered Reaction()! Possible mirror stage.");
 }
 
-bool Player::UseKey(AppUtil::Effect type, int count) {
-  switch (type) {
-  case AppUtil::Effect::KEY_YELLOW:
-    if (m_yellow_keys >= count) {
-      m_yellow_keys -= count;
-      return true;
-    }
-    break;
-  case AppUtil::Effect::KEY_BLUE:
-    if (m_blue_keys >= count) {
-      m_blue_keys -= count;
-      return true;
-    }
-    break;
-  case AppUtil::Effect::KEY_RED:
-    if (m_red_keys >= count) {
-      m_red_keys -= count;
-      return true;
-    }
-    break;
-  default:
-    LOG_WARN("Player::UseKey: Unsupported effect type for key consumption");
-    break;
-  }
-  return false;
-}
-
 void Player::ResetStateAfterFloorChange() {
   m_direction = PlayerDirection::DOWN;
   m_is_animating = false;
@@ -158,57 +132,14 @@ void Player::SyncPosition(std::shared_ptr<FloorMap> roadmap) {
   }
 }
 
-void Player::ApplyEffect(AppUtil::Effect type, int value) {
-  switch (type) {
-  case AppUtil::Effect::HP:
-    m_hp += value;
-    break;
-  case AppUtil::Effect::ATTACK:
-    m_attack += value;
-    break;
-  case AppUtil::Effect::DEFENSE:
-    m_defense += value;
-    break;
-  case AppUtil::Effect::AGILITY:
-    m_agility += value;
-    break;
-  case AppUtil::Effect::KEY_YELLOW:
-    m_yellow_keys += value;
-    break;
-  case AppUtil::Effect::KEY_BLUE:
-    m_blue_keys += value;
-    break;
-  case AppUtil::Effect::KEY_RED:
-    m_red_keys += value;
-    break;
-  case AppUtil::Effect::COIN:
-    m_coins += value;
-    break;
-  case AppUtil::Effect::LEVEL:
-    m_level += value;
-    LOG_INFO("Player level increased by {}", value);
-    break;
-  case AppUtil::Effect::EXP:
-    m_exp += value;
-    LOG_INFO("Player EXP increased by {}", value);
-    break;
-  case AppUtil::Effect::WEAK:
-    // TODO: Implement weak status logic
-    LOG_INFO("Player current weak status: {}", value);
-    break;
-  case AppUtil::Effect::POISON:
-    // TODO: Implement poison status logic
-    LOG_INFO("Player current poison status: {}", value);
-    break;
-  case AppUtil::Effect::FLY:
-    m_has_fly = true;
-    LOG_INFO("Player acquired FLY effect");
-    break;
-  case AppUtil::Effect::NONE:
-  default:
-    break;
-  }
+void Player::OnAttributeChanged(AppUtil::Effect type) {
+    // Add special logic if needed, e.g. death check or audio feedback
+    if (type == AppUtil::Effect::HP && GetAttr(AppUtil::Effect::HP) <= 0) {
+        LOG_INFO("Player has died!");
+        // TODO: Trigger Game Over
+    }
 }
+
 
 void Player::ObjectUpdate() {
   if (m_is_animating) {

@@ -7,6 +7,8 @@
 
 #include <string>
 
+class Player;
+
 class Enemy : public Actor {
 public:
   Enemy(int id);

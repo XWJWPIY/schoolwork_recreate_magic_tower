@@ -57,17 +57,26 @@ void Door::Reaction(std::shared_ptr<Player> player) {
   }
 
   bool can_open = true;
-  if (props.yellow_key > 0 &&
-      !player->UseKey(AppUtil::Effect::KEY_YELLOW, props.yellow_key)) {
-    can_open = false;
+  if (props.yellow_key > 0) {
+      if (player->GetAttr(AppUtil::Effect::KEY_YELLOW) >= props.yellow_key) {
+          player->ApplyEffect(AppUtil::Effect::KEY_YELLOW, -props.yellow_key);
+      } else {
+          can_open = false;
+      }
   }
-  if (can_open && props.blue_key > 0 &&
-      !player->UseKey(AppUtil::Effect::KEY_BLUE, props.blue_key)) {
-    can_open = false;
+  if (can_open && props.blue_key > 0) {
+      if (player->GetAttr(AppUtil::Effect::KEY_BLUE) >= props.blue_key) {
+          player->ApplyEffect(AppUtil::Effect::KEY_BLUE, -props.blue_key);
+      } else {
+          can_open = false;
+      }
   }
-  if (can_open && props.red_key > 0 &&
-      !player->UseKey(AppUtil::Effect::KEY_RED, props.red_key)) {
-    can_open = false;
+  if (can_open && props.red_key > 0) {
+      if (player->GetAttr(AppUtil::Effect::KEY_RED) >= props.red_key) {
+          player->ApplyEffect(AppUtil::Effect::KEY_RED, -props.red_key);
+      } else {
+          can_open = false;
+      }
   }
 
   if (can_open) {

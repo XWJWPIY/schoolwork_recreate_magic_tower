@@ -67,14 +67,12 @@ classDiagram
     }
 
     class Actor {
-        #int m_hp
-        #int m_attack
-        #int m_defense
-        #int m_level
-        #int m_agility
-        #int m_exp
+        #unordered_map~Effect, int~ m_attributes
         +Actor(id, imagePath, canReact)
-        +Get/Set Hp, Attack, Defense, Level, Agility, Exp
+        +GetAttr(Effect) int
+        +SetAttr(Effect, value)
+        +ApplyEffect(Effect, delta)
+        +virtual OnAttributeChanged(Effect)
     }
 
     class MapBlock {
@@ -93,26 +91,19 @@ classDiagram
         -bool m_is_animating
         -float m_animation_timer
         -float FRAME_INTERVAL
-        -int m_yellow_keys
-        -int m_blue_keys
-        -int m_red_keys
-        -int m_coins
         -int m_pending_shop_id
-        -bool m_has_fly
         +Player()
         +Move(dx, dy, roadmap, thingsmap)
         +SyncPosition(roadmap)
         +Reaction(player) override
         +ObjectUpdate() override
-        +UseKey(Effect, count) bool
-        +ApplyEffect(Effect, value)
-        +Get/Add/SetCoins()
-        +Get/SetPendingShop()
-        +HasFly() bool
+        +GetPendingShop() int
+        +SetPendingShop(id)
         +ResetStateAfterFloorChange()
         +SetDirection(PlayerDirection)
         +SetIsAnimating(bool)
         +SetCurrentFrame(int)
+        +OnAttributeChanged(Effect) override
         -UpdateSprite()
     }
 
@@ -340,8 +331,8 @@ classDiagram
     Shop ..> DialogueManager : drives UI in Open/Close
     Shop ..> Player : reads & modifies stats
 
-    Door ..> Player : UseKey in Reaction
-    Item ..> Player : ApplyEffect in Reaction
+    Door ..> Player : reads attributes in Reaction
+    Item ..> Actor : ApplyEffect in Reaction
     Stair ..> App : TriggerCallback→ChangeFloor
 
     StatusUI *-- NumericDisplayText : 12 text displays
@@ -475,22 +466,25 @@ classDiagram
 
 ## 四、多型衍生實體 (Entity 子類)
 
-### 4.0 `Actor` (戰鬥實體)
-- 繼承 `Entity`。戰鬥角色的共同基類。
-- **屬性**：戰鬥數值 (`m_hp`, `m_attack`, `m_defense`, `m_level`, `m_agility`, `m_exp`)。
+### 4.0 `Actor` (屬性引擎基類)
+- 繼承 `Entity`。所有具備屬性（HP、金錢、鑰匙等）實體的共同基類。
+- **屬性容器**：`m_attributes` (`std::unordered_map<AppUtil::Effect, int>`)。
+- **核心介面**：
+  - `GetAttr(Effect)`: 取得指定屬性，不存在則回傳 0。
+  - `SetAttr(Effect, value)`: 強制設定屬性數值。
+  - `ApplyEffect(Effect, delta)`: 增量/減量修改屬性（自動調用 `OnAttributeChanged`）。
+- **掛鉤**：`virtual OnAttributeChanged(Effect)` — 供子類別監聽屬性變動。
 - **建構**：從 `GlobalObjectRegistry` 的 `CombatComponent` 讀取並初始化預設數值。
 
 ### 4.1 `Player` (主角)
 - 繼承 `Actor` 與 `std::enable_shared_from_this<Player>`。
 - **Z-Index**：-3。初始位置 (5, 10)。
-- **屬性**：方向 (`PlayerDirection` 枚舉: DOWN/UP/LEFT/RIGHT)、動畫狀態 (`m_is_animating`, `m_animation_timer`, `m_current_frame`, `FRAME_INTERVAL=0.05f`)、鑰匙 (`m_yellow/blue/red_keys`)、金幣 (`m_coins`)、`m_pending_shop_id`、`m_has_fly` (飛行道具開關)。
+- **屬性**：方向 (`PlayerDirection` 枚舉: DOWN/UP/LEFT/RIGHT)、動畫狀態 (`m_is_animating`, `m_animation_timer`, `m_current_frame`, `FRAME_INTERVAL=0.05f`)、`m_pending_shop_id`。
 - **方法**：
   - `Move(dx, dy, roadmap, thingsmap)` — 邊界檢查 → `RoadMap::IsPassable` → `ThingsMap` 實體互動 → 移動/阻擋判斷 → 動畫觸發。
   - `SyncPosition(roadmap)` — 從 `FloorMap` 借用同位置物件的 `m_Transform`。
-  - `UseKey(Effect, count)` — 扣除鑰匙並回傳是否成功。
-  - `ApplyEffect(Effect, value)` — 套用道具效果至角色數值 (支援 HP/ATK/DEF/AGI/EXP/Level/Keys/Coin/Weak/Poison/Fly)。
-  - `HasFly()` — 回傳玩家是否已取得飛行道具 (黃金色羽根)。
-  - `ResetStateAfterFloorChange()` — 強制重置方向為 DOWN、停止動畫並切換為 `player_1.png`（用於上下樓後的視覺重置）。
+  - `ResetStateAfterFloorChange()` — 強制重置方向為 DOWN、停止動畫並切換為 `player_1.png`。
+  - `OnAttributeChanged(Effect)` override — 監聽 HP 變動（TODO: 處理死亡邏輯）。
   - `ObjectUpdate()` override — 驅動 4 幀走路動畫循環。
   - `Reaction()` override — 空實作 (Log 提示)。
 - **私有**：`UpdateSprite()` — 根據方向與幀數動態合成路徑 `player_{dir}{frame}.BMP`。
