@@ -161,12 +161,14 @@ struct ShopData {
 };
 
 std::string GetIdString(int id);
-std::string GetIdResourcePath(int id);
+bool ProbabilityGen(int p);
+void ResetGameVariables();
+int GetMaxGlobalFrame();
 
-// Returns the full absolute path for a registry-based object (prepends MAGIC_TOWER_RESOURCE_DIR).
+// Refactored asset path resolution
+std::string GetBaseImagePath(int id);
+std::string GetPhaseImagePath(const std::string& basePath, int phase);
 std::string GetFullResourcePath(int id);
-
-// Returns the full absolute path for a static/hardcoded relative path (e.g. "bmp/Road/road1.bmp").
 std::string GetStaticResourcePath(const std::string& relativePath);
 
 // Game state machine

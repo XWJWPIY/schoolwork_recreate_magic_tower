@@ -285,6 +285,18 @@ classDiagram
         +ReplaceWith(x, y, id)
     }
 
+    class RegistryLoader {
+        <<static>>
+        +LoadAllData()
+        +LoadSettings(path)
+        +LoadObjectCSV(path, folder, passable)
+    }
+
+    class TileAnimationManager {
+        <<namespace>>
+        +GetGlobalFrame2(ms) int
+    }
+
     class DialogueManager {
         -Mode m_mode
         -vector~ScriptLine~ m_script
@@ -391,8 +403,37 @@ classDiagram
         +string extra
     }
 
+    class CSVLoader {
+        -unordered_map~string, int~ m_headerMap
+        -vector~vector~string~~ m_data
+        -vector~int~ m_attributeCols
+        +Load(path) bool
+        +GetRowCount() size_t
+        +GetString(rowIndex, colName, def) string
+        +GetInt(rowIndex, colName, def) int
+        +GetBool(rowIndex, colName, def) bool
+        +GetRowEffects(rowIndex) vector~SubEffect~
+    }
+
+    class MapParser {
+        <<static>>
+        +ParseCsv(filepath) vector~vector~MapCell~~
+        +ParseCsvToStrings(filepath) vector~vector~string~~
+        +ParseCsvToRawIDs(filepath) vector~vector~int~~
+        +ParseShopOptions(filepath) vector~ShopOption~
+    }
+
     class MapCell {
         +int id
+    }
+
+    class AppUtilAPI {
+        <<namespace>>
+        +GetStaticResourcePath(relativePath) string
+        +GetBaseImagePath(id) string
+        +GetPhaseImagePath(basePath, phase) string
+        +GetFullResourcePath(id) string
+        +GetIdString(id) string
     }
 
     ShopOption *-- SubEffect
@@ -451,7 +492,7 @@ classDiagram
   - `OnAttributeChanged(Effect)` override — 監聽 HP 變動（TODO: 處理死亡邏輯）。
   - `ObjectUpdate()` override — 驅動 4 幀走路動畫循環。
   - `Reaction()` override — 空實作 (Log 提示)。
-- **私有**：`UpdateSprite()` — 根據方向與幀數動態合成路徑 `player_{dir}{frame}.BMP`。
+- **私有**：`UpdateSprite()` — 使用 `AppUtil::GetPhaseImagePath` 從 `bmp/Player/player_{dir}` 取得動態圖片路徑（完美支援擴充與各式副檔名）。
 
 ### 4.2 `Door` (門)
 - **屬性**：`MAX_ANIMATION_FRAMES=5`、`shared_ptr<Util::Animation> m_animation`。
@@ -497,7 +538,7 @@ classDiagram
 
 ### 4.8 `Trigger` (事件觸發塊)
 - **屬性**：`TriggerCallback m_trigger_callback`。
-- **建構**：`Trigger(id, TriggerCallback)` — 預設套用 `no_door.png` 隱藏外觀，且圖示會強制透過 `AppUtil` 對應為隱身。
+- **建構**：`Trigger(id, TriggerCallback)` — 完全消除程式層級特例，全面依靠 CSV (`Trigger.csv`) 的 `Path` 設定（例如：`air`）交由 `AppUtil::GetFullResourcePath` 決定透明或指定顯示圖案。
 - **`Reaction()` override** — 自動發布觸發 `m_trigger_callback`，接續對話腳本解析。
 
 ## 五、背景 (`Background`)
@@ -602,10 +643,11 @@ classDiagram
 - **通用加載機制**：
   - `AttributeRegistry`：動態分配並緩存以字串為主鍵的屬性 ID，取代舊有寫死的 Enum 結構。
   - 統一透過 `LoadObjectCSV` 將 CSV 表格標頭作為 Key，儲存至 `ObjectMetadata::attributes`。
-- **資源定位**：`GetIdResourcePath(id)` — 依 `ObjectMetadata` 動態合成路徑。
-  - **自動修復**：實作自動後綴 (`1` 為預設) 與多格式偵測 (`.bmp`, `.BMP`, `.png`)。
-  - **優先級**：優先尋找帶後綴的 `.bmp`，若找不到則嘗試原始檔名或其他格式。
-  - **特殊處理**：`Trigger` 強制使用佔位透明圖形。
+- **資源定位與解耦 API**：統一取代舊有的硬編碼路徑，全權動態識別副檔名（`.png`, `.bmp`）。
+  - `GetBaseImagePath(id)`：依 `ObjectMetadata` 取得無後綴基準目錄與檔名（例：`bmp/Door/red_door`）。
+  - `GetPhaseImagePath(basePath, phase)`：附加動畫幀數並進行多格式副檔名碰撞偵測（`.png`, `.bmp`, `.PNG`, `.BMP`），回傳可以直接使用的絕對路徑。
+  - `GetFullResourcePath(id)`：封裝上述兩者，透過全域時間系統動態結算出當前最終呈現的絕對路徑。
+  - `GetStaticResourcePath(relPath)`：針對非物件註冊表的靜態檔案，保證帶有系統前綴修飾。
 - **多樣化效果**：利用 `AttributeRegistry` 彈性支援 HP, ATK, DEF, AGI, EXP, Level, Keys, Coins, Weak, Poison，擴充不再需要修改程式碼。
 - **CSV 解析器 (`MapParser` 與 `CSVLoader`)**：
   - `CSVLoader::Load()` → 載入為帶有標頭屬性對應表的動態結構。

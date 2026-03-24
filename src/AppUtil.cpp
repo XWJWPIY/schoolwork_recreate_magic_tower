@@ -200,7 +200,7 @@ std::string GetIdString(int id) {
   return "unknown";
 }
 
-std::string GetIdResourcePath(int id) {
+std::string GetBaseImagePath(int id) {
   auto it = GlobalObjectRegistry.find(id);
   if (it == GlobalObjectRegistry.end()) return "";
 
@@ -210,17 +210,17 @@ std::string GetIdResourcePath(int id) {
   
   if (path.empty()) return "";
 
-  int totalFrames = meta.frames;
-  int currentFrame = (totalFrames > 1) ? TileAnimationManager::GetGlobalFrame2() : 1;
-  std::string frameStr = std::to_string(currentFrame);
-
-  // Unified logic: bmp/Folder/Path[Frame].ext
-  // We need to handle case-sensitivity and multiple extensions (bmp/png)
   std::string baseDir = "bmp/";
   if (!folder.empty()) {
       baseDir += folder + "/";
   }
-  std::string fullBasePath = baseDir + path + frameStr;
+  return baseDir + path;
+}
+
+std::string GetPhaseImagePath(const std::string& basePath, int phase) {
+  if (basePath.empty()) return "";
+
+  std::string fullBasePath = basePath + std::to_string(phase);
 
   auto fileExists = [](const std::string& p) {
       std::string fullPath = std::string(MAGIC_TOWER_RESOURCE_DIR) + "/" + p;
@@ -228,23 +228,27 @@ std::string GetIdResourcePath(int id) {
       return f.good();
   };
 
-  // Try common extensions in both cases
   std::vector<std::string> variations = { ".bmp", ".BMP", ".png", ".PNG" };
   for (const auto& ext : variations) {
       if (fileExists(fullBasePath + ext)) {
-          return fullBasePath + ext;
+          return GetStaticResourcePath(fullBasePath + ext);
       }
   }
 
-  // Fallback to legacy default if nothing found
-  return fullBasePath + ".bmp";
+  return GetStaticResourcePath(fullBasePath + ".bmp");
 }
+
 std::string GetStaticResourcePath(const std::string& relativePath) {
   return std::string(MAGIC_TOWER_RESOURCE_DIR) + "/" + relativePath;
 }
 
 std::string GetFullResourcePath(int id) {
-  return GetStaticResourcePath(GetIdResourcePath(id));
+  auto it = GlobalObjectRegistry.find(id);
+  if (it == GlobalObjectRegistry.end()) return "";
+
+  int totalFrames = it->second.frames;
+  int currentFrame = (totalFrames > 1) ? TileAnimationManager::GetGlobalFrame2() : 1;
+  return GetPhaseImagePath(GetBaseImagePath(id), currentFrame);
 }
 
 std::vector<std::vector<MapCell>>

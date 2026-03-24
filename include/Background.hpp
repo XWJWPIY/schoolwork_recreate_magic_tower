@@ -21,7 +21,7 @@ public:
 private:
   // 組合圖片路徑的輔助函式
   inline std::string ImagePath(const int phase) const {
-    return AppUtil::GetStaticResourcePath("bmp/Scene/scene" + std::to_string(phase) + ".BMP");
+    return AppUtil::GetPhaseImagePath("bmp/Scene/scene", phase);
   }
 };
 

@@ -24,9 +24,8 @@ void Entity::UpdateProperties(int id) {
 
         if (meta.frames > 1) {
             m_current_frame = AppUtil::TileAnimationManager::GetGlobalFrame2(500);
-            std::string base = AppUtil::GetFullResourcePath(id);
-            std::string prefix = base.substr(0, base.length() - 5); // remove 1.bmp
-            SetDrawable(std::make_shared<Util::Image>(prefix + std::to_string(m_current_frame) + ".bmp"));
+            std::string basePath = AppUtil::GetBaseImagePath(id);
+            SetDrawable(std::make_shared<Util::Image>(AppUtil::GetPhaseImagePath(basePath, m_current_frame)));
         } else {
             SetDrawable(std::make_shared<Util::Image>(AppUtil::GetFullResourcePath(id)));
         }

@@ -5,8 +5,7 @@
 #include "Util/Logger.hpp"
 
 Player::Player()
-    : Actor(0, AppUtil::GetStaticResourcePath("bmp/Player/player_11.BMP"),
-             false) { // Start facing Down, Frame 1
+    : Actor(0, AppUtil::GetPhaseImagePath("bmp/Player/player_1", 1), false) {
   // Player layer is -3 based on Constructure.md
   SetZIndex(-3.0f);
 
@@ -159,17 +158,9 @@ void Player::ObjectUpdate() {
 }
 
 void Player::UpdateSprite() {
-  std::string path;
-  if (!m_is_animating) {
-    // Static standing frame
-    path = AppUtil::GetStaticResourcePath("bmp/Player/player_" +
-           std::to_string(static_cast<int>(m_direction)) + ".png");
-  } else {
-    // Animated moving frames
-    path = AppUtil::GetStaticResourcePath("bmp/Player/player_" +
-           std::to_string(static_cast<int>(m_direction)) +
-           std::to_string(m_current_frame) + ".BMP");
-  }
+  std::string basePath = "bmp/Player/player_" + std::to_string(static_cast<int>(m_direction));
+  int phase = m_is_animating ? m_current_frame : 1;
+  std::string path = AppUtil::GetPhaseImagePath(basePath, phase);
   
   // Dynamically change the drawable (Image)
   m_Drawable = std::make_shared<Util::Image>(path);

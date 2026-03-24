@@ -6,21 +6,11 @@
 #include "Player.hpp"
 
 Door::Door(int id)
-    : Entity(id,
-             AppUtil::GetStaticResourcePath("bmp/Door/" + AppUtil::GetIdString(id) + "1.BMP"),
-             true) {
-  std::string door_name = AppUtil::GetIdString(id);
+    : Entity(id, AppUtil::GetFullResourcePath(id), true) {
+  std::string basePath = AppUtil::GetBaseImagePath(id);
   std::vector<std::string> paths;
   for (int i = 1; i <= MAX_ANIMATION_FRAMES; i++) {
-    std::string path = AppUtil::GetStaticResourcePath("bmp/Door/" + door_name +
-                       std::to_string(i));
-    // Handle the inconsistent extension case (some are .BMP, some .bmp)
-    if (door_name == "iron_fence" && i == 2) {
-      path += ".bmp";
-    } else {
-      path += ".BMP";
-    }
-    paths.push_back(path);
+    paths.push_back(AppUtil::GetPhaseImagePath(basePath, i));
   }
 
   // Create Animation: paths, play, interval(ms), looping, cooldown

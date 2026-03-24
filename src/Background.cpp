@@ -14,6 +14,6 @@ void Background::NextPhase(const int phase) {
 void Background::SetLoadingFrame(int frame) {
   auto temp = std::dynamic_pointer_cast<Util::Image>(m_Drawable);
   if (temp) {
-    temp->SetImage(AppUtil::GetStaticResourcePath("bmp/Scene/loading" + std::to_string(frame) + ".BMP"));
+    temp->SetImage(AppUtil::GetPhaseImagePath("bmp/Scene/loading", frame));
   }
 }
