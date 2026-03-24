@@ -34,7 +34,7 @@ StatusUI::StatusUI(unsigned int fontSize) : m_default_font_size(fontSize) {
 void StatusUI::InitNumericText(std::shared_ptr<NumericDisplayText>& text, 
                                float x, float y, const Util::Color& color, unsigned int size) {
     text = std::make_shared<NumericDisplayText>(
-        MAGIC_TOWER_RESOURCE_DIR "/Font/Cubic_11.ttf", size);
+        AppUtil::GetStaticResourcePath("Font/Cubic_11.ttf"), size);
     text->SetPrefix("");
     text->SetNumber(0);
     text->SetColor(color);

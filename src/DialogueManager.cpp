@@ -11,15 +11,15 @@ DialogueManager::DialogueManager(std::shared_ptr<MenuUI> ui)
     : m_ui(ui) {
 
     // Initialize UI Components
-    const std::string fontPath = MAGIC_TOWER_RESOURCE_DIR "/font/Cubic_11.ttf"; 
+    const std::string fontPath = AppUtil::GetStaticResourcePath("font/Cubic_11.ttf"); 
 
     m_background = std::make_shared<Util::GameObject>(
-        std::make_unique<Util::Image>(MAGIC_TOWER_RESOURCE_DIR "/bmp/NPC/NPCDialog.bmp"), 10.0f);
+        std::make_unique<Util::Image>(AppUtil::GetStaticResourcePath("bmp/NPC/NPCDialog.bmp")), 10.0f);
     m_background->m_Transform.scale = {0.735f, 0.735f};
     m_background->m_Transform.translation = {141.0f, 150.0f}; 
 
     m_npc_icon = std::make_shared<Util::GameObject>(
-        std::make_unique<Util::Image>(MAGIC_TOWER_RESOURCE_DIR "/bmp/NPC/elder1.bmp"), 11.0f);
+        std::make_unique<Util::Image>(AppUtil::GetStaticResourcePath("bmp/NPC/elder1.bmp")), 11.0f);
     m_npc_icon->m_Transform.translation = {-28.0f, 207.0f}; // Absolute position
     m_npc_icon->m_Transform.scale = {0.735f, 0.735f}; 
 
@@ -50,7 +50,7 @@ DialogueManager::DialogueManager(std::shared_ptr<MenuUI> ui)
     }
 
     m_shop_selector = std::make_shared<Util::GameObject>(
-        std::make_unique<Util::Image>(MAGIC_TOWER_RESOURCE_DIR "/bmp/Special/right_arrow_white.png"), 16.0f);
+        std::make_unique<Util::Image>(AppUtil::GetStaticResourcePath("bmp/Special/right_arrow_white.png")), 16.0f);
     m_shop_selector->m_Transform.scale = {0.5f, 0.5f};
 
     m_price_text = std::make_shared<NumericDisplayText>(fontPath, 24);
@@ -303,7 +303,7 @@ void DialogueManager::AdvanceScript(std::shared_ptr<Player> player) {
 
         if (line.speaker == 0) {
             name = AppUtil::GetGlobalString("PlayerName", "Hero");
-            iconPath = MAGIC_TOWER_RESOURCE_DIR "/bmp/Player/player_1.png";
+            iconPath = AppUtil::GetStaticResourcePath("bmp/Player/player_1.png");
         } else if (m_source_entity) {
             auto it = AppUtil::GlobalObjectRegistry.find(m_source_entity->GetObjectId());
             if (it != AppUtil::GlobalObjectRegistry.end()) {
@@ -311,7 +311,7 @@ void DialogueManager::AdvanceScript(std::shared_ptr<Player> player) {
                 name = meta.GetString(AppUtil::Attr::TITLE, m_last_speaker);
                 std::string icon = meta.GetString(AppUtil::Attr::ICON);
                 if (!icon.empty()) {
-                    iconPath = std::string(MAGIC_TOWER_RESOURCE_DIR) + "/bmp/NPC/" + icon + ".bmp";
+                    iconPath = AppUtil::GetStaticResourcePath("bmp/NPC/" + icon + ".bmp");
                 }
             } else {
                 name = m_last_speaker;
@@ -328,7 +328,7 @@ void DialogueManager::AdvanceScript(std::shared_ptr<Player> player) {
                 name = m_current_shop_data.title;
             }
             if (!m_current_shop_data.icon_path.empty()) {
-                iconPath = std::string(MAGIC_TOWER_RESOURCE_DIR) + "/bmp/Shop/" + m_current_shop_data.icon_path;
+                iconPath = AppUtil::GetStaticResourcePath("bmp/Shop/" + m_current_shop_data.icon_path);
             }
         } else {
             ApplyDialogueLayout();
@@ -402,7 +402,7 @@ void DialogueManager::AdvanceScript(std::shared_ptr<Player> player) {
 
 void DialogueManager::ParseScript(const std::string& name) {
     m_script.clear();
-    std::string path = std::string(MAGIC_TOWER_RESOURCE_DIR) + "/Datas/Texts/" + name + ".csv";
+    std::string path = AppUtil::GetStaticResourcePath("Datas/Texts/" + name + ".csv");
     auto rows = AppUtil::MapParser::ParseCsvToStrings(path);
 
     bool skipHeader = true;
@@ -458,7 +458,7 @@ void DialogueManager::ExecuteCommand(const ScriptLine& line, std::shared_ptr<Pla
         // If triggered from script and no data provided, load default path
         if (m_on_selection == nullptr) {
             std::string path = m_script_name + "_option";
-            std::string option_full_path = std::string(MAGIC_TOWER_RESOURCE_DIR) + "/Datas/Texts/" + path + ".csv";
+            std::string option_full_path = AppUtil::GetStaticResourcePath("Datas/Texts/" + path + ".csv");
             m_current_shop_data.options = AppUtil::MapParser::ParseShopOptions(option_full_path);
             if (m_current_shop_data.options.empty()) {
                 m_current_shop_data.options.push_back({"No Inventory Found", {}});
@@ -519,7 +519,7 @@ void DialogueManager::ExecuteCommand(const ScriptLine& line, std::shared_ptr<Pla
         m_name_text->UpdateDisplayText();
         
         if (!m_current_shop_data.icon_path.empty()) {
-            std::string iconPath = std::string(MAGIC_TOWER_RESOURCE_DIR) + "/bmp/Shop/" + m_current_shop_data.icon_path;
+            std::string iconPath = AppUtil::GetStaticResourcePath("bmp/Shop/" + m_current_shop_data.icon_path);
             m_npc_icon->SetDrawable(std::make_unique<Util::Image>(iconPath));
             m_npc_icon->SetVisible(true);
         } else if (!m_is_shop_session) {
@@ -542,7 +542,7 @@ void DialogueManager::ExecuteCommand(const ScriptLine& line, std::shared_ptr<Pla
 
 void DialogueManager::ApplyDialogueLayout() {
     if (m_background) {
-        m_background->SetDrawable(std::make_unique<Util::Image>(MAGIC_TOWER_RESOURCE_DIR "/bmp/NPC/NPCDialog.bmp"));
+        m_background->SetDrawable(std::make_unique<Util::Image>(AppUtil::GetStaticResourcePath("bmp/NPC/NPCDialog.bmp")));
         m_background->m_Transform.translation = {141.0f, 150.0f}; 
     }
     if (m_npc_icon) m_npc_icon->m_Transform.translation = {-28.0f, 207.0f}; 
@@ -552,7 +552,7 @@ void DialogueManager::ApplyDialogueLayout() {
 
 void DialogueManager::ApplyShopLayout() {
     if (m_background) {
-        m_background->SetDrawable(std::make_unique<Util::Image>(MAGIC_TOWER_RESOURCE_DIR "/bmp/Shop/ShopDialog.bmp"));
+        m_background->SetDrawable(std::make_unique<Util::Image>(AppUtil::GetStaticResourcePath("bmp/Shop/ShopDialog.bmp")));
         m_background->m_Transform.translation = {141.0f, 0.0f}; 
     }
     if (m_npc_icon) m_npc_icon->m_Transform.translation = {28.0f, 141.0f}; 

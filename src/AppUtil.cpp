@@ -109,16 +109,16 @@ void RegistryLoader::LoadAllData() {
     GlobalObjectRegistry.clear();
     GlobalObjectRegistry.emplace(0, ObjectMetadata("road", "Road", true));
 
-    LoadSettings(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Settings.csv");
+    LoadSettings(GetStaticResourcePath("Datas/Data/Settings.csv"));
     
     // Using the Universal Flattened Loader
-    LoadObjectCSV(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Block.csv", "Road", true);
-    LoadObjectCSV(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Door.csv", "Door", false);
-    LoadObjectCSV(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Item.csv", "Item", false);
-    LoadObjectCSV(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Stair.csv", "Stair", true);
-    LoadObjectCSV(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Shop.csv", "Shop", false);
-    LoadObjectCSV(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/NPC.csv", "Road", false);
-    LoadObjectCSV(MAGIC_TOWER_RESOURCE_DIR "/Datas/Data/Trigger.csv", "Trigger", true);
+    LoadObjectCSV(GetStaticResourcePath("Datas/Data/Block.csv"), "Road", true);
+    LoadObjectCSV(GetStaticResourcePath("Datas/Data/Door.csv"), "Door", false);
+    LoadObjectCSV(GetStaticResourcePath("Datas/Data/Item.csv"), "Item", false);
+    LoadObjectCSV(GetStaticResourcePath("Datas/Data/Stair.csv"), "Stair", true);
+    LoadObjectCSV(GetStaticResourcePath("Datas/Data/Shop.csv"), "Shop", false);
+    LoadObjectCSV(GetStaticResourcePath("Datas/Data/NPC.csv"), "Road", false);
+    LoadObjectCSV(GetStaticResourcePath("Datas/Data/Trigger.csv"), "Trigger", true);
 
     LOG_INFO("RegistryLoader: Total {} object types in registry.", GlobalObjectRegistry.size());
 }
@@ -210,10 +210,6 @@ std::string GetIdResourcePath(int id) {
   
   if (path.empty()) return "";
 
-  if (folder == "Trigger") {
-      return "bmp/Trigger/no_door.png";
-  }
-
   int totalFrames = meta.frames;
   int currentFrame = (totalFrames > 1) ? TileAnimationManager::GetGlobalFrame2() : 1;
   std::string frameStr = std::to_string(currentFrame);
@@ -227,13 +223,13 @@ std::string GetIdResourcePath(int id) {
   std::string fullBasePath = baseDir + path + frameStr;
 
   auto fileExists = [](const std::string& p) {
-      std::string fullPath = "Resources/" + p;
+      std::string fullPath = std::string(MAGIC_TOWER_RESOURCE_DIR) + "/" + p;
       std::ifstream f(fullPath);
       return f.good();
   };
 
   // Try common extensions in both cases
-  std::vector<std::string> variations = { ".bmp", ".BMP", ".png", ".png" };
+  std::vector<std::string> variations = { ".bmp", ".BMP", ".png", ".PNG" };
   for (const auto& ext : variations) {
       if (fileExists(fullBasePath + ext)) {
           return fullBasePath + ext;
@@ -243,6 +239,14 @@ std::string GetIdResourcePath(int id) {
   // Fallback to legacy default if nothing found
   return fullBasePath + ".bmp";
 }
+std::string GetStaticResourcePath(const std::string& relativePath) {
+  return std::string(MAGIC_TOWER_RESOURCE_DIR) + "/" + relativePath;
+}
+
+std::string GetFullResourcePath(int id) {
+  return GetStaticResourcePath(GetIdResourcePath(id));
+}
+
 std::vector<std::vector<MapCell>>
 MapParser::ParseCsv(const std::string &filepath) {
   std::vector<std::vector<MapCell>> mapData;

@@ -163,6 +163,12 @@ struct ShopData {
 std::string GetIdString(int id);
 std::string GetIdResourcePath(int id);
 
+// Returns the full absolute path for a registry-based object (prepends MAGIC_TOWER_RESOURCE_DIR).
+std::string GetFullResourcePath(int id);
+
+// Returns the full absolute path for a static/hardcoded relative path (e.g. "bmp/Road/road1.bmp").
+std::string GetStaticResourcePath(const std::string& relativePath);
+
 // Game state machine
 enum class GameState {
   MAIN_MENU = 0,    // 0: Main menu

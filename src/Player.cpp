@@ -1,10 +1,11 @@
 #include "Player.hpp"
+#include "AppUtil.hpp"
 #include "FloorMap.hpp" // Required to get target entities for interaction
 #include "Util/Image.hpp"
 #include "Util/Logger.hpp"
 
 Player::Player()
-    : Actor(0, MAGIC_TOWER_RESOURCE_DIR "/bmp/Player/player_11.BMP",
+    : Actor(0, AppUtil::GetStaticResourcePath("bmp/Player/player_11.BMP"),
              false) { // Start facing Down, Frame 1
   // Player layer is -3 based on Constructure.md
   SetZIndex(-3.0f);
@@ -161,13 +162,13 @@ void Player::UpdateSprite() {
   std::string path;
   if (!m_is_animating) {
     // Static standing frame
-    path = MAGIC_TOWER_RESOURCE_DIR "/bmp/Player/player_" +
-           std::to_string(static_cast<int>(m_direction)) + ".png";
+    path = AppUtil::GetStaticResourcePath("bmp/Player/player_" +
+           std::to_string(static_cast<int>(m_direction)) + ".png");
   } else {
     // Animated moving frames
-    path = MAGIC_TOWER_RESOURCE_DIR "/bmp/Player/player_" +
+    path = AppUtil::GetStaticResourcePath("bmp/Player/player_" +
            std::to_string(static_cast<int>(m_direction)) +
-           std::to_string(m_current_frame) + ".BMP";
+           std::to_string(m_current_frame) + ".BMP");
   }
   
   // Dynamically change the drawable (Image)

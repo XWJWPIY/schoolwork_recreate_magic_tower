@@ -1,4 +1,5 @@
 #include "App.hpp"
+#include "AppUtil.hpp"
 
 #include "Util/Image.hpp"
 #include "Util/Input.hpp"
@@ -82,7 +83,7 @@ void App::InitializeGame() {
           });
     } else {
       // Fallback for unknown or ID 0 (now handled by Entity itself for size templating)
-      entity = std::make_shared<Entity>(id, std::string(MAGIC_TOWER_RESOURCE_DIR) + "/bmp/Road/road1.bmp", true);
+      entity = std::make_shared<Entity>(id, AppUtil::GetStaticResourcePath("bmp/Road/road1.bmp"), true);
       if (id == 0) entity->SetVisible(false);
     }
 
@@ -99,7 +100,7 @@ void App::InitializeGame() {
 
   for (int i = 0; i < AppUtil::TOTAL_STORY; ++i) {
     auto roadData = AppUtil::MapParser::ParseCsv(
-        MAGIC_TOWER_RESOURCE_DIR "/Datas/Maps/RoadMap" + std::to_string(i) + ".csv");
+        AppUtil::GetStaticResourcePath("Datas/Maps/RoadMap" + std::to_string(i) + ".csv"));
     if (!roadData.empty()) m_road_map->LoadFloorData(roadData, i);
   }
   m_road_map->SetAllVisible(false);
@@ -111,9 +112,9 @@ void App::InitializeGame() {
   m_things_map->AddToRenderer();
 
   for (int i = 0; i < AppUtil::TOTAL_STORY; ++i) {
-    auto thingsData = AppUtil::MapParser::ParseCsv(MAGIC_TOWER_RESOURCE_DIR
-                                                   "/Datas/Maps/ThingsMap" +
-                                                   std::to_string(i) + ".csv");
+    auto thingsData = AppUtil::MapParser::ParseCsv(AppUtil::GetStaticResourcePath(
+                                                   "Datas/Maps/ThingsMap" +
+                                                   std::to_string(i) + ".csv"));
     if (!thingsData.empty()) m_things_map->LoadFloorData(thingsData, i);
   }
   m_things_map->SetAllVisible(false);

@@ -24,17 +24,17 @@ void Entity::UpdateProperties(int id) {
 
         if (meta.frames > 1) {
             m_current_frame = AppUtil::TileAnimationManager::GetGlobalFrame2(500);
-            std::string base = std::string(MAGIC_TOWER_RESOURCE_DIR) + "/" + AppUtil::GetIdResourcePath(id);
+            std::string base = AppUtil::GetFullResourcePath(id);
             std::string prefix = base.substr(0, base.length() - 5); // remove 1.bmp
             SetDrawable(std::make_shared<Util::Image>(prefix + std::to_string(m_current_frame) + ".bmp"));
         } else {
-            SetDrawable(std::make_shared<Util::Image>(std::string(MAGIC_TOWER_RESOURCE_DIR) + "/" + AppUtil::GetIdResourcePath(id)));
+            SetDrawable(std::make_shared<Util::Image>(AppUtil::GetFullResourcePath(id)));
         }
     } else if (id == 0) {
         SetVisible(false);
         m_is_passable = true;
         // Use road1.bmp as size template for empty entity slot
-        SetDrawable(std::make_shared<Util::Image>(std::string(MAGIC_TOWER_RESOURCE_DIR) + "/bmp/Road/road1.bmp"));
+        SetDrawable(std::make_shared<Util::Image>(AppUtil::GetStaticResourcePath("bmp/Road/road1.bmp")));
     }
 }
 
@@ -46,7 +46,7 @@ void Entity::ObjectUpdate() {
             m_current_frame = global_frame;
             auto image = std::dynamic_pointer_cast<Util::Image>(m_Drawable);
             if (image) {
-                std::string base = std::string(MAGIC_TOWER_RESOURCE_DIR) + "/" + AppUtil::GetIdResourcePath(m_object_id);
+                std::string base = AppUtil::GetFullResourcePath(m_object_id);
                 std::string prefix = base.substr(0, base.length() - 5);
                 image->SetImage(prefix + std::to_string(m_current_frame) + ".bmp");
             }

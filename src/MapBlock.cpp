@@ -40,7 +40,7 @@ void MapBlock::UpdateProperties(int id) {
     SetVisible(false);
     m_is_passable = true;
     // Load a standard tile (road) as size template for ID 0 but keep it hidden
-    SetDrawable(std::make_shared<Util::Image>(std::string(MAGIC_TOWER_RESOURCE_DIR) + "/bmp/Road/road1.bmp"));
+    SetDrawable(std::make_shared<Util::Image>(AppUtil::GetStaticResourcePath("bmp/Road/road1.bmp")));
     return;
   }
 
@@ -56,14 +56,14 @@ void MapBlock::UpdateProperties(int id) {
   // Use current global frame to initialize if it's an animated tile
   if (meta.frames > 1) {
     m_current_local_frame = AppUtil::TileAnimationManager::GetGlobalFrame2(500);
-    std::string base = std::string(MAGIC_TOWER_RESOURCE_DIR) + "/" + AppUtil::GetIdResourcePath(id);
+    std::string base = AppUtil::GetFullResourcePath(id);
     std::string prefix = base.substr(0, base.length() - 5);
     SetDrawable(std::make_shared<Util::Image>(prefix + std::to_string(m_current_local_frame) + ".bmp"));
   } else {
-    SetDrawable(std::make_shared<Util::Image>(std::string(MAGIC_TOWER_RESOURCE_DIR) + "/" + AppUtil::GetIdResourcePath(id)));
+    SetDrawable(std::make_shared<Util::Image>(AppUtil::GetFullResourcePath(id)));
   }
 }
 
 std::string MapBlock::GetImagePath(int id) const {
-    return std::string(MAGIC_TOWER_RESOURCE_DIR) + "/" + AppUtil::GetIdResourcePath(id);
+    return AppUtil::GetFullResourcePath(id);
 }

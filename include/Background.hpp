@@ -5,6 +5,7 @@
 
 #include "Util/GameObject.hpp"
 #include "Util/Image.hpp"
+#include "AppUtil.hpp"
 #include <string>
 
 class Background : public Util::GameObject {
@@ -20,8 +21,7 @@ public:
 private:
   // 組合圖片路徑的輔助函式
   inline std::string ImagePath(const int phase) const {
-    return MAGIC_TOWER_RESOURCE_DIR "/bmp/Scene/scene" + std::to_string(phase) +
-           ".BMP";
+    return AppUtil::GetStaticResourcePath("bmp/Scene/scene" + std::to_string(phase) + ".BMP");
   }
 };
 

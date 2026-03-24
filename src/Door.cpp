@@ -7,14 +7,13 @@
 
 Door::Door(int id)
     : Entity(id,
-             MAGIC_TOWER_RESOURCE_DIR "/bmp/Door/" +
-                 AppUtil::GetIdString(id) + "1.BMP",
+             AppUtil::GetStaticResourcePath("bmp/Door/" + AppUtil::GetIdString(id) + "1.BMP"),
              true) {
   std::string door_name = AppUtil::GetIdString(id);
   std::vector<std::string> paths;
   for (int i = 1; i <= MAX_ANIMATION_FRAMES; i++) {
-    std::string path = MAGIC_TOWER_RESOURCE_DIR "/bmp/Door/" + door_name +
-                       std::to_string(i);
+    std::string path = AppUtil::GetStaticResourcePath("bmp/Door/" + door_name +
+                       std::to_string(i));
     // Handle the inconsistent extension case (some are .BMP, some .bmp)
     if (door_name == "iron_fence" && i == 2) {
       path += ".bmp";

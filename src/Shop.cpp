@@ -1,4 +1,5 @@
 #include "Shop.hpp"
+#include "AppUtil.hpp"
 #include "Player.hpp"
 #include "Util/Input.hpp"
 #include "Util/Keycode.hpp"
@@ -99,7 +100,7 @@ void Shop::BuildShopData(int floor) {
     m_session_data.prompts.clear();
 
     std::string name = std::to_string(floor) + "_" + meta.name;
-    std::string option_path = std::string(MAGIC_TOWER_RESOURCE_DIR) + "/Datas/Texts/" + name + "_option.csv";
+    std::string option_path = AppUtil::GetStaticResourcePath("Datas/Texts/" + name + "_option.csv");
     m_session_data.options = AppUtil::MapParser::ParseShopOptions(option_path);
     if (m_session_data.options.empty()) m_session_data.options.push_back({"No Inventory Found", {}});
     m_session_data.options.push_back({"Exit", {}});

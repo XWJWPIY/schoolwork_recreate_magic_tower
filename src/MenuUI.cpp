@@ -1,16 +1,17 @@
 #include "MenuUI.hpp"
+#include "AppUtil.hpp"
 
 MenuUI::MenuUI() {
     // 1. Notice Initialization
     m_notice_bg = std::make_shared<Util::GameObject>();
-    m_notice_bg->SetDrawable(std::make_shared<Util::Image>(MAGIC_TOWER_RESOURCE_DIR "/bmp/Special/notice.bmp"));
+    m_notice_bg->SetDrawable(std::make_shared<Util::Image>(AppUtil::GetStaticResourcePath("bmp/Special/notice.bmp")));
     m_notice_bg->m_Transform.translation = {141.0f, 0.0f};
     m_notice_bg->m_Transform.scale = {0.735f, 0.735f};
     m_notice_bg->SetZIndex(90.0f);
 
     // 2. Fly Initialization
     m_fly_bg = std::make_shared<Util::GameObject>();
-    m_fly_bg->SetDrawable(std::make_shared<Util::Image>(MAGIC_TOWER_RESOURCE_DIR "/bmp/Special/Fly.bmp"));
+    m_fly_bg->SetDrawable(std::make_shared<Util::Image>(AppUtil::GetStaticResourcePath("bmp/Special/Fly.bmp")));
     m_fly_bg->m_Transform.translation = {141.0f, 0.0f};
     m_fly_bg->m_Transform.scale = {0.735f, 0.735f};
     m_fly_bg->SetZIndex(90.0f);
@@ -29,10 +30,10 @@ MenuUI::MenuUI() {
     m_quit_text->SetZIndex(92.0f);
 
     // Arrows
-    m_up_white = std::make_shared<Util::Image>(MAGIC_TOWER_RESOURCE_DIR "/bmp/Special/up_arrow_white.png");
-    m_up_gray = std::make_shared<Util::Image>(MAGIC_TOWER_RESOURCE_DIR "/bmp/Special/up_arrow_gray.png");
-    m_down_white = std::make_shared<Util::Image>(MAGIC_TOWER_RESOURCE_DIR "/bmp/Special/down_arrow_white.png");
-    m_down_gray = std::make_shared<Util::Image>(MAGIC_TOWER_RESOURCE_DIR "/bmp/Special/down_arrow_gray.png");
+    m_up_white = std::make_shared<Util::Image>(AppUtil::GetStaticResourcePath("bmp/Special/up_arrow_white.png"));
+    m_up_gray = std::make_shared<Util::Image>(AppUtil::GetStaticResourcePath("bmp/Special/up_arrow_gray.png"));
+    m_down_white = std::make_shared<Util::Image>(AppUtil::GetStaticResourcePath("bmp/Special/down_arrow_white.png"));
+    m_down_gray = std::make_shared<Util::Image>(AppUtil::GetStaticResourcePath("bmp/Special/down_arrow_gray.png"));
 
     m_up_arrow = std::make_shared<Util::GameObject>();
     m_up_arrow->m_Transform.translation = {141.0f, 220.0f};
@@ -46,7 +47,7 @@ MenuUI::MenuUI() {
 
     // 3. Item Notice Initialization
     m_item_notice_bg = std::make_shared<Util::GameObject>();
-    m_item_notice_bg->SetDrawable(std::make_shared<Util::Image>(MAGIC_TOWER_RESOURCE_DIR "/bmp/Item/itemDialog.bmp"));
+    m_item_notice_bg->SetDrawable(std::make_shared<Util::Image>(AppUtil::GetStaticResourcePath("bmp/Item/itemDialog.bmp")));
     m_item_notice_bg->m_Transform.translation = {141.0f, 0.0f};
     m_item_notice_bg->m_Transform.scale = {0.735f, 0.735f};
     m_item_notice_bg->SetZIndex(90.0f);
@@ -66,7 +67,7 @@ MenuUI::MenuUI() {
 }
 
 void MenuUI::InitText(std::shared_ptr<NumericDisplayText>& text, const std::string& prefix, float x, float y, int size) {
-    text = std::make_shared<NumericDisplayText>(MAGIC_TOWER_RESOURCE_DIR "/Font/Cubic_11.ttf", size);
+    text = std::make_shared<NumericDisplayText>(AppUtil::GetStaticResourcePath("Font/Cubic_11.ttf"), size);
     text->SetPrefix(prefix);
     text->SetNumber(0);
     text->SetColor(Util::Color::FromRGB(255, 255, 255));

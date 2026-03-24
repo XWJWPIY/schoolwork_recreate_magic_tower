@@ -4,7 +4,7 @@
 #include "Util/Logger.hpp"
 
 Trigger::Trigger(int id, TriggerCallback callback)
-    : Entity(id, MAGIC_TOWER_RESOURCE_DIR "/bmp/Door/no_door.png", true),
+    : Entity(id, AppUtil::GetFullResourcePath(id), true),
       m_trigger_callback(callback) {
 }
 
