@@ -97,9 +97,9 @@ void DialogueManager::StartScript(const std::string& name, std::shared_ptr<Entit
     m_pending_notice = "";
     m_on_selection = nullptr;
     m_current_shop_data = AppUtil::ShopData(); // Reset stale data
-    ParseScript(name);
+    m_engine.LoadScript(name);
     
-    if (m_script.empty()) {
+    if (m_engine.GetSize() == 0) {
         LOG_WARN("DialogueManager: Script '{}' is empty or not found.", name);
         if (m_source_entity) {
             LOG_INFO("DialogueManager: No script found for NPC, triggering default hide.");
@@ -110,7 +110,7 @@ void DialogueManager::StartScript(const std::string& name, std::shared_ptr<Entit
 
     if (!isShop) {
         m_mode = Mode::SCRIPT;
-        m_current_line = 0;
+        m_engine.Reset();
         m_last_speaker = "";
         SetVisible(true);
         
@@ -120,10 +120,10 @@ void DialogueManager::StartScript(const std::string& name, std::shared_ptr<Entit
 }
 
 void DialogueManager::ShowNotice(const std::string& text) {
-    m_script.clear();
-    m_script.push_back({-1, text, "notice", ""});
+    m_engine.Clear();
+    m_engine.InjectStep({ScriptEngine::Speaker::SYSTEM, text, ScriptEngine::CommandType::NOTICE, ""});
     m_mode = Mode::NOTICE;
-    m_current_line = 0;
+    m_engine.Reset();
     SetVisible(true);
     SetUIState(false); // Ensure dialogue UI is off during simple notices
     
@@ -137,31 +137,27 @@ void DialogueManager::StartShop(const std::string& scriptName, const AppUtil::Sh
     m_on_selection = onSelect;
     
     // Inject a "shop" command at the end so it knows to enter SELECTION mode
-    if (!m_script.empty() && m_script.back().command == "end") {
-        auto endLine = m_script.back();
-        m_script.pop_back();
-        m_script.push_back({-1, "", "shop", ""});
-        m_script.push_back(endLine);
+    if (m_engine.GetSize() > 0 && m_engine.GetSteps().back().command == ScriptEngine::CommandType::END) {
+        auto& steps = m_engine.GetSteps();
+        auto endStep = steps.back();
+        steps.pop_back();
+        steps.push_back({ScriptEngine::Speaker::SYSTEM, "", ScriptEngine::CommandType::SHOP, ""});
+        steps.push_back(endStep);
     } else {
-        m_script.push_back({-1, "", "shop", ""});
-        m_script.push_back({-1, "", "end", ""});
+        m_engine.InjectStep({ScriptEngine::Speaker::SYSTEM, "", ScriptEngine::CommandType::SHOP, ""});
+        m_engine.InjectStep({ScriptEngine::Speaker::SYSTEM, "", ScriptEngine::CommandType::END, ""});
     }
 
     if (m_mode == Mode::INACTIVE) {
         m_mode = Mode::SCRIPT;
-        m_current_line = 0;
+        m_engine.Reset();
         SetVisible(true);
         AdvanceScript(nullptr);
     }
 }
 
 void DialogueManager::ReplaceScriptText(const std::string& target, const std::string& replacement) {
-    for (auto& line : m_script) {
-        size_t pos = line.text.find(target);
-        if (pos != std::string::npos) {
-            line.text.replace(pos, target.length(), replacement);
-        }
-    }
+    m_engine.ReplaceText(target, replacement);
     // Also update existing display if it contains the target
     if (m_content_text) {
         std::string current = m_content_text->GetPrefix(); // Assuming GetPrefix() returns current text
@@ -200,7 +196,7 @@ void DialogueManager::RefreshShopOptions(const AppUtil::ShopData& shopData) {
 }
 
 void DialogueManager::EndShopSelection() {
-    if (!m_is_shop_session && m_current_line < m_script.size()) {
+    if (!m_is_shop_session && m_engine.HasNext()) {
         // Continue script only if it's a regular script session (e.g. NPC with shop command)
         m_mode = Mode::SCRIPT;
         AdvanceScript(nullptr);
@@ -280,7 +276,7 @@ void DialogueManager::AdvanceScript(std::shared_ptr<Player> player) {
         return;
     }
 
-    if (m_current_line >= m_script.size()) {
+    if (!m_engine.HasNext()) {
         m_mode = Mode::INACTIVE;
         SetVisible(false);
         SetUIState(false);
@@ -294,14 +290,14 @@ void DialogueManager::AdvanceScript(std::shared_ptr<Player> player) {
         return;
     }
 
-    const auto& line = m_script[m_current_line];
+    const auto& step = m_engine.Peek();
     
-    if (line.speaker != -1) {
-        // Speaker mode (0: Player, 1: NPC)
+    if (step.command == ScriptEngine::CommandType::NONE) {
+        // Speech Step
         std::string name = "???";
         std::string iconPath = "";
 
-        if (line.speaker == 0) {
+        if (step.speaker == ScriptEngine::Speaker::PLAYER) {
             name = AppUtil::GetGlobalString("PlayerName", "Hero");
             iconPath = AppUtil::GetStaticResourcePath("bmp/Player/player_1.png");
         } else if (m_source_entity) {
@@ -320,13 +316,11 @@ void DialogueManager::AdvanceScript(std::shared_ptr<Player> player) {
             name = m_last_speaker;
         }
 
-        m_last_speaker = name; // Update for next lines
+        m_last_speaker = name;
 
         if (m_is_shop_session) {
             ApplyShopLayout();
-            if (!m_current_shop_data.title.empty()) {
-                name = m_current_shop_data.title;
-            }
+            if (!m_current_shop_data.title.empty()) name = m_current_shop_data.title;
             if (!m_current_shop_data.icon_path.empty()) {
                 iconPath = AppUtil::GetStaticResourcePath("bmp/Shop/" + m_current_shop_data.icon_path);
             }
@@ -334,26 +328,9 @@ void DialogueManager::AdvanceScript(std::shared_ptr<Player> player) {
             ApplyDialogueLayout();
         }
 
-        // --- MULTI-LINE MERGE LOGIC START ---
-        std::string fullText = line.text;
-        int linesProcessed = 0;
-        int maxLines = 3; // Commonly 3 lines in RPG boxes
-
-        for (size_t i = m_current_line + 1; i < m_script.size(); ++i) {
-            // Merge if it's the same speaker AND it's a simple speech line (no command)
-            if (m_script[i].speaker == line.speaker && m_script[i].command.empty()) {
-                fullText += "\n" + m_script[i].text;
-                linesProcessed++;
-                if (linesProcessed + 1 >= maxLines) break; // Limit reached
-            } else {
-                break; // Break if speaker changed or command encountered
-            }
-        }
-        // --- MULTI-LINE MERGE LOGIC END ---
-
         m_name_text->SetPrefix(name);
         m_name_text->UpdateDisplayText();
-        m_content_text->SetPrefix(fullText);
+        m_content_text->SetPrefix(step.text);
         m_content_text->UpdateDisplayText();
         
         if (!iconPath.empty()) {
@@ -364,97 +341,62 @@ void DialogueManager::AdvanceScript(std::shared_ptr<Player> player) {
         }
 
         SetUIState(true);
-        m_current_line += (linesProcessed + 1); // Skip all merged lines
-    } else if (line.command == "end") {
-        m_current_line = m_script.size(); // Trigger end logic in next call
+        m_engine.Next(); // Advance to next step
+    } else if (step.command == ScriptEngine::CommandType::END) {
+        m_engine.SetCurrentIndex(m_engine.GetSize());
         AdvanceScript(player);
-    } else if (line.command == "hide") {
+    } else if (step.command == ScriptEngine::CommandType::HIDE) {
         if (m_source_entity) m_source_entity->TriggerReplacement(0);
-        m_current_line++;
+        m_engine.Next();
         AdvanceScript(player);
-    } else if (line.command == "item") {
-        if (player) ExecuteCommand(line, player);
-        m_current_line++;
+    } else if (step.command == ScriptEngine::CommandType::ITEM) {
+        if (player) ExecuteCommand(step, player);
+        m_engine.Next();
         AdvanceScript(player);
-    } else {
-        // Handle other commands (shop, etc.)
-        ExecuteCommand(line, player);
+    } else if (step.command == ScriptEngine::CommandType::SHOP) {
+        ExecuteCommand(step, player);
         if (m_mode == Mode::SELECTION) {
-            std::string shopText = "";
-            size_t next_line = m_current_line;
-            while (next_line < m_script.size() && m_script[next_line].speaker != -1) {
-                if (!shopText.empty()) shopText += "\n";
-                shopText += m_script[next_line].text;
-                next_line++;
-            }
-            if (!shopText.empty()) {
-                m_content_text->SetPrefix(shopText);
-                m_content_text->UpdateDisplayText();
-                m_content_text->SetVisible(true);
-                m_current_line = next_line;
+            // If the next step is speech, use it as the shop intro text
+            if (m_engine.HasNext()) {
+                const auto& next = m_engine.Peek();
+                if (next.command == ScriptEngine::CommandType::NONE) {
+                    m_content_text->SetPrefix(next.text);
+                    m_content_text->UpdateDisplayText();
+                    m_content_text->SetVisible(true);
+                    m_engine.Next();
+                }
             }
             return;
         }
-        m_current_line++;
+        m_engine.Next();
         AdvanceScript(player); 
     }
 }
 
-void DialogueManager::ParseScript(const std::string& name) {
-    m_script.clear();
-    std::string path = AppUtil::GetStaticResourcePath("Datas/Texts/" + name + ".csv");
-    auto rows = AppUtil::MapParser::ParseCsvToStrings(path);
+// ParseScript removed, now handled by m_engine.LoadScript
 
-    bool skipHeader = true;
-    for (const auto& row : rows) {
-        if (row.empty()) continue;
-        if (skipHeader) { skipHeader = false; continue; }
-        
-        std::string first = row[0];
-        if (first == ".") {
-            m_script.push_back({-1, "", "end", ""});
-            break;
-        }
-        
-        if (first == "0" || first == "1") {
-            int speakerId = std::stoi(first);
-            m_script.push_back({speakerId, row.size() > 1 ? row[1] : "", "", ""});
-        } else if (first == "item") {
-            if (row.size() >= 3) m_script.push_back({-1, row[1], "item", row[2]});
-        } else if (first == "hide") {
-            m_script.push_back({-1, "", "hide", ""});
-        } else if (first == "shop") {
-            m_script.push_back({-1, "", "shop", ""});
-        } else {
-            // Fallback for older format
-            m_last_speaker = first;
-            m_script.push_back({1, row.size() > 1 ? row[1] : "", "", ""});
-        }
-    }
-}
-
-void DialogueManager::ExecuteCommand(const ScriptLine& line, std::shared_ptr<Player> player) {
-    if (line.command == "item") {
-        LOG_INFO("DialogueManager: Executing item command (id={})", line.extra);
-        m_pending_notice = line.text; // Store text for end-of-script notice
+void DialogueManager::ExecuteCommand(const ScriptStep& step, std::shared_ptr<Player> player) {
+    if (step.command == ScriptEngine::CommandType::ITEM) {
+        LOG_INFO("DialogueManager: Executing item command (id={})", step.extra);
+        m_pending_notice = step.text; // Store text for end-of-script notice
 
         // Map string-based item ID to Effect
         AppUtil::Effect effect = AppUtil::Effect::NONE;
-        if (line.extra == "enemy_data") effect = AppUtil::Effect::NONE; // Placeholder
-        else if (line.extra == "yellow_key") effect = AppUtil::Effect::KEY_YELLOW;
-        else if (line.extra == "blue_key") effect = AppUtil::Effect::KEY_BLUE;
-        else if (line.extra == "red_key") effect = AppUtil::Effect::KEY_RED;
-        else if (line.extra == "fly") effect = AppUtil::Effect::FLY;
+        if (step.extra == "enemy_data") effect = AppUtil::Effect::NONE; // Placeholder
+        else if (step.extra == "yellow_key") effect = AppUtil::Effect::KEY_YELLOW;
+        else if (step.extra == "blue_key") effect = AppUtil::Effect::KEY_BLUE;
+        else if (step.extra == "red_key") effect = AppUtil::Effect::KEY_RED;
+        else if (step.extra == "fly") effect = AppUtil::Effect::FLY;
         
         if (player && effect != AppUtil::Effect::NONE) {
             player->ApplyEffect(effect, 1);
         }
-    } else if (line.command == "hide") {
+    } else if (step.command == ScriptEngine::CommandType::HIDE) {
         LOG_INFO("DialogueManager: Executing hide command");
         if (m_source_entity) {
             m_source_entity->TriggerReplacement(0);
         }
-    } else if (line.command == "shop") {
+    } else if (step.command == ScriptEngine::CommandType::SHOP) {
         // If triggered from script and no data provided, load default path
         if (m_on_selection == nullptr) {
             std::string path = m_script_name + "_option";
@@ -511,7 +453,7 @@ void DialogueManager::ExecuteCommand(const ScriptLine& line, std::shared_ptr<Pla
             };
         }
 
-        m_current_line++;
+        m_engine.Next();
         m_mode = Mode::SELECTION;
         m_selection = 0;
         

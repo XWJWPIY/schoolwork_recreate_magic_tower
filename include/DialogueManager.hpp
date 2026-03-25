@@ -11,6 +11,7 @@
 #include <functional>
 
 #include "NumericDisplayText.hpp"
+#include "ScriptEngine.hpp"
 #include "Util/Image.hpp"
 
 class MenuUI;
@@ -26,12 +27,7 @@ public:
         NOTICE      // One-line item notice
     };
 
-    struct ScriptLine {
-        int speaker = -1;    // 0: Player, 1: NPC, -1: Command
-        std::string text;    // Dialogue text
-        std::string command; // Command like "item", "hide", "shop", "notice"
-        std::string extra;   // Command parameters (e.g., item ID, shop path)
-    };
+    using ScriptStep = ScriptEngine::ScriptStep;
 
     DialogueManager(std::shared_ptr<MenuUI> ui);
     virtual ~DialogueManager() = default;
@@ -56,8 +52,8 @@ public:
 
 private:
     void AdvanceScript(std::shared_ptr<Player> player);
-    void ParseScript(const std::string& name);
-    void ExecuteCommand(const ScriptLine& line, std::shared_ptr<Player> player);
+    void ParseScript(const std::string& name) { m_engine.LoadScript(name); }
+    void ExecuteCommand(const ScriptStep& step, std::shared_ptr<Player> player);
     void SetUIState(bool dialogueVisible);
     void UpdateSelection(int index);
     void ApplyDialogueLayout();
@@ -69,8 +65,7 @@ private:
     std::string m_script_name;
     bool m_is_shop_session = false;
     
-    std::vector<ScriptLine> m_script;
-    size_t m_current_line = 0;
+    ScriptEngine m_engine;
     std::shared_ptr<Entity> m_source_entity;
     std::string m_last_speaker;
     std::string m_pending_notice;
