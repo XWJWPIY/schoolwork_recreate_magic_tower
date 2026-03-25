@@ -495,9 +495,9 @@ classDiagram
   - 解析所有動態屬性欄位並轉換為 `SubEffect`，對每個效果呼叫 `Player::ApplyEffect`。
   - 最後透過 `TriggerReplacement(0)` 將自身替換為空地 (消除圖示)。
 ### 4.6 `Stair` (樓梯)
-- **屬性**：`TriggerCallback m_on_trigger` — lambda 回調，指向 `App::ChangeFloor`。
-- **`Reaction()` override** — 從 `GlobalObjectRegistry` 讀取屬性 (`floor_delta`)：
-  - 呼叫 `m_on_trigger(floor_delta)`。
+- **屬性**：`TriggerCallback m_on_trigger` — lambda 回調，參數為 `(int value, bool isRelative)`。
+- **`Reaction()` override** — 從 `GlobalObjectRegistry` 讀取屬性 (`is_relative` 與 `relation`)：
+  - 呼叫 `m_on_trigger(relation, is_relative)`。
 - **設定**：`m_is_passable = true` (由 CSV 定義)。
 
 ### 4.7 `Shop` (商店)

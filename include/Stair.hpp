@@ -10,7 +10,7 @@
 
 class Stair : public Entity {
 public:
-  using TriggerCallback = std::function<void(int delta)>;
+  using TriggerCallback = std::function<void(int value, bool isRelative)>;
 
   Stair(int id, TriggerCallback callback);
   ~Stair() override = default;

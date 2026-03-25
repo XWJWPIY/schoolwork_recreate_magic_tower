@@ -74,7 +74,10 @@ void App::InitializeGame() {
           });
     } else if (id >= 700 && id < 800) {
       entity = std::make_shared<Stair>(
-          id, [this](int delta) { this->ChangeFloor(delta); });
+          id, [this](int val, bool rel) { 
+              if (rel) this->ChangeFloor(val); 
+              else this->SetFloor(val); 
+          });
     } else if (id >= 800 && id < 900) {
       entity = std::make_shared<Trigger>(
           id, [this](std::shared_ptr<Trigger> t, const std::string& path) {
@@ -352,7 +355,10 @@ void App::Restart() {
 }
 
 void App::ChangeFloor(int delta) {
-  int nextStory = m_road_map->GetCurrentStory() + delta;
+  SetFloor(m_road_map->GetCurrentStory() + delta);
+}
+
+void App::SetFloor(int nextStory) {
   if (nextStory >= 0 && nextStory < AppUtil::TOTAL_STORY) {
     m_road_map->SwitchStory(nextStory);
     m_things_map->SwitchStory(nextStory);

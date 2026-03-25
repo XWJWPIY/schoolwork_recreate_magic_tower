@@ -32,6 +32,7 @@ public:
   void End(); // NOLINT(readability-convert-member-functions-to-static)
 
   void ChangeFloor(int delta);
+  void SetFloor(int story);
   void TeleportToFloor(int targetStory, int targetStairId);
   void ShowItemNotice(const std::string& text);
   void HideItemNotice();
