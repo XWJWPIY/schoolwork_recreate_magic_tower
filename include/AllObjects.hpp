@@ -2,16 +2,18 @@
 #define ALL_OBJECTS_HPP
 
 #include "Util/GameObject.hpp"
+#include "Util/Animation.hpp"
 #include <memory>
+#include <string>
 
 class AllObjects : public Util::GameObject {
 public:
   virtual ~AllObjects() = default;
 
-  virtual void SetObjectId(int newId) { m_object_id = newId; }
+  virtual void SetObjectId(int newId);
   int GetObjectId() const { return m_object_id; }
 
-  virtual void ObjectUpdate() {}
+  virtual void ObjectUpdate();
   bool GetVisible() const { return this->m_Visible; }
 
   // Unified passability
@@ -25,6 +27,15 @@ protected:
   // Forward constructor to GameObject to handle Drawable and ZIndex
   AllObjects(const std::shared_ptr<Core::Drawable> &drawable,
              const float zIndex, int initialId = 0);
+
+  // --- Animation Infrastructure ---
+  // Build a Util::Animation from CSV metadata (base path + frames count).
+  // looping=true: for scene tiles (will be Pause'd and controlled centrally)
+  // looping=false: for one-shot animations (Door, effects)
+  void SetupAnimation(int id, bool looping, int intervalMs = 500);
+
+  std::shared_ptr<Util::Animation> m_animation;
+  std::string m_base_image_path;
 
   int m_object_id = 0;
   bool m_is_passable = true;

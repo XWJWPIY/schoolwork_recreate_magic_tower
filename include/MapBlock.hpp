@@ -10,9 +10,6 @@ public:
   MapBlock(int initialId = 0);
   ~MapBlock() override = default;
 
-  void SetObjectId(int newId) override;
-  void ObjectUpdate() override;
-
   glm::vec2 GetImageSize() const {
     if (this->m_Drawable) {
       return this->m_Drawable->GetSize();
@@ -20,11 +17,8 @@ public:
     return {0.0f, 0.0f};
   }
 
-
 private:
-  int m_current_local_frame = 1;
   std::string GetImagePath(int id) const;
-  void UpdateProperties(int id);
 };
 
 #endif // MAP_BLOCK_HPP

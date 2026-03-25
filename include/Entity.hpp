@@ -20,11 +20,7 @@ public:
   bool CanReact() const { return m_can_react; }
   void SetCanReact(bool value) { m_can_react = value; }
 
-  void SetObjectId(int newId) override;
-  void UpdateProperties(int id);
-
   virtual void Reaction(std::shared_ptr<Player> player);
-  void ObjectUpdate() override;
 
   void SetReplacementComponent(std::shared_ptr<DynamicReplacementComponent> comp) {
     m_replacement_comp = comp;
@@ -47,8 +43,6 @@ protected:
 
   bool m_can_react = true;
   bool m_is_movable = false;
-
-  int m_current_frame = 0;
 
   std::shared_ptr<DynamicReplacementComponent> m_replacement_comp;
 };

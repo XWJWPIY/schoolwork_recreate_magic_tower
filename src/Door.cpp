@@ -1,25 +1,15 @@
 #include "Door.hpp"
 #include "AppUtil.hpp"
 #include "Util/Logger.hpp"
-#include "Util/Time.hpp"
-#include "Util/Image.hpp"
 #include "Player.hpp"
 
 Door::Door(int id)
-    : Entity(id, AppUtil::GetFullResourcePath(id), true) {
-  std::string basePath = AppUtil::GetBaseImagePath(id);
-  std::vector<std::string> paths;
-  for (int i = 1; i <= MAX_ANIMATION_FRAMES; i++) {
-    paths.push_back(AppUtil::GetPhaseImagePath(basePath, i));
-  }
-
-  // Create Animation: paths, play, interval(ms), looping, cooldown
-  m_animation = std::make_shared<Util::Animation>(paths, false, 100, false);
-  SetDrawable(m_animation);
+    : Entity(id, "", true) {
+  SetupAnimation(id, false, 100); // looping=false, 100ms/frame, one-shot
 }
 
 void Door::Reaction(std::shared_ptr<Player> player) {
-  if (m_animation->GetState() == Util::Animation::State::PLAY)
+  if (m_animation && m_animation->GetState() == Util::Animation::State::PLAY)
     return;
 
   auto it = AppUtil::GlobalObjectRegistry.find(m_object_id);
@@ -78,12 +68,8 @@ void Door::Reaction(std::shared_ptr<Player> player) {
 }
 
 void Door::ObjectUpdate() {
-  // If animation has ended
-  if (m_animation->GetState() == Util::Animation::State::ENDED) {
-    if (m_replacement_comp) {
-      m_replacement_comp->ReplaceWith(m_grid_x, m_grid_y, 0);
-    } else {
-      SetVisible(false);
-    }
+  // Pure business logic: destroy self after animation ends
+  if (m_animation && m_animation->GetState() == Util::Animation::State::ENDED) {
+    TriggerReplacement(0);
   }
 }

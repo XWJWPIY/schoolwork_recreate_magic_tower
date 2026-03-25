@@ -19,12 +19,15 @@ classDiagram
     class AllObjects {
         #int m_object_id
         #bool m_is_passable
+        #shared_ptr~Animation~ m_animation
+        #string m_base_image_path
         +virtual ~AllObjects()
         +virtual SetObjectId(int newId)
         +GetObjectId() int
         +virtual ObjectUpdate()
         +virtual IsPassable() bool
         +SetPassable(bool)
+        #SetupAnimation(id, looping, intervalMs)
     }
 
     class DialogueManager {
@@ -49,13 +52,9 @@ classDiagram
         #int m_grid_y
         #bool m_can_react
         #bool m_is_movable
-        #int m_current_frame
         #shared_ptr~DynamicReplacementComponent~ m_replacement_comp
         +Entity(id, imagePath, canReact)
-        +SetObjectId(int) override
-        +UpdateProperties(int)
         +virtual Reaction(shared_ptr~Player~) = 0*
-        +ObjectUpdate() override
         +SetReplacementComponent(shared_ptr)
         +TriggerReplacement(targetId)
         +SetGridPosition(x, y)
@@ -76,13 +75,9 @@ classDiagram
     }
 
     class MapBlock {
-        -int m_current_local_frame
         +MapBlock(int initialId)
-        +SetObjectId(int) override
-        +ObjectUpdate() override
         +GetImageSize() vec2
         -GetImagePath(int) string
-        -UpdateProperties(int)
     }
 
     class Player {
@@ -334,8 +329,11 @@ classDiagram
     FloorMap ..> MapBlock : roadObjFactory creates
     FloorMap ..> Entity : thingsObjFactory creates
 
+    AllObjects o-- "Util::Animation" : m_animation (Owned)
+    AllObjects ..> ObjectMetadata : SetObjectId loads data
+
     Entity *-- DynamicReplacementComponent : m_replacement_comp
-    Entity ..> ObjectMetadata : reads from GlobalObjectRegistry
+    Entity ..> ObjectMetadata : notes for NPC/Shop/Enemy sync
 
     Player ..> FloorMap : SyncPosition / Move
     Player ..> Entity : Reaction via shared_from_this
@@ -444,30 +442,25 @@ classDiagram
 
 ## 一、基底物件 (`AllObjects`)
 - 繼承 `Util::GameObject`。
-- 提供所有地圖物件的基礎：`m_object_id` (物件 ID)、座標 (`m_Transform`)、顯隱控制 (`m_Visible`)。
-- **統一通行性判斷**：提供 `virtual bool IsPassable()` 與成員 `m_is_passable`（預設 `true`）。
-- **虛擬函數**：`virtual void ObjectUpdate()` — 預設空實作，供子類覆寫。
-- **建構子**：兩個 `protected` 建構子，一個只接收 ID，一個同時接收 `Drawable` 和 `zIndex`。
+- **統一驅動核心**：`SetObjectId(int)` 現在負責從 `GlobalObjectRegistry` 載入所有屬性與動畫資源。
+- **混合動畫架構**：
+  - `m_animation`：持有一個 `Util::Animation` 實體。
+  - `SetupAnimation()`：工具方法，自動從 CSV `frames` 欄位與 `AppUtil` 路徑解析器建立動畫。
+- **自動同步**：`ObjectUpdate()` 提供預設實作，若物件處於 `PAUSE` 狀態且 `frames > 1`，則自動與 `TileAnimationManager` 的全域時鐘同步。
+- **建構子**：保持 `protected` 以確保封裝。
 
 ## 二、地圖區塊 (`MapBlock`)
-- 繼承 `AllObjects`。
-- 用於 `RoadMap` 的地板/牆壁等靜態或動畫方塊。
-- **屬性**：`m_current_local_frame` — 動畫當前幀數。
-- **方法覆寫**：
-  - `SetObjectId(int)` override — 更新 ID 並重新載入圖片與通行性。
-  - `ObjectUpdate()` override — 從 `TileAnimationManager::GetGlobalFrame2()` 同步全域動畫幀。
-- **私有方法**：`GetImagePath(int)` 合成資源路徑、`UpdateProperties(int)` 根據 `GlobalObjectRegistry` 載入圖片與通行性。
-- **特殊**：ID 0 硬編碼為不可見但保留圖片尺寸供佈局取樣。
+- 繼承 `AllObjects`。最精簡的地磚物件，完全依賴基底類別處理渲染與同步。
+- **Z-Index**：固定為 -5。
+- **方法**：僅保留 `GetImageSize()` 與 `GetImagePath()`。
 
 ## 三、實體基類 (`Entity`)
 - 繼承 `AllObjects`。
-- **互動基類**：宣告 `virtual void Reaction(shared_ptr<Player>) = 0`（純虛擬函數）。
-- **屬性**：`m_grid_x/y`（網格座標）、`m_can_react`（是否可互動）、`m_is_movable`、`m_current_frame`（動畫幀）、`m_replacement_comp`（動態替換組件）。
-- **通行性**：建構時從 `GlobalObjectRegistry` 讀取，未知 ID 預設 `false`。
-- **覆寫方法**：
-  - `SetObjectId(int)` override — 更新 ID 並呼叫 `UpdateProperties`。
-  - `ObjectUpdate()` override — 對有動畫幀數的物件，重新載入動態路徑圖片。
-- **組件持有**：`DynamicReplacementComponent` — 用於物件被消滅後呼叫 `FloorMap::SetObject` 替換為空地。
+- **動畫策略**：
+  - **NPC、Shop、Enemy**：與場景同步控制（Global Sync）。
+  - **Item、Stair、Trigger**：單幀靜態顯示（Static）。
+- **覆寫方法**：不再需要覆寫 `SetObjectId` 與 `ObjectUpdate`，完全複用基底類別邏輯。
+- **組件持有**：`DynamicReplacementComponent` — 用於物件被消滅後的動態替換。
 
 ## 四、多型衍生實體 (Entity 子類)
 
@@ -495,8 +488,9 @@ classDiagram
 - **私有**：`UpdateSprite()` — 使用 `AppUtil::GetPhaseImagePath` 從 `bmp/Player/player_{dir}` 取得動態圖片路徑（完美支援擴充與各式副檔名）。
 
 ### 4.2 `Door` (門)
-- **屬性**：`MAX_ANIMATION_FRAMES=5`、`shared_ptr<Util::Animation> m_animation`。
-- **建構**：載入 5 帧開門動畫圖片，建立 `Util::Animation` (non-looping, 100ms)。
+- **動畫切換**：建構時調用 `SetupAnimation(id, false, 100)` 進入「原生輪播」模式（One-shot）。
+- **`Reaction()` override** — 判定開門條件後調用 `m_animation->Play()`。
+- **`ObjectUpdate()` override** — 監聽 `Util::Animation::State::ENDED`，於動畫播完後發起 `TriggerReplacement(0)` 進行路徑打通。
 - **`Reaction()` override** — 從 `GlobalObjectRegistry` 讀取通關條件 (`yellow_key, blue_key, red_key` 與 `is_passive`)：
   - 被動門 (`is_passive`) 直接返回。
   - 無需鑰匙的門直接播放開門動畫。

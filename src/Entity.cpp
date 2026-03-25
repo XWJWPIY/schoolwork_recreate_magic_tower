@@ -3,54 +3,19 @@
 #include "Util/Logger.hpp"
 #include "Util/Image.hpp"
 
+/* --- 動畫與同步機制註記 ---
+ * 1. NPC、Shop：目前的影像資源具備多幀循環（frames > 1），統一由 AllObjects 基底類別
+ *    透過 GLOBAL_SYNC 模式與「地磚/場景物件」進行全域同步控制。
+ * 2. Enemy：未來實作呼吸動畫時，同樣需在 CSV 標註 Animation > 1，
+ *    系統將自動納入全域同步軌道。
+ * 3. Item、Stair、Trigger：由於 CSV 標註為 1 幀，系統將保持靜態顯示（STATIC）。
+ */
+
 Entity::Entity(int initialId, const std::string &imagePath, bool canReact) 
     : AllObjects(initialId) {
     SetZIndex(-4);
-    UpdateProperties(initialId);
     m_can_react = canReact;
-}
-
-void Entity::SetObjectId(int newId) {
-    AllObjects::SetObjectId(newId);
-    UpdateProperties(newId);
-}
-
-void Entity::UpdateProperties(int id) {
-    auto it = AppUtil::GlobalObjectRegistry.find(id);
-    if (it != AppUtil::GlobalObjectRegistry.end()) {
-        const auto& meta = it->second;
-        m_is_passable = meta.is_passable;
-        SetVisible(true);
-
-        if (meta.frames > 1) {
-            m_current_frame = AppUtil::TileAnimationManager::GetGlobalFrame2(500);
-            std::string basePath = AppUtil::GetBaseImagePath(id);
-            SetDrawable(std::make_shared<Util::Image>(AppUtil::GetPhaseImagePath(basePath, m_current_frame)));
-        } else {
-            SetDrawable(std::make_shared<Util::Image>(AppUtil::GetFullResourcePath(id)));
-        }
-    } else if (id == 0) {
-        SetVisible(false);
-        m_is_passable = true;
-        // Use road1.bmp as size template for empty entity slot
-        SetDrawable(std::make_shared<Util::Image>(AppUtil::GetStaticResourcePath("bmp/Road/road1.bmp")));
-    }
-}
-
-void Entity::ObjectUpdate() {
-    auto it = AppUtil::GlobalObjectRegistry.find(m_object_id);
-    if (it != AppUtil::GlobalObjectRegistry.end() && it->second.frames > 1) {
-        int global_frame = AppUtil::TileAnimationManager::GetGlobalFrame2(500);
-        if (m_current_frame != global_frame) {
-            m_current_frame = global_frame;
-            auto image = std::dynamic_pointer_cast<Util::Image>(m_Drawable);
-            if (image) {
-                std::string base = AppUtil::GetFullResourcePath(m_object_id);
-                std::string prefix = base.substr(0, base.length() - 5);
-                image->SetImage(prefix + std::to_string(m_current_frame) + ".bmp");
-            }
-        }
-    }
+    SetObjectId(initialId); // 觸發基底類別的資源載入與動畫初始化
 }
 
 void Entity::Reaction(std::shared_ptr<Player> player) {
