@@ -712,61 +712,71 @@ classDiagram
 - **`TileAnimationManager::GetGlobalFrame2(ms)`** — 依全域時間回傳 1 或 2 (兩幀切換動畫)。
 - **`main.cpp`** — `Core::Context` 主迴圈驅動 `App::Start/Update/End`。
 
-## 十六、檔案清單
+---
+## 二、專案目錄結構 (Modular Architecture)
+專案採用模組化目錄結構以提升可維護性：
+- **`Core/`**：核心引擎邏輯、全域工具及地圖基礎系統。
+- **`Objects/`**：遊戲中所有可互動實體與地圖物件（Actor, Item, Door 等）。
+- **`UI/`**：介面渲染組件、狀態面板及對話管理器。
+- **`Systems/`**：邏輯子系統（腳本引擎、商店數據處理、動態替換組件）。
+
+---
+
+## 三、檔案清單 (File Manifest)
 
 ### include/ (24 個標頭檔)
-| 檔案 | 類別 | 角色 |
-|------|------|------|
-| `Actor.hpp` | `Actor` | 具備屬性之實體基類 |
-| `AllObjects.hpp` | `AllObjects` | 所有地圖物件基類 |
-| `App.hpp` | `App` | 遊戲核心控制器 |
-| `AppUtil.hpp` | namespace `AppUtil` | 元數據、組件、工具、常數 |
-| `Background.hpp` | `Background` | 場景背景 |
-| `Door.hpp` | `Door` | 門實體 |
-| `DynamicReplacementComponent.hpp` | `DynamicReplacementComponent` | 動態替換組件 |
-| `Enemy.hpp` | `Enemy` | 怪物實體 |
-| `Entity.hpp` | `Entity` | 互動實體基類 |
-| `FloorMap.hpp` | `FloorMap` | 多樓層地圖管理 |
-| `Item.hpp` | `Item` | 道具實體 |
-| `MapBlock.hpp` | `MapBlock` | 地板/牆壁方塊 |
-| `MenuUI.hpp` | `MenuUI` | 選單覆蓋層 |
-| `NPC.hpp` | `NPC` | NPC 實體 |
-| `NumericDisplayText.hpp` | `NumericDisplayText` | 數字/文字顯示 |
-| `Player.hpp` | `Player` | 主角 |
-| `Shop.hpp` | `Shop` | 商店實體 |
-| `Stair.hpp` | `Stair` | 樓梯實體 |
-| `StatusUI.hpp` | `StatusUI` | 狀態面板 |
-| `DialogueManager.hpp` | `DialogueManager` | 統一對話與通知管理器 |
-| `ScriptEngine.hpp` | `ScriptEngine` | 腳本解析與分步引擎 |
-| `ShopSystem.hpp` | `ShopSystem` | 商店數據與定價輔助 |
-| `ShopUI.hpp` | `ShopUI` | 商店選項渲染與交互介面 |
-| `Trigger.hpp` | `Trigger` | 隱形事件觸發塊 |
+| 檔案路徑 | 類別 | 角色 |
+|----------|------|------|
+| `Core/App.hpp` | `App` | 遊戲核心控制器 |
+| `Core/AppUtil.hpp` | namespace `AppUtil` | 元數據、組件、工具、常數 |
+| `Core/FloorMap.hpp` | `FloorMap` | 多樓層地圖管理 |
+| `Objects/Actor.hpp` | `Actor` | 具備屬性之實體基類 |
+| `Objects/AllObjects.hpp` | `AllObjects` | 所有地圖物件基類 |
+| `Objects/Entity.hpp` | `Entity` | 互動實體基類 |
+| `Objects/Door.hpp` | `Door` | 門實體 |
+| `Objects/Enemy.hpp` | `Enemy` | 怪物實體 |
+| `Objects/Item.hpp` | `Item` | 道具實體 |
+| `Objects/MapBlock.hpp` | `MapBlock` | 地板/牆壁方塊 |
+| `Objects/NPC.hpp` | `NPC` | NPC 實體 |
+| `Objects/Player.hpp` | `Player` | 主角 |
+| `Objects/Shop.hpp` | `Shop` | 商店實體 |
+| `Objects/Stair.hpp` | `Stair` | 樓梯實體 |
+| `Objects/Trigger.hpp` | `Trigger` | 隱形事件觸發塊 |
+| `UI/Background.hpp` | `Background` | 場景背景 |
+| `UI/DialogueManager.hpp` | `DialogueManager` | 統一對話與通知管理器 |
+| `UI/MenuUI.hpp` | `MenuUI` | 選單覆蓋層 |
+| `UI/NumericDisplayText.hpp` | `NumericDisplayText` | 數字/文字顯示 |
+| `UI/ShopUI.hpp` | `ShopUI` | 商店選項渲染與交互介面 |
+| `UI/StatusUI.hpp` | `StatusUI` | 狀態面板 |
+| `Systems/DynamicReplacementComponent.hpp` | `DynamicReplacementComponent` | 動態替換組件 |
+| `Systems/ScriptEngine.hpp` | `ScriptEngine` | 腳本解析與分步引擎 |
+| `Systems/ShopSystem.hpp` | `ShopSystem` | 商店數據與定價輔助 |
 
-### src/ (25 個原始檔)
-| 檔案 | 對應類別 | 說明 |
-|------|---------|------|
-| `main.cpp` | — | 程式進入點 |
-| `Actor.cpp` | `Actor` | 屬性初始化與變動回調 |
-| `App.cpp` | `App` | 遊戲主迴圈、狀態機、初始化 |
-| `AppUtil.cpp` | `AppUtil` | 全域註冊表、CSV 解析器、RegistryLoader |
-| `AllObjects.cpp` | `AllObjects` | 建構子實作 |
-| `Entity.cpp` | `Entity` | 建構子、屬性更新、動畫更新 |
-| `MapBlock.cpp` | `MapBlock` | ID 切換、動畫幀同步 |
-| `FloorMap.cpp` | `FloorMap` | 地圖載入、樓層切換、物件搜尋 |
-| `Player.cpp` | `Player` | 移動、碰撞、效果套用、動畫 |
-| `Door.cpp` | `Door` | 開門動畫、鑰匙扣除、動態替換 |
-| `Enemy.cpp` | `Enemy` | 戰鬥(TODO)、動態替換 |
-| `NPC.cpp` | `NPC` | 對話(TODO) |
-| `Item.cpp` | `Item` | 效果套用、對話觸發、動態替換 |
-| `Stair.cpp` | `Stair` | 樓層切換觸發 |
-| `Shop.cpp` | `Shop` | 商店 Session 完整流程 |
-| `Background.cpp` | `Background` | 場景/載入圖切換 |
-| `NumericDisplayText.cpp` | `NumericDisplayText` | 文字渲染邏輯 |
-| `DynamicReplacementComponent.cpp` | `DynamicReplacementComponent` | 回調執行 |
-| `MenuUI.cpp` | `MenuUI` | 選單初始化、顯隱、數據綁定 |
-| `StatusUI.cpp` | `StatusUI` | 數值刷新、文字初始化 |
-| `DialogueManager.cpp` | `DialogueManager` | 腳本執行與狀態切換 |
-| `ScriptEngine.cpp` | `ScriptEngine` | 腳本解析與分頁邏輯 |
-| `ShopSystem.cpp` | `ShopSystem` | 商店數據加載與定價實作 |
-| `ShopUI.cpp` | `ShopUI` | 商店選項渲染與選擇交互 |
-| `Trigger.cpp` | `Trigger` | 自動觸發回調邏輯 |
+### src/ (26 個原始檔)
+| 檔案路徑 | 對應類別 | 說明 |
+|----------|---------|------|
+| `src/main.cpp` | — | 程式進入點 |
+| `Core/App.cpp` | `App` | 遊戲主迴圈、狀態機、初始化 |
+| `Core/AppUtil.cpp` | `AppUtil` | 全域註冊表、CSV 解析器、RegistryLoader |
+| `Core/FloorMap.cpp` | `FloorMap` | 地圖載入、樓層切換、物件搜尋 |
+| `Objects/Actor.cpp` | `Actor` | 屬性初始化與變動回調 |
+| `Objects/AllObjects.cpp` | `AllObjects` | 建構子實作 |
+| `Objects/Entity.cpp` | `Entity` | 建構子、屬性更新、動畫更新 |
+| `Objects/MapBlock.cpp` | `MapBlock` | ID 切換、動畫幀同步 |
+| `Objects/Player.cpp` | `Player` | 移動、碰撞、效果套用、動畫 |
+| `Objects/Door.cpp` | `Door` | 開門動畫、鑰匙扣除、動態替換 |
+| `Objects/Enemy.cpp` | `Enemy` | 戰鬥(TODO)、動態替換 |
+| `Objects/NPC.cpp` | `NPC` | 對話(TODO) |
+| `Objects/Item.cpp` | `Item` | 效果套用、對話觸發、動態替換 |
+| `Objects/Stair.cpp` | `Stair` | 樓層切換觸發 |
+| `Objects/Shop.cpp` | `Shop` | 商店 Session 完整流程 |
+| `Objects/Trigger.cpp` | `Trigger` | 自動觸發回調邏輯 |
+| `UI/Background.cpp` | `Background` | 場景/載入圖切換 |
+| `UI/NumericDisplayText.cpp` | `NumericDisplayText` | 文字渲染邏輯 |
+| `UI/MenuUI.cpp` | `MenuUI` | 選單初始化、顯隱、數據綁定 |
+| `UI/StatusUI.cpp` | `StatusUI` | 數值刷新、文字初始化 |
+| `UI/DialogueManager.cpp` | `DialogueManager` | 腳本執行與狀態切換 |
+| `UI/ShopUI.cpp` | `ShopUI` | 商店選項渲染與選擇交互 |
+| `Systems/DynamicReplacementComponent.cpp` | `DynamicReplacementComponent` | 回調執行 |
+| `Systems/ScriptEngine.cpp` | `ScriptEngine` | 腳本解析與分頁邏輯 |
+| `Systems/ShopSystem.cpp` | `ShopSystem` | 商店數據加載與定價實作 |
