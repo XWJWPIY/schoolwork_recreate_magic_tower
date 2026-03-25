@@ -3,6 +3,7 @@
 
 #include "Entity.hpp"
 #include "AppUtil.hpp"
+#include "ShopSystem.hpp"
 #include "DialogueManager.hpp"
 #include <functional>
 #include <memory>

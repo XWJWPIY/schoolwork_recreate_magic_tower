@@ -20,6 +20,7 @@ set(SRC_FILES
     MenuUI.cpp
     DialogueManager.cpp
     ScriptEngine.cpp
+    ShopSystem.cpp
     Trigger.cpp
 )
 
@@ -45,6 +46,7 @@ set(INCLUDE_FILES
     MenuUI.hpp
     DialogueManager.hpp
     ScriptEngine.hpp
+    ShopSystem.hpp
     Trigger.hpp
 )
 

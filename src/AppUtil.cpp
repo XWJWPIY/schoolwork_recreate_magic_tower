@@ -343,22 +343,7 @@ MapParser::ParseCsvToStrings(const std::string &filepath) {
 
 // Removed ParseCsvToRawIDs as it was redundant after MapCell flattening.
 
-std::vector<ShopOption> MapParser::ParseShopOptions(const std::string& filepath) {
-    std::vector<ShopOption> options;
-    CSVLoader loader;
-    if (!loader.Load(filepath)) return options;
-
-    for (size_t i = 0; i < loader.GetRowCount(); ++i) {
-        ShopOption opt;
-        opt.text = loader.GetString(i, Attr::DIALOG);
-        opt.effects = loader.GetRowEffects(i);
-
-        if (!opt.effects.empty() || !opt.text.empty()) {
-            options.push_back(std::move(opt));
-        }
-    }
-    return options;
-}
+// ParseShopOptions moved to ShopSystem
 
 // --- CSVLoader Implementation ---
 

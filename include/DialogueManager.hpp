@@ -12,6 +12,7 @@
 
 #include "NumericDisplayText.hpp"
 #include "ScriptEngine.hpp"
+#include "ShopSystem.hpp"
 #include "Util/Image.hpp"
 
 class MenuUI;

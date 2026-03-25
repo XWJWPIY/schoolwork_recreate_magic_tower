@@ -1,4 +1,5 @@
 #include "Shop.hpp"
+#include "ShopSystem.hpp"
 #include "AppUtil.hpp"
 #include "Player.hpp"
 #include "Util/Input.hpp"
@@ -90,42 +91,5 @@ void Shop::ExecutePurchase(const AppUtil::ShopOption& opt, std::shared_ptr<Playe
 }
 
 void Shop::BuildShopData(int floor) {
-    auto it = AppUtil::GlobalObjectRegistry.find(m_object_id);
-    if (it == AppUtil::GlobalObjectRegistry.end()) return;
-
-    const auto& meta = it->second;
-    m_session_data.title = meta.GetString(AppUtil::Attr::TITLE, "Store Explorer");
-    m_session_data.icon_path = meta.GetString(AppUtil::Attr::ICON);
-    m_session_data.transaction_count = m_transaction_count;
-    m_session_data.prompts.clear();
-
-    std::string name = std::to_string(floor) + "_" + meta.name;
-    std::string option_path = AppUtil::GetStaticResourcePath("Datas/Texts/" + name + "_option.csv");
-    m_session_data.options = AppUtil::MapParser::ParseShopOptions(option_path);
-    if (m_session_data.options.empty()) m_session_data.options.push_back({"No Inventory Found", {}});
-    m_session_data.options.push_back({"Exit", {}});
-
-    // Calculate Dynamic Price
-    if (m_object_id == 602) { // Scaling Greed check
-        int cost = 20 + m_transaction_count + (m_transaction_count > 25 ? (m_transaction_count - 25) * 4 : 0);
-        
-        // Update Special Price String for Dialogue UI
-        std::string price_str = std::to_string(cost);
-        if (price_str.length() == 1) price_str = "   " + price_str;
-        else if (price_str.length() == 2) price_str = "  " + price_str;
-        else if (price_str.length() == 3) price_str = " " + price_str;
-        m_session_data.special_price_str = price_str;
-
-        // Update Option Costs
-        for (auto& optr : m_session_data.options) {
-            if (optr.text == "Exit") continue;
-            for (auto& eff : optr.effects) {
-                if (AppUtil::AttributeRegistry::ToEffect(eff.type_id) == AppUtil::Effect::COIN) eff.value = -cost;
-            }
-            size_t pos = optr.text.find('(');
-            if (pos != std::string::npos) optr.text = optr.text.substr(0, pos);
-        }
-    } else {
-        m_session_data.special_price_str = "";
-    }
+    m_session_data = ShopSystem::LoadForShopEntity(m_object_id, floor, m_transaction_count);
 }

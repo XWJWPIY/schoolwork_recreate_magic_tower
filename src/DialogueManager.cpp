@@ -399,15 +399,9 @@ void DialogueManager::ExecuteCommand(const ScriptStep& step, std::shared_ptr<Pla
     } else if (step.command == ScriptEngine::CommandType::SHOP) {
         // If triggered from script and no data provided, load default path
         if (m_on_selection == nullptr) {
-            std::string path = m_script_name + "_option";
-            std::string option_full_path = AppUtil::GetStaticResourcePath("Datas/Texts/" + path + ".csv");
-            m_current_shop_data.options = AppUtil::MapParser::ParseShopOptions(option_full_path);
-            if (m_current_shop_data.options.empty()) {
-                m_current_shop_data.options.push_back({"No Inventory Found", {}});
-            }
-            m_current_shop_data.options.push_back({"Exit", {}});
+            m_current_shop_data = ShopSystem::LoadFromStaticFile(m_script_name + "_option");
             
-            // For scripts, the title should be the current NPC name
+            // For scripts, the title should be the current NPC name (set in AdvanceScript)
             m_current_shop_data.title = m_name_text->GetPrefix(); 
             
             // For scripts, try to keep the NPC icon if possible

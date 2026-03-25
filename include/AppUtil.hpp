@@ -146,19 +146,7 @@ const int WINDOW_WIDTH = 1200;
 const int WINDOW_HEIGHT = 800;
 constexpr int TOTAL_STORY = 26;
 
-struct ShopOption {
-    std::string text;
-    std::vector<SubEffect> effects;
-};
-
-struct ShopData {
-    std::string title;
-    std::string icon_path;
-    std::vector<std::string> prompts;
-    int transaction_count;
-    std::vector<ShopOption> options;
-    std::string special_price_str; // e.g., real-time cost for Greed God
-};
+// ShopOption and ShopData moved to ShopSystem.hpp
 
 std::string GetIdString(int id);
 bool ProbabilityGen(int p);
@@ -204,7 +192,7 @@ public:
   ParseCsvToStrings(const std::string &filepath);
   // ParseCsvToRawIDs is now redundant as ParseCsv returns vector<vector<int>> directly.
   // Removed to avoid confusion and fix compilation errors.
-  static std::vector<ShopOption> ParseShopOptions(const std::string &filepath);
+  // ParseShopOptions moved to ShopSystem
 };
 
 } // namespace AppUtil
