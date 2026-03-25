@@ -251,9 +251,9 @@ std::string GetFullResourcePath(int id) {
   return GetPhaseImagePath(GetBaseImagePath(id), currentFrame);
 }
 
-std::vector<std::vector<MapCell>>
+std::vector<std::vector<int>>
 MapParser::ParseCsv(const std::string &filepath) {
-  std::vector<std::vector<MapCell>> mapData;
+  std::vector<std::vector<int>> mapData;
   std::ifstream file(filepath);
 
   if (!file.is_open()) {
@@ -266,11 +266,12 @@ MapParser::ParseCsv(const std::string &filepath) {
     if (line.empty())
       continue;
 
+    // Handle carriage returns for Windows/Linux compatibility
     if (!line.empty() && line.back() == '\r') {
       line.pop_back();
     }
 
-    std::vector<MapCell> row;
+    std::vector<int> row;
     std::stringstream ss(line);
     std::string cellString;
 
@@ -282,15 +283,15 @@ MapParser::ParseCsv(const std::string &filepath) {
       if (cellString.empty())
         continue;
 
-      MapCell cell;
+      int id = 0;
       try {
-        cell.id = std::stoi(cellString);
+        id = std::stoi(cellString);
       } catch (const std::exception &e) {
-        LOG_WARN("MapParser encounted invalid cell data '{}' in {}: {}",
+        LOG_WARN("MapParser encountered invalid cell data '{}' in {}: {}",
                  cellString, filepath, e.what());
-        cell.id = 0;
+        id = 0;
       }
-      row.push_back(cell);
+      row.push_back(id);
     }
 
     if (!row.empty()) {
@@ -340,24 +341,7 @@ MapParser::ParseCsvToStrings(const std::string &filepath) {
   return mapData;
 }
 
-std::vector<std::vector<int>>
-MapParser::ParseCsvToRawIDs(const std::string &filepath) {
-  auto parsedCells = ParseCsv(filepath);
-  std::vector<std::vector<int>> rawData;
-
-  rawData.reserve(parsedCells.size());
-
-  for (const auto &row : parsedCells) {
-    std::vector<int> idRow;
-    idRow.reserve(row.size());
-    for (const auto &cell : row) {
-      idRow.push_back(cell.id);
-    }
-    rawData.push_back(idRow);
-  }
-
-  return rawData;
-}
+// Removed ParseCsvToRawIDs as it was redundant after MapCell flattening.
 
 std::vector<ShopOption> MapParser::ParseShopOptions(const std::string& filepath) {
     std::vector<ShopOption> options;

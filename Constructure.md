@@ -218,29 +218,21 @@ classDiagram
     }
 
     class FloorMap {
-        -Renderer* m_root
         -ObjectFactory m_factory
-        -vector~3D shared_ptr AllObjects~ m_objects
+        -vector~vector~vector~shared_ptr~AllObjects~~~~ m_objects
         -int m_current_story
-        -float DEFAULT_SIZE
-        -vec2 m_base_size
-        -float m_center_x/y
-        -float m_scale_x/y
-        -float m_z_index
-        +FloorMap(factory, centerX, centerY, ...)
-        +GetBaseSize() vec2
-        +LoadFloorData(MapCell / int)
+        +FloorMap(factory, centerX, centerY, scaleX, scaleY, zIndex)
+        +LoadAllFloors(prefix)
+        +LoadFloorData(floorData, story)
+        +SwitchStory(story)
         +GetObject(x, y, story) AllObjects
         +IsPassable(x, y, story) bool
-        +SwitchStory(int)
+        +SetObject(x, y, id, story)
+        +SetAllVisible(visible)
+        +SetRenderer(root)
+        +AddToRenderer()
         +Update()
         +GetCurrentStory() int
-        +SetObject(x, y, id, story)
-        +SetAllVisible(bool)
-        +FindFirstObjectPosition(id, story) ivec2
-        +FindFirstObjectOfId(id, story) AllObjects
-        +SetRenderer(Renderer*)
-        +AddToRenderer()
     }
 
     class MenuUI {
@@ -306,47 +298,7 @@ classDiagram
     }
 ```
 
-## 使用關係圖
 
-```mermaid
-classDiagram
-    direction LR
-
-    App ..> RegistryLoader : calls LoadAllData()
-    App *-- Background : m_background
-    App *-- FloorMap : m_road_map, m_things_map
-    App *-- Player : m_player
-    App *-- StatusUI : m_status_ui
-    App *-- MenuUI : m_menu_ui
-    App *-- DialogueManager : m_dialogue_manager
-    App ..> Shop : m_active_shop (non-owning)
-
-    FloorMap o-- AllObjects : m_objects (3D grid)
-    FloorMap ..> MapBlock : roadObjFactory creates
-    FloorMap ..> Entity : thingsObjFactory creates
-
-    AllObjects o-- "Util::Animation" : m_animation (Owned)
-    AllObjects ..> ObjectMetadata : SetObjectId loads data
-
-    Entity *-- DynamicReplacementComponent : m_replacement_comp
-    Entity ..> ObjectMetadata : notes for NPC/Shop/Enemy sync
-
-    Player ..> FloorMap : SyncPosition / Move
-    Player ..> Entity : Reaction via shared_from_this
-
-    Shop ..> DialogueManager : drives UI in Open/Close
-    Shop ..> Player : reads & modifies stats
-
-    Door ..> Player : reads attributes in Reaction
-    Item ..> Actor : ApplyEffect in Reaction
-    Stair ..> App : TriggerCallback→ChangeFloor
-
-    StatusUI *-- NumericDisplayText : 12 text displays
-    MenuUI *-- NumericDisplayText : text elements
-
-    RegistryLoader ..> AppUtil : populates GlobalObjectRegistry
-    AppUtil o-- ObjectMetadata : Registry holds
-```
 
 ## 資料結構與元件 (AppUtil Namespace)
 
@@ -411,14 +363,9 @@ classDiagram
 
     class MapParser {
         <<static>>
-        +ParseCsv(filepath) vector~vector~MapCell~~
+        +ParseCsv(filepath) vector~vector~int~~
         +ParseCsvToStrings(filepath) vector~vector~string~~
-        +ParseCsvToRawIDs(filepath) vector~vector~int~~
         +ParseShopOptions(filepath) vector~ShopOption~
-    }
-
-    class MapCell {
-        +int id
     }
 
     class AppUtilAPI {
@@ -433,6 +380,43 @@ classDiagram
     ShopOption *-- SubEffect
     ShopData *-- ShopOption
 ```
+
+
+## 系統架構組件關係圖
+
+```mermaid
+classDiagram
+    direction LR
+    class Animation["Util::Animation"]
+    class ObjectMetadata["AppUtil::ObjectMetadata"]
+
+    App ..> RegistryLoader : LoadAllData
+    App *-- Background
+    App *-- FloorMap
+    App *-- Player
+    App *-- StatusUI
+    App *-- MenuUI
+    App *-- DialogueManager
+    App ..> Shop
+
+    FloorMap o-- AllObjects
+    FloorMap ..> MapBlock
+    FloorMap ..> Entity
+
+    AllObjects o-- Animation
+    AllObjects ..> ObjectMetadata
+
+    Player ..> FloorMap
+    Player ..> Entity
+    Shop ..> DialogueManager
+    Door ..> Player
+    Item ..> Actor
+    Stair ..> App
+
+    RegistryLoader ..> AppUtil
+    AppUtil o-- ObjectMetadata
+```
+
 
 ---
 
@@ -556,10 +540,11 @@ classDiagram
   - `roadObjFactory` → 生產 `MapBlock`。
   - `thingsObjFactory` → 依 ID 範圍生產 `Item(200~299)`, `Door(300~399)`, `Enemy(400~499)`, `NPC(500~599)`, `Shop(600~699)`, `Stair(700~799)`, `Trigger(800~899)`。
 - **核心方法**：
-  - `LoadFloorData()` — 接收 CSV 解析結果，替換更新網格物件。
-  - `SwitchStory(int)` — 隱藏當前樓層物件、顯示新樓層物件。
-  - `Update()` — 遍歷當前樓層所有可見物件呼叫 `ObjectUpdate()`。
-  - `SetObject(x, y, id)` — 動態替換單格物件 (由 `DynamicReplacementComponent` 呼叫)。
+  - **`LoadAllFloors(prefix)`**: 封裝 0~25 樓的載入迴圈，自動拼接路徑並呼叫 `LoadFloorData`。
+  - **`LoadFloorData(floorData, story)`**: 將 `vector<vector<int>>` 的 ID 資料透過 `ObjectFactory` 轉換為實體物件矩陣。
+  - **`SwitchStory(story)`**: 切換樓層，控制 `GameObject` 的 `Visible` 屬性。
+  - **`GetObject(x, y, story)`**: 取得特定網格位置的物件。
+  - **`SetObject(x, y, id, story)`**: 動態替換位置上的物件（用於吃掉物品、開門）。 (由 `DynamicReplacementComponent` 呼叫)。
   - `FindFirstObjectPosition(id)` / `FindFirstObjectOfId(id)` — 搜尋物件座標/指標。
 - **排版校準**：取樣 ID 0 物件尺寸決定 11×11 網格間距。
 
@@ -643,7 +628,7 @@ classDiagram
 - **CSV 解析器 (`MapParser` 與 `CSVLoader`)**：
   - `CSVLoader::Load()` → 載入為帶有標頭屬性對應表的動態結構。
   - `CSVLoader::GetRowEffects()` → 自動篩選非結構欄位並轉換為 `SubEffect`。
-  - `ParseCsv()` → `vector<vector<MapCell>>` (整數 ID 地圖)。
+  - **`ParseCsv(filepath)`**: 傳回 `std::vector<std::vector<int>>`。 (整數 ID 地圖)。
   - `ParseShopOptions()` → `vector<ShopOption>` (商店選項與效果)。
 
 ## 十四、交互觸發流程
@@ -716,4 +701,3 @@ classDiagram
 | `StatusUI.cpp` | `StatusUI` | 數值刷新、文字初始化 |
 | `DialogueManager.cpp` | `DialogueManager` | 腳本解析、對話流程、通知攔截 |
 | `Trigger.cpp` | `Trigger` | 自動觸發回調邏輯 |
-

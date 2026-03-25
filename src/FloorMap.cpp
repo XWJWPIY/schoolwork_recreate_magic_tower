@@ -69,25 +69,48 @@ FloorMap::FloorMap(ObjectFactory factory, float centerX, float centerY,
   }
 }
 
-void FloorMap::LoadFloorData(
-    const std::vector<std::vector<AppUtil::MapCell>> &floorData, int story) {
-  int targetStory = (story == -1) ? m_current_story : story;
-  if (targetStory < 0 || targetStory >= AppUtil::TOTAL_STORY)
+void FloorMap::LoadAllFloors(const std::string &prefix) {
+  for (int i = 0; i < AppUtil::TOTAL_STORY; ++i) {
+    std::string path = AppUtil::GetStaticResourcePath(prefix + std::to_string(i) + ".csv");
+    auto data = AppUtil::MapParser::ParseCsv(path);
+    if (!data.empty()) {
+      LoadFloorData(data, i);
+    }
+  }
+}
+
+void FloorMap::LoadFloorData(const std::vector<std::vector<int>> &floorData,
+                             int floorLevel) {
+  if (floorLevel < 0 || floorLevel >= AppUtil::TOTAL_STORY) {
+    LOG_ERROR("Floor level out of bounds: {}", floorLevel);
     return;
+  }
 
   if (floorData.size() != 11) {
     LOG_ERROR("Floor data Y size must be 11, strictly matching grid size.");
     return;
   }
 
+  // Ensure m_objects has enough capacity (should be handled by constructor but safety first)
+  if (floorLevel >= static_cast<int>(m_objects.size())) {
+    m_objects.resize(floorLevel + 1);
+  }
+
   for (int y = 0; y < 11; ++y) {
     if (floorData[y].size() != 11) {
-      LOG_ERROR("Floor data X size must be 11, strictly matching grid size.");
+      LOG_ERROR("Floor data X size must be 11 at row {}", y);
       return;
     }
+
     for (int x = 0; x < 11; ++x) {
-      int newId = floorData[y][x].id;
-      auto old_obj = m_objects[targetStory][y][x];
+      int newId = floorData[y][x];
+      
+      // Safety: ensure row exists
+      if (m_objects[floorLevel].size() <= static_cast<size_t>(y)) {
+          m_objects[floorLevel].resize(11, std::vector<std::shared_ptr<AllObjects>>(11, nullptr));
+      }
+
+      auto old_obj = m_objects[floorLevel][y][x];
 
       if ((!old_obj && newId == 0) ||
           (old_obj && old_obj->GetObjectId() == newId)) {
@@ -111,14 +134,12 @@ void FloorMap::LoadFloorData(
           float spacingX = m_base_size.x * m_scale_x;
           float spacingY = m_base_size.y * m_scale_y;
           float absX = m_center_x + (x - 5) * spacingX;
-          float absY =
-              m_center_y +
-              (5 - y) * spacingY; 
+          float absY = m_center_y + (5 - y) * spacingY; 
           new_obj->m_Transform.translation = {absX, absY};
         }
 
         // Visibility logic
-        new_obj->SetVisible(targetStory == m_current_story && newId != 0);
+        new_obj->SetVisible(floorLevel == m_current_story && newId != 0);
 
         if (m_root)
           m_root->AddChild(new_obj);
@@ -128,64 +149,7 @@ void FloorMap::LoadFloorData(
           m_root->RemoveChild(old_obj);
       }
 
-      m_objects[targetStory][y][x] = new_obj;
-
-      auto entity = std::dynamic_pointer_cast<Entity>(new_obj);
-      if (entity) {
-        entity->SetGridPosition(x, y);
-      }
-    }
-  }
-}
-
-void FloorMap::LoadFloorData(const std::vector<std::vector<int>> &floorData,
-                             int story) {
-  int targetStory = (story == -1) ? m_current_story : story;
-  if (targetStory < 0 || targetStory >= AppUtil::TOTAL_STORY)
-    return;
-
-  if (floorData.size() != 11)
-    return;
-  for (int y = 0; y < 11; ++y) {
-    if (floorData[y].size() != 11)
-      return;
-    for (int x = 0; x < 11; ++x) {
-      int newId = floorData[y][x];
-      auto old_obj = m_objects[targetStory][y][x];
-
-      if ((!old_obj && newId == 0) ||
-          (old_obj && old_obj->GetObjectId() == newId)) {
-        continue;
-      }
-
-      // Need to replace the object
-      auto new_obj = m_factory(newId);
-
-      if (new_obj) {
-        new_obj->SetZIndex(m_z_index);
-        if (old_obj) {
-          new_obj->m_Transform = old_obj->m_Transform;
-          if (m_root)
-            m_root->RemoveChild(old_obj);
-        } else {
-          new_obj->m_Transform.scale = {m_scale_x, m_scale_y};
-          float spacingX = m_base_size.x * m_scale_x;
-          float spacingY = m_base_size.y * m_scale_y;
-          float absX = m_center_x + (x - 5) * spacingX;
-          float absY = m_center_y + (5 - y) * spacingY;
-          new_obj->m_Transform.translation = {absX, absY};
-        }
-
-        // Visibility logic
-        new_obj->SetVisible(targetStory == m_current_story && newId != 0);
-
-        if (m_root)
-          m_root->AddChild(new_obj);
-      } else if (old_obj) {
-        if (m_root)
-          m_root->RemoveChild(old_obj);
-      }
-      m_objects[targetStory][y][x] = new_obj;
+      m_objects[floorLevel][y][x] = new_obj;
 
       auto entity = std::dynamic_pointer_cast<Entity>(new_obj);
       if (entity) {

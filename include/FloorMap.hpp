@@ -20,12 +20,13 @@ public:
 
   glm::vec2 GetBaseSize() const { return m_base_size; }
 
-  void
-  LoadFloorData(const std::vector<std::vector<AppUtil::MapCell>> &floorData,
-                int story = -1);
-
   void LoadFloorData(const std::vector<std::vector<int>> &floorData,
                      int story = -1);
+
+  /**
+   * @brief Load all floors from a prefix path (e.g. "Datas/Maps/RoadMap")
+   */
+  void LoadAllFloors(const std::string &prefix);
 
   std::shared_ptr<AllObjects> GetObject(int x, int y, int story = -1);
   bool IsPassable(int x, int y, int story = -1);

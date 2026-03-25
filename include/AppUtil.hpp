@@ -182,9 +182,7 @@ enum class GameState {
   SHOP = 6           // 6: Shop state
 };
 
-struct MapCell {
-  int id = 0;
-};
+// Removed MapCell struct as it was just a wrapper for int id
 
 struct TileAnimationManager {
   /**
@@ -200,12 +198,12 @@ struct TileAnimationManager {
 
 class MapParser {
 public:
-  static std::vector<std::vector<MapCell>>
+  static std::vector<std::vector<int>>
   ParseCsv(const std::string &filepath);
   static std::vector<std::vector<std::string>>
   ParseCsvToStrings(const std::string &filepath);
-  static std::vector<std::vector<int>>
-  ParseCsvToRawIDs(const std::string &filepath);
+  // ParseCsvToRawIDs is now redundant as ParseCsv returns vector<vector<int>> directly.
+  // Removed to avoid confusion and fix compilation errors.
   static std::vector<ShopOption> ParseShopOptions(const std::string &filepath);
 };
 

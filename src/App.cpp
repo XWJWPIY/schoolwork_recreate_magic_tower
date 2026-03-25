@@ -96,27 +96,16 @@ void App::InitializeGame() {
   m_road_map = std::make_shared<FloorMap>(roadObjFactory, 141.0f, 0.0f, 0.735f,
                                          0.735f, -5.0f);
   m_road_map->SetRenderer(&m_root);
+  m_road_map->LoadAllFloors("Datas/Maps/RoadMap");
   m_road_map->AddToRenderer();
-
-  for (int i = 0; i < AppUtil::TOTAL_STORY; ++i) {
-    auto roadData = AppUtil::MapParser::ParseCsv(
-        AppUtil::GetStaticResourcePath("Datas/Maps/RoadMap" + std::to_string(i) + ".csv"));
-    if (!roadData.empty()) m_road_map->LoadFloorData(roadData, i);
-  }
   m_road_map->SetAllVisible(false);
 
   m_things_map = std::make_shared<FloorMap>(
       thingsObjFactory, 141.0f, 0.0f, 0.735f, 0.735f, -4.0f,
       m_road_map->GetBaseSize());
   m_things_map->SetRenderer(&m_root);
+  m_things_map->LoadAllFloors("Datas/Maps/ThingsMap");
   m_things_map->AddToRenderer();
-
-  for (int i = 0; i < AppUtil::TOTAL_STORY; ++i) {
-    auto thingsData = AppUtil::MapParser::ParseCsv(AppUtil::GetStaticResourcePath(
-                                                   "Datas/Maps/ThingsMap" +
-                                                   std::to_string(i) + ".csv"));
-    if (!thingsData.empty()) m_things_map->LoadFloorData(thingsData, i);
-  }
   m_things_map->SetAllVisible(false);
 
   // Status UI
