@@ -82,10 +82,8 @@ classDiagram
 
     class Player {
         -PlayerDirection m_direction
-        -int m_current_frame
         -bool m_is_animating
-        -float m_animation_timer
-        -float FRAME_INTERVAL
+        -shared_ptr~Animation~ m_animations[4]
         -int m_pending_shop_id
         +Player()
         +Move(dx, dy, roadmap, thingsmap)
@@ -97,9 +95,7 @@ classDiagram
         +ResetStateAfterFloorChange()
         +SetDirection(PlayerDirection)
         +SetIsAnimating(bool)
-        +SetCurrentFrame(int)
         +OnAttributeChanged(Effect) override
-        -UpdateSprite()
     }
 
     class Door {
@@ -477,13 +473,14 @@ classDiagram
 ### 4.1 `Player` (主角)
 - 繼承 `Actor` 與 `std::enable_shared_from_this<Player>`。
 - **Z-Index**：-3。初始位置 (5, 10)。
-- **屬性**：方向 (`PlayerDirection` 枚舉: DOWN/UP/LEFT/RIGHT)、動畫狀態 (`m_is_animating`, `m_animation_timer`, `m_current_frame`, `FRAME_INTERVAL=0.05f`)、`m_pending_shop_id`。
+- **屬性**：方向 (`PlayerDirection` 枚舉: DOWN/UP/LEFT/RIGHT)、動畫狀態 (`m_is_moving`)、`m_pending_shop_id`。
 - **方法**：
   - `Move(dx, dy, roadmap, thingsmap)` — 邊界檢查 → `RoadMap::IsPassable` → `ThingsMap` 實體互動 → 移動/阻擋判斷 → 動畫觸發。
   - `SyncPosition(roadmap)` — 從 `FloorMap` 借用同位置物件的 `m_Transform`。
-  - `ResetStateAfterFloorChange()` — 強制重置方向為 DOWN、停止動畫並切換為 `player_1.png`。
-  - `OnAttributeChanged(Effect)` override — 監聽 HP 變動（TODO: 處理死亡邏輯）。
-  - `ObjectUpdate()` override — 驅動 4 幀走路動畫循環。
+  - `ResetStateAfterFloorChange()` — 強制重置方向為 DOWN、停止動畫，並切換為去背效果最佳的 `player_1.png`。
+  - `OnAttributeChanged(Effect)` override — 監聽 HP 變動。
+  - `ObjectUpdate()` override — 驅動單次踏步動畫，並在播放結束時 (`ENDED`) 回歸對應方向的 `.png` 靜止圖片。
+  - `SetDirection(PlayerDirection)` — 切換方向並更新圖片。若在靜止狀態，自動載入 `player_{dir}.png` 以確保透明去背正確。
   - `Reaction()` override — 空實作 (Log 提示)。
 - **私有**：`UpdateSprite()` — 使用 `AppUtil::GetPhaseImagePath` 從 `bmp/Player/player_{dir}` 取得動態圖片路徑（完美支援擴充與各式副檔名）。
 

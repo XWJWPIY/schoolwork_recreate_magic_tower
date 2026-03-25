@@ -29,23 +29,16 @@ public:
   int GetPendingShop() const { return m_pending_shop_id; }
   
   void ResetStateAfterFloorChange();
-  void SetDirection(PlayerDirection dir) { m_direction = dir; }
+  void SetDirection(PlayerDirection dir);
   void SetIsAnimating(bool animate) { m_is_animating = animate; }
-  void SetCurrentFrame(int frame) { m_current_frame = frame; }
 
   void OnAttributeChanged(AppUtil::Effect type) override;
 
-public:
   void ObjectUpdate() override;
 
-private:
-  void UpdateSprite();
-
   PlayerDirection m_direction = PlayerDirection::DOWN;
-  int m_current_frame = 1;
   bool m_is_animating = false;
-  float m_animation_timer = 0.0f;
-  const float FRAME_INTERVAL = 0.05f; // 50ms per frame for a fast movement feel
+  std::shared_ptr<Util::Animation> m_animations[4]; // 0:Down, 1:Up, 2:Left, 3:Right
 
   int m_pending_shop_id = -1;
 };
