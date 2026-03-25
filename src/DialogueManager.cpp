@@ -40,22 +40,8 @@ DialogueManager::DialogueManager(std::shared_ptr<MenuUI> ui)
     m_space_prompt->SetShowNumber(false);
     m_space_prompt->UpdateDisplayText();
 
-    // Shop Options
-    for (int i = 0; i < 4; ++i) { 
-        auto opt = std::make_shared<NumericDisplayText>(fontPath, 24);
-        opt->SetShowNumber(false);
-        opt->m_Transform.translation = {141.0f, -10.0f - i * 60.0f}; 
-        opt->SetZIndex(15.0f);
-        m_shop_options.push_back(opt);
-    }
-
-    m_shop_selector = std::make_shared<Util::GameObject>(
-        std::make_unique<Util::Image>(AppUtil::GetStaticResourcePath("bmp/Special/right_arrow_white.png")), 16.0f);
-    m_shop_selector->m_Transform.scale = {0.5f, 0.5f};
-
-    m_price_text = std::make_shared<NumericDisplayText>(fontPath, 24);
-    m_price_text->SetZIndex(15.0f);
-    m_price_text->SetShowNumber(true);
+    // Shop UI (Replacing manual shop component init)
+    m_shop_ui = std::make_unique<ShopUI>(fontPath);
 
     SetUIState(false);
 }
@@ -67,9 +53,8 @@ void DialogueManager::AddToRoot(Util::Renderer& root) {
     if (m_content_text) root.AddChild(m_content_text);
     if (m_space_prompt) root.AddChild(m_space_prompt);
     
-    if (m_price_text) root.AddChild(m_price_text);
-    for (auto& opt : m_shop_options) root.AddChild(opt);
-    if (m_shop_selector) root.AddChild(m_shop_selector);
+    // Delegate shop elements to ShopUI
+    if (m_shop_ui) m_shop_ui->AddToRoot(root);
 }
 
 void DialogueManager::SetVisible(bool visible) {
@@ -83,10 +68,10 @@ void DialogueManager::SetUIState(bool dialogueVisible) {
     if (m_content_text) m_content_text->SetVisible(dialogueVisible);
     if (m_space_prompt) m_space_prompt->SetVisible(dialogueVisible);
     
-    // Always hide shop elements initially; SELECTION mode unhides them
-    for (auto& opt : m_shop_options) opt->SetVisible(false);
-    if (m_shop_selector) m_shop_selector->SetVisible(false);
-    if (m_price_text) m_price_text->SetVisible(false);
+    // Manage ShopUI visibility based on mode and overall visibility
+    if (m_shop_ui) {
+        m_shop_ui->SetVisible(dialogueVisible && m_mode == Mode::SELECTION);
+    }
 }
 
 void DialogueManager::StartScript(const std::string& name, std::shared_ptr<Entity> source, bool isShop) {
@@ -172,32 +157,19 @@ void DialogueManager::ReplaceScriptText(const std::string& target, const std::st
 
 void DialogueManager::RefreshShopOptions(const AppUtil::ShopData& shopData) {
     m_current_shop_data = shopData;
-    for (size_t i = 0; i < m_shop_options.size(); ++i) {
-        if (i < m_current_shop_data.options.size()) {
-            m_shop_options[i]->SetPrefix(m_current_shop_data.options[i].text);
-            m_shop_options[i]->SetVisible(true);
-            m_shop_options[i]->UpdateDisplayText();
-        } else {
-            m_shop_options[i]->SetVisible(false);
-        }
-    }
-
-    // Dynamic Special Price update (Greed God, etc.)
+    if (m_shop_ui) m_shop_ui->Refresh(m_current_shop_data);
+    
+    // Also update text content placeholders for dynamic pricing
     if (!shopData.special_price_str.empty()) {
-        m_price_text->SetPrefix(shopData.special_price_str);
-        m_price_text->SetShowNumber(false); // We pass the full string including spaces if needed
-        m_price_text->UpdateDisplayText();
-        m_price_text->SetVisible(true);
-        // Also update text content placeholders
         ReplaceScriptText("　　　", shopData.special_price_str);
-    } else {
-        m_price_text->SetVisible(false);
     }
 }
 
 void DialogueManager::EndShopSelection() {
+    m_on_selection = nullptr;
+    if (m_shop_ui) m_shop_ui->SetVisible(false);
+
     if (!m_is_shop_session && m_engine.HasNext()) {
-        // Continue script only if it's a regular script session (e.g. NPC with shop command)
         m_mode = Mode::SCRIPT;
         AdvanceScript(nullptr);
     } else {
@@ -207,35 +179,13 @@ void DialogueManager::EndShopSelection() {
     }
 }
 
-void DialogueManager::UpdateSelection(int index) {
-    if (index >= 0 && index < static_cast<int>(m_shop_options.size())) {
-        m_shop_selector->m_Transform.translation = m_shop_options[index]->m_Transform.translation + glm::vec2(-150.0f, 0.0f);
-    }
-}
+// UpdateSelection removed (moved to ShopUI)
 
 void DialogueManager::HandleInput(std::shared_ptr<Player> player) {
     if (!IsActive()) return;
 
     if (m_mode == Mode::SELECTION) {
-        int opt_count = static_cast<int>(m_current_shop_data.options.size());
-        if (Util::Input::IsKeyDown(Util::Keycode::W) || Util::Input::IsKeyDown(Util::Keycode::UP)) {
-            m_selection = (m_selection - 1 + opt_count) % opt_count;
-            UpdateSelection(m_selection);
-        }
-        if (Util::Input::IsKeyDown(Util::Keycode::S) || Util::Input::IsKeyDown(Util::Keycode::DOWN)) {
-            m_selection = (m_selection + 1) % opt_count;
-            UpdateSelection(m_selection);
-        }
-        if (Util::Input::IsKeyDown(Util::Keycode::SPACE) || Util::Input::IsKeyDown(Util::Keycode::RETURN)) {
-            if (m_on_selection) m_on_selection(m_selection);
-        }
-        if (Util::Input::IsKeyDown(Util::Keycode::ESCAPE) || Util::Input::IsKeyDown(Util::Keycode::Q)) {
-            int exitIdx = opt_count - 1;
-            for (int i = 0; i < opt_count; ++i) {
-                if (m_current_shop_data.options[i].text == "Exit") exitIdx = i;
-            }
-            if (m_on_selection) m_on_selection(exitIdx);
-        }
+        if (m_shop_ui) m_shop_ui->HandleInput();
         return;
     }
 
@@ -246,8 +196,6 @@ void DialogueManager::HandleInput(std::shared_ptr<Player> player) {
             AdvanceScript(player);
         }
     }
-    
-    // TODO: Handle selection W/S/ENTER if mode is SELECTION
 }
 
 void DialogueManager::Update() {
@@ -449,8 +397,9 @@ void DialogueManager::ExecuteCommand(const ScriptStep& step, std::shared_ptr<Pla
 
         m_engine.Next();
         m_mode = Mode::SELECTION;
-        m_selection = 0;
         
+        if (m_shop_ui) m_shop_ui->Start(m_current_shop_data, m_on_selection);
+
         m_name_text->SetPrefix(m_current_shop_data.title);
         m_name_text->UpdateDisplayText();
         
@@ -459,7 +408,6 @@ void DialogueManager::ExecuteCommand(const ScriptStep& step, std::shared_ptr<Pla
             m_npc_icon->SetDrawable(std::make_unique<Util::Image>(iconPath));
             m_npc_icon->SetVisible(true);
         } else if (!m_is_shop_session) {
-            // Keep the icon set by StartScript/AdvanceScript for NPC shops
             m_npc_icon->SetVisible(true);
         } else {
             m_npc_icon->SetVisible(false);
@@ -468,9 +416,8 @@ void DialogueManager::ExecuteCommand(const ScriptStep& step, std::shared_ptr<Pla
         ApplyShopLayout();
         SetUIState(true); // Ensure background and texts are visible
         
+        // Use the manager's Refresh to trigger text replacement in dialogue
         RefreshShopOptions(m_current_shop_data);
-        m_shop_selector->SetVisible(true);
-        UpdateSelection(m_selection);
         
         if (m_space_prompt) m_space_prompt->SetVisible(false);
     }
@@ -496,9 +443,5 @@ void DialogueManager::ApplyShopLayout() {
     if (m_content_text) {
         m_content_text->m_Transform.translation = {205.0f, 130.0f};
         m_content_text->SetVisible(true);
-    }
-    if (m_price_text) {
-        // Position it exactly over the three full-width spaces
-        m_price_text->m_Transform.translation = {155.0f, 130.0f}; 
     }
 }

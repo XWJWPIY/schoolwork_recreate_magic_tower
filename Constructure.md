@@ -32,7 +32,9 @@ classDiagram
 
     class DialogueManager {
         -Mode m_mode
-        -vector~ScriptLine~ m_script
+        -ScriptEngine m_engine
+        -unique_ptr~ShopUI~ m_shop_ui
+        -AppUtil::ShopData m_current_shop_data
         -string m_script_name
         -bool m_is_shop_session
         +DialogueManager(MenuUI)
@@ -45,6 +47,21 @@ classDiagram
         +ReplaceScriptText(target, replacement)
         +EndShopSelection()
         +IsActive() bool
+    }
+
+    class ShopUI {
+        -vector~shared_ptr~NumericDisplayText~~ m_options
+        -shared_ptr~GameObject~ m_selector
+        -shared_ptr~NumericDisplayText~ m_price_display
+        -AppUtil::ShopData m_data
+        -int m_selection
+        -bool m_visible
+        +ShopUI(fontPath)
+        +Start(ShopData, onSelect)
+        +HandleInput()
+        +Refresh(ShopData)
+        +SetVisible(bool)
+        +AddToRoot(Renderer)
     }
 
     class Entity {
@@ -134,7 +151,7 @@ classDiagram
     }
 
     class Shop {
-        -ShopData m_session_data
+        -AppUtil::ShopData m_session_data
         -int m_transaction_count
         -bool m_is_open
         +Shop(id, onOpen, onClose)
@@ -180,6 +197,7 @@ classDiagram
     Entity <|-- Actor
     Actor <|-- Player
     Actor <|-- Enemy
+    GameObject <|-- ShopUI
 ```
 
 ## 非繼承類別（管理器與 UI）
@@ -282,7 +300,9 @@ classDiagram
 
     class DialogueManager {
         -Mode m_mode
-        -vector~ScriptLine~ m_script
+        -ScriptEngine m_engine
+        -unique_ptr~ShopUI~ m_shop_ui
+        -AppUtil::ShopData m_current_shop_data
         -string m_script_name
         -bool m_is_shop_session
         +DialogueManager(MenuUI)
@@ -295,6 +315,37 @@ classDiagram
         +ReplaceScriptText(target, replacement)
         +EndShopSelection()
         +IsActive() bool
+    }
+
+    class ShopUI {
+        -vector~shared_ptr~NumericDisplayText~~ m_options
+        -shared_ptr~GameObject~ m_selector
+        -shared_ptr~NumericDisplayText~ m_price_display
+        -AppUtil::ShopData m_data
+        -int m_selection
+        -bool m_visible
+        +ShopUI(fontPath)
+        +Start(ShopData, onSelect)
+        +HandleInput()
+        +Refresh(ShopData)
+        +SetVisible(bool)
+        +AddToRoot(Renderer)
+    }
+
+    class ScriptEngine {
+        -vector~ScriptStep~ m_steps
+        -size_t m_current_step
+        +LoadScript(name)
+        +Advance() ScriptStep
+        +Peek() ScriptStep
+        +Next()
+        +IsEnd() bool
+    }
+
+    class ShopSystem {
+        <<static>>
+        +LoadFromStaticFile(name) ShopData
+        +LoadForShopEntity(id, floor, transCount) ShopData
     }
 ```
 
@@ -342,10 +393,10 @@ classDiagram
         +string special_price_str
     }
 
-    class ScriptLine {
-        +int speaker
+    class ScriptStep {
+        +Speaker speaker
         +string text
-        +string command
+        +CommandType command
         +string extra
     }
 
@@ -365,7 +416,6 @@ classDiagram
         <<static>>
         +ParseCsv(filepath) vector~vector~int~~
         +ParseCsvToStrings(filepath) vector~vector~string~~
-        +ParseShopOptions(filepath) vector~ShopOption~
     }
 
     class AppUtilAPI {
@@ -398,6 +448,11 @@ classDiagram
     App *-- MenuUI
     App *-- DialogueManager
     App ..> Shop
+    DialogueManager *-- ScriptEngine
+    DialogueManager *-- ShopUI
+    DialogueManager ..> ShopSystem
+    ShopSystem ..> ShopUI : (Data interface)
+    Shop ..> ShopSystem
 
     FloorMap o-- AllObjects
     FloorMap ..> MapBlock
@@ -585,22 +640,28 @@ classDiagram
   - **Item Notice Panel** (Z=90~91)：`itemDialog.bmp` 背景 + 獲得物品文字 + `-Space-` 確認提示。
 - `SetVisible(bool, MenuType)` — 先隱藏所有子元件，再依 MenuType 顯示對應面板。
 
-## 十一、對話管理系統 (`DialogueManager`)
+## 十一、對話系統與腳本引擎
+
+### 11.1 `ScriptEngine` (腳本引擎)
+- **職責**：獨立處理 CSV 腳本解析、指令緩存與分步執行。
+- **核心機制**：
+  - **自動分頁 (Chunking)**：加載時自動合併連續對話（每頁最多 3 行），簡化 UI 邏輯。
+  - **類型安全**：使用 `ScriptStep` 結構與 `Speaker` / `CommandType` 枚舉，取代原始的純字串解析。
+  - **指令注入**：支援 `InjectStep` 以動態插入對話（如獲得物品通知）。
+
+### 11.2 `DialogueManager` (對話管理器)
 - **統一介面**：由 `App` 持有，集中處理所有對話、選擇與通知。
-- **屬性**：`m_mode` (SCRIPT/SELECTION/NOTICE), `m_script`, `m_current_line`, `m_script_name` (當前腳本名), `m_on_selection` (選擇回調), `m_is_shop_session` (是否為純商店啟動)。
-- **UI 組件**：包含背景圖、NPC 頭像、說話者名稱、對話內容、動態價格 (`m_price_text`)，以及一個會閃爍的 `-Space-` 繼續提示。元件皆使用**絕對座標**定位。
-- **腳本解析功能**：
-  - **多行自動合併**：`AdvanceScript` 會自動將連續 3 行內同一個說話者的對話合併顯示，並以 `\n` 換行。
-  - **說話者辨識**：首欄為 `0` 表示玩家（勇者），`1` 表示 NPC。其餘則視為指令。
-  - **指令標籤**：
-    - `item` (給予物品)：給予對應 ID 的道具或數值，並快取提示文字。
-    - `shop` (開啟商店)：自動連結 `<script_name>_option.csv` 開啟交易介面。支援腳本內置購買邏輯與價格同步。
-    - `hide` (銷毀 NPC)：執行 `SourceEntity->TriggerReplacement(0)` 使 NPC 消失。
-- **動態佈局與 Session 管理**：
-  - `ApplyShopLayout()` / `ApplyDialogueLayout()`：根據內容切換 UI 元件位置。
-  - `EndShopSelection()`：若為腳本嵌入模式且仍有後續指令（如小偷腳本末尾的 `hide`），則呼叫 `AdvanceScript` 續行；否則關閉 UI 設為 `INACTIVE`。
-- **全域同步**：
-  - 接手商店對白合併、價格佔位符 (`　　　`) 替換等邏輯，確保 Greed God 等動態價格能正確在劇情對白中顯示。
+- **重構優化**：自身僅處理狀態切換與腳本流程控制，將渲染細節與互動完全委派給 `ShopUI` 與 `ScriptEngine`。
+- **佈局管理**：`ApplyShopLayout()` / `ApplyDialogueLayout()`：切換 NPC 頭像、背景圖與對話說話者位置。
+
+### 11.3 `ShopSystem` (商店輔助系統)
+- **數據提供者**：負責商店數據的加載與「貪婪之神」等動態價格的計算。
+- **純數據邏輯**：自身不包含任何 UI 代碼，輸出 `ShopData` 供 `ShopUI` 渲染。
+
+### 11.4 `ShopUI` (商店交互組件)
+- **渲染專精**：處理商店選項、選取代碼箭頭、動態價格標籤的佈局與縮放。
+- **解耦輸入**：獨立接收 `DialogueManager` 轉發的輸入，處理 W/S 選擇切換與 Space 確認邏輯。
+- **佈局常量化**：使用獨立的座標系管理商店特有的 UI 佈局，不干擾主對話框。
 
 ## 十二、層級控制 (Z-Index 渲染順序)
 | Z-Index | 層級 | 內容 |
@@ -653,9 +714,10 @@ classDiagram
 
 ## 十六、檔案清單
 
-### include/ (18 個標頭檔)
+### include/ (24 個標頭檔)
 | 檔案 | 類別 | 角色 |
 |------|------|------|
+| `Actor.hpp` | `Actor` | 具備屬性之實體基類 |
 | `AllObjects.hpp` | `AllObjects` | 所有地圖物件基類 |
 | `App.hpp` | `App` | 遊戲核心控制器 |
 | `AppUtil.hpp` | namespace `AppUtil` | 元數據、組件、工具、常數 |
@@ -675,12 +737,16 @@ classDiagram
 | `Stair.hpp` | `Stair` | 樓梯實體 |
 | `StatusUI.hpp` | `StatusUI` | 狀態面板 |
 | `DialogueManager.hpp` | `DialogueManager` | 統一對話與通知管理器 |
+| `ScriptEngine.hpp` | `ScriptEngine` | 腳本解析與分步引擎 |
+| `ShopSystem.hpp` | `ShopSystem` | 商店數據與定價輔助 |
+| `ShopUI.hpp` | `ShopUI` | 商店選項渲染與交互介面 |
 | `Trigger.hpp` | `Trigger` | 隱形事件觸發塊 |
 
-### src/ (20 個原始檔)
+### src/ (25 個原始檔)
 | 檔案 | 對應類別 | 說明 |
 |------|---------|------|
 | `main.cpp` | — | 程式進入點 |
+| `Actor.cpp` | `Actor` | 屬性初始化與變動回調 |
 | `App.cpp` | `App` | 遊戲主迴圈、狀態機、初始化 |
 | `AppUtil.cpp` | `AppUtil` | 全域註冊表、CSV 解析器、RegistryLoader |
 | `AllObjects.cpp` | `AllObjects` | 建構子實作 |
@@ -699,5 +765,8 @@ classDiagram
 | `DynamicReplacementComponent.cpp` | `DynamicReplacementComponent` | 回調執行 |
 | `MenuUI.cpp` | `MenuUI` | 選單初始化、顯隱、數據綁定 |
 | `StatusUI.cpp` | `StatusUI` | 數值刷新、文字初始化 |
-| `DialogueManager.cpp` | `DialogueManager` | 腳本解析、對話流程、通知攔截 |
+| `DialogueManager.cpp` | `DialogueManager` | 腳本執行與狀態切換 |
+| `ScriptEngine.cpp` | `ScriptEngine` | 腳本解析與分頁邏輯 |
+| `ShopSystem.cpp` | `ShopSystem` | 商店數據加載與定價實作 |
+| `ShopUI.cpp` | `ShopUI` | 商店選項渲染與選擇交互 |
 | `Trigger.cpp` | `Trigger` | 自動觸發回調邏輯 |

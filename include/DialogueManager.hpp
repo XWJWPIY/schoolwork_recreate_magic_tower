@@ -13,6 +13,7 @@
 #include "NumericDisplayText.hpp"
 #include "ScriptEngine.hpp"
 #include "ShopSystem.hpp"
+#include "ShopUI.hpp"
 #include "Util/Image.hpp"
 
 class MenuUI;
@@ -56,7 +57,6 @@ private:
     void ParseScript(const std::string& name) { m_engine.LoadScript(name); }
     void ExecuteCommand(const ScriptStep& step, std::shared_ptr<Player> player);
     void SetUIState(bool dialogueVisible);
-    void UpdateSelection(int index);
     void ApplyDialogueLayout();
     void ApplyShopLayout();
 
@@ -79,10 +79,7 @@ private:
     std::shared_ptr<NumericDisplayText> m_space_prompt;
 
     // Shop/Selection Components
-    std::vector<std::shared_ptr<NumericDisplayText>> m_shop_options;
-    std::shared_ptr<Util::GameObject> m_shop_selector;
-    std::shared_ptr<NumericDisplayText> m_price_text;
-    int m_selection = 0;
+    std::unique_ptr<ShopUI> m_shop_ui;
     AppUtil::ShopData m_current_shop_data;
     std::function<void(int)> m_on_selection;
 };
