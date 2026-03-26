@@ -1,22 +1,40 @@
 #ifndef ENTITY_HPP
 #define ENTITY_HPP
 
-#include "Objects/AllObjects.hpp"
+#include "Util/GameObject.hpp"
+#include "Util/Animation.hpp"
 #include "pch.hpp"
 #include "Systems/DynamicReplacementComponent.hpp"
 #include <memory>
 #include <string>
 #include <vector>
 
-// #include "Util/Image.hpp" // Placeholder for PTSD Image
-
 class Player;
 
-class Entity : public AllObjects, public std::enable_shared_from_this<Entity> {
+class Entity : public Util::GameObject, public std::enable_shared_from_this<Entity> {
 public:
+  // Using protected constructor so it can't be instantiated accidentally as a base
+  Entity(int initialId = 0);
   Entity(int initialId, const std::string &imagePath, bool canReact = true);
-  ~Entity() override = default;
+  
+  // Forward constructor to GameObject to handle Drawable and ZIndex
+  Entity(const std::shared_ptr<Core::Drawable> &drawable,
+             const float zIndex, int initialId = 0);
 
+  virtual ~Entity() override = default;
+
+  // --- Core Object Identification & Rendering ---
+  virtual void SetObjectId(int newId);
+  int GetObjectId() const { return m_object_id; }
+
+  virtual void ObjectUpdate();
+  bool GetVisible() const { return this->m_Visible; }
+
+  // Unified passability
+  virtual bool IsPassable() const { return m_is_passable; }
+  void SetPassable(bool passable) { m_is_passable = passable; }
+
+  // --- Interaction & Logic ---
   bool CanReact() const { return m_can_react; }
   void SetCanReact(bool value) { m_can_react = value; }
 
@@ -38,6 +56,15 @@ public:
   bool GetMovable() const { return m_is_movable; }
 
 protected:
+  // --- Animation Infrastructure ---
+  void SetupAnimation(int id, bool looping, int intervalMs = 500);
+
+  std::shared_ptr<Util::Animation> m_animation;
+  std::string m_base_image_path;
+
+  int m_object_id = 0;
+  bool m_is_passable = true;
+
   int m_grid_x = 0;
   int m_grid_y = 0;
 

@@ -1,7 +1,7 @@
 #ifndef FLOOR_MAP_HPP
 #define FLOOR_MAP_HPP
 
-#include "Objects/AllObjects.hpp"
+#include "Objects/Entity.hpp"
 #include "Core/AppUtil.hpp"
 #include "Util/Renderer.hpp"
 #include "pch.hpp" // For glm::vec2 included by pch
@@ -11,7 +11,7 @@
 
 class FloorMap {
 public:
-  using ObjectFactory = std::function<std::shared_ptr<AllObjects>(int id)>;
+  using ObjectFactory = std::function<std::shared_ptr<Entity>(int id)>;
 
   FloorMap(ObjectFactory factory, float centerX = 0.0f, float centerY = 0.0f,
            float scaleX = 1.0f, float scaleY = 1.0f, float zIndex = -5.0f,
@@ -28,7 +28,7 @@ public:
    */
   void LoadAllFloors(const std::string &prefix);
 
-  std::shared_ptr<AllObjects> GetObject(int x, int y, int story = -1);
+  std::shared_ptr<Entity> GetObject(int x, int y, int story = -1);
   bool IsPassable(int x, int y, int story = -1);
 
   void SwitchStory(int story);
@@ -40,7 +40,7 @@ public:
 
   void SetAllVisible(bool visible);
   glm::ivec2 FindFirstObjectPosition(int id, int story = -1);
-  std::shared_ptr<AllObjects> FindFirstObjectOfId(int id, int story = -1);
+  std::shared_ptr<Entity> FindFirstObjectOfId(int id, int story = -1);
 
   // Set the Root Renderer so FloorMap can Add/Remove objects dynamically
   void SetRenderer(Util::Renderer *root) { m_root = root; }
@@ -49,7 +49,7 @@ public:
 private:
   Util::Renderer *m_root = nullptr;
   ObjectFactory m_factory;
-  std::vector<std::vector<std::vector<std::shared_ptr<AllObjects>>>> m_objects;
+  std::vector<std::vector<std::vector<std::shared_ptr<Entity>>>> m_objects;
   int m_current_story = 0;
   const float DEFAULT_SIZE =
       48.0f; // Default size used when image path is missing

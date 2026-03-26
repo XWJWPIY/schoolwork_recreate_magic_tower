@@ -1,5 +1,4 @@
 #include "Core/FloorMap.hpp"
-#include "Objects/AllObjects.hpp"
 #include "Objects/Entity.hpp"
 #include "Objects/MapBlock.hpp"
 #include "Util/Logger.hpp"
@@ -36,9 +35,9 @@ FloorMap::FloorMap(ObjectFactory factory, float centerX, float centerY,
   float spacingY = currentBaseSize.y * scaleY;
 
   for (int s = 0; s < AppUtil::TOTAL_STORY; ++s) {
-    std::vector<std::vector<std::shared_ptr<AllObjects>>> story_objects;
+    std::vector<std::vector<std::shared_ptr<Entity>>> story_objects;
     for (int y = 0; y < 11; ++y) {
-      std::vector<std::shared_ptr<AllObjects>> row;
+      std::vector<std::shared_ptr<Entity>> row;
       for (int x = 0; x < 11; ++x) {
         auto obj = m_factory(0);
 
@@ -56,10 +55,7 @@ FloorMap::FloorMap(ObjectFactory factory, float centerX, float centerY,
           if (m_root)
             m_root->AddChild(obj);
 
-          auto entity = std::dynamic_pointer_cast<Entity>(obj);
-          if (entity) {
-            entity->SetGridPosition(x, y);
-          }
+          obj->SetGridPosition(x, y);
         }
         row.push_back(obj);
       }
@@ -107,7 +103,7 @@ void FloorMap::LoadFloorData(const std::vector<std::vector<int>> &floorData,
       
       // Safety: ensure row exists
       if (m_objects[floorLevel].size() <= static_cast<size_t>(y)) {
-          m_objects[floorLevel].resize(11, std::vector<std::shared_ptr<AllObjects>>(11, nullptr));
+          m_objects[floorLevel].resize(11, std::vector<std::shared_ptr<Entity>>(11, nullptr));
       }
 
       auto old_obj = m_objects[floorLevel][y][x];
@@ -151,9 +147,8 @@ void FloorMap::LoadFloorData(const std::vector<std::vector<int>> &floorData,
 
       m_objects[floorLevel][y][x] = new_obj;
 
-      auto entity = std::dynamic_pointer_cast<Entity>(new_obj);
-      if (entity) {
-        entity->SetGridPosition(x, y);
+      if (new_obj) {
+        new_obj->SetGridPosition(x, y);
       }
     }
   }
@@ -189,9 +184,8 @@ void FloorMap::SetObject(int x, int y, int id, int story) {
     }
 
     // Set grid position for entities
-    auto entity = std::dynamic_pointer_cast<Entity>(new_obj);
-    if (entity) {
-      entity->SetGridPosition(x, y);
+    if (new_obj) {
+      new_obj->SetGridPosition(x, y);
     }
 
     // Visibility logic
@@ -206,7 +200,7 @@ void FloorMap::SetObject(int x, int y, int id, int story) {
   m_objects[targetStory][y][x] = new_obj;
 }
 
-std::shared_ptr<AllObjects> FloorMap::GetObject(int x, int y, int story) {
+std::shared_ptr<Entity> FloorMap::GetObject(int x, int y, int story) {
   int targetStory = (story == -1) ? m_current_story : story;
   if (targetStory < 0 || targetStory >= AppUtil::TOTAL_STORY)
     return nullptr;
@@ -223,17 +217,12 @@ bool FloorMap::IsPassable(int x, int y, int story) {
     return true; // Empty space is passable by default
   }
 
-  auto mapBlock = std::dynamic_pointer_cast<MapBlock>(obj);
-  if (mapBlock) {
-    return mapBlock->IsPassable();
-  }
-
-  auto entity = std::dynamic_pointer_cast<Entity>(obj);
-  if (entity) {
+  if (obj) {
     // Entities like doors or monsters might have different passability logic.
     // For now, if it's an entity, we assume it's NOT passable if it's visible.
     // In the future, we can add a reaction system.
-    //return !entity->GetVisible();
+    //return !obj->GetVisible();
+    return obj->IsPassable();
   }
 
   return true;
@@ -307,7 +296,7 @@ glm::ivec2 FloorMap::FindFirstObjectPosition(int id, int story) {
   return {-1, -1};
 }
 
-std::shared_ptr<AllObjects> FloorMap::FindFirstObjectOfId(int id, int story) {
+std::shared_ptr<Entity> FloorMap::FindFirstObjectOfId(int id, int story) {
   int targetStory = (story == -1) ? m_current_story : story;
   if (targetStory < 0 || targetStory >= AppUtil::TOTAL_STORY)
     return nullptr;

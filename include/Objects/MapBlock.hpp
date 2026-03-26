@@ -1,11 +1,10 @@
 #ifndef MAP_BLOCK_HPP
 #define MAP_BLOCK_HPP
 
-#include "Objects/AllObjects.hpp"
-#include "Util/Image.hpp"
+#include "Objects/Entity.hpp"
 #include <vector>
 
-class MapBlock : public AllObjects {
+class MapBlock : public Entity {
 public:
   MapBlock(int initialId = 0);
   ~MapBlock() override = default;
@@ -16,9 +15,6 @@ public:
     }
     return {0.0f, 0.0f};
   }
-
-private:
-  std::string GetImagePath(int id) const;
 };
 
 #endif // MAP_BLOCK_HPP

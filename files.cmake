@@ -4,7 +4,6 @@ set(SRC_FILES
     Core/FloorMap.cpp
     Objects/Actor.cpp
     Objects/Entity.cpp
-    Objects/AllObjects.cpp
     Objects/MapBlock.cpp
     Objects/Player.cpp
     Objects/Stair.cpp
@@ -31,7 +30,6 @@ set(INCLUDE_FILES
     Core/FloorMap.hpp
     Objects/Actor.hpp
     Objects/Entity.hpp
-    Objects/AllObjects.hpp
     Objects/MapBlock.hpp
     Objects/Player.hpp
     Objects/Stair.hpp

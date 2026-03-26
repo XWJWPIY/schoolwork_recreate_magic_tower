@@ -33,7 +33,7 @@ void App::InitializeGame() {
 
   // Factory for RoadMap (creates MapBlocks)
   FloorMap::ObjectFactory roadObjFactory =
-      [](int id) -> std::shared_ptr<AllObjects> {
+      [](int id) -> std::shared_ptr<Entity> {
     return std::make_shared<MapBlock>(id);
   };
 
@@ -42,7 +42,7 @@ void App::InitializeGame() {
       [this](int x, int y, int id) { this->m_things_map->SetObject(x, y, id); });
 
   FloorMap::ObjectFactory thingsObjFactory =
-      [this, replacementComp](int id) -> std::shared_ptr<AllObjects> {
+      [this, replacementComp](int id) -> std::shared_ptr<Entity> {
     std::shared_ptr<Entity> entity;
 
     if (id >= 200 && id < 300) {

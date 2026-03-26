@@ -16,18 +16,33 @@ classDiagram
         +GetVisible() bool
     }
 
-    class AllObjects {
+    class Entity {
         #int m_object_id
         #bool m_is_passable
         #shared_ptr~Animation~ m_animation
         #string m_base_image_path
-        +virtual ~AllObjects()
+        #int m_grid_x
+        #int m_grid_y
+        #bool m_can_react
+        #bool m_is_movable
+        #shared_ptr~DynamicReplacementComponent~ m_replacement_comp
+        +Entity(id, imagePath, canReact)
+        +virtual ~Entity()
         +virtual SetObjectId(int newId)
         +GetObjectId() int
         +virtual ObjectUpdate()
         +virtual IsPassable() bool
         +SetPassable(bool)
         #SetupAnimation(id, looping, intervalMs)
+        +virtual Reaction(shared_ptr~Player~)
+        +SetReplacementComponent(shared_ptr)
+        +TriggerReplacement(targetId)
+        +SetGridPosition(x, y)
+        +GetGridX/Y() int
+        +SetMovable(bool)
+        +GetMovable() bool
+        +SetCanReact(bool)
+        +CanReact() bool
     }
 
     class DialogueManager {
@@ -64,23 +79,6 @@ classDiagram
         +AddToRoot(Renderer)
     }
 
-    class Entity {
-        #int m_grid_x
-        #int m_grid_y
-        #bool m_can_react
-        #bool m_is_movable
-        #shared_ptr~DynamicReplacementComponent~ m_replacement_comp
-        +Entity(id, imagePath, canReact)
-        +virtual Reaction(shared_ptr~Player~) = 0*
-        +SetReplacementComponent(shared_ptr)
-        +TriggerReplacement(targetId)
-        +SetGridPosition(x, y)
-        +GetGridX/Y() int
-        +SetMovable(bool)
-        +GetMovable() bool
-        +SetCanReact(bool)
-        +CanReact() bool
-    }
 
     class Actor {
         #unordered_map~Effect, int~ m_attributes
@@ -183,11 +181,10 @@ classDiagram
     }
 
     %% ── 繼承關係 ──
-    GameObject <|-- AllObjects
+    GameObject <|-- Entity
     GameObject <|-- Background
     GameObject <|-- NumericDisplayText
-    AllObjects <|-- MapBlock
-    AllObjects <|-- Entity
+    Entity <|-- MapBlock
     Entity <|-- Door
     Entity <|-- NPC
     Entity <|-- Item
@@ -237,13 +234,13 @@ classDiagram
 
     class FloorMap {
         -ObjectFactory m_factory
-        -vector~vector~vector~shared_ptr~AllObjects~~~~ m_objects
+        -vector~vector~vector~shared_ptr~Entity~~~~ m_objects
         -int m_current_story
         +FloorMap(factory, centerX, centerY, scaleX, scaleY, zIndex)
         +LoadAllFloors(prefix)
         +LoadFloorData(floorData, story)
         +SwitchStory(story)
-        +GetObject(x, y, story) AllObjects
+        +GetObject(x, y, story) Entity
         +IsPassable(x, y, story) bool
         +SetObject(x, y, id, story)
         +SetAllVisible(visible)
@@ -454,12 +451,12 @@ classDiagram
     ShopSystem ..> ShopUI : (Data interface)
     Shop ..> ShopSystem
 
-    FloorMap o-- AllObjects
+    FloorMap o-- Entity
     FloorMap ..> MapBlock
     FloorMap ..> Entity
 
-    AllObjects o-- Animation
-    AllObjects ..> ObjectMetadata
+    Entity o-- Animation
+    Entity ..> ObjectMetadata
 
     Player ..> FloorMap
     Player ..> Entity
@@ -475,27 +472,26 @@ classDiagram
 
 ---
 
-## 一、基底物件 (`AllObjects`)
+## 一、互動實體基類 (`Entity`)
 - 繼承 `Util::GameObject`。
 - **統一驅動核心**：`SetObjectId(int)` 現在負責從 `GlobalObjectRegistry` 載入所有屬性與動畫資源。
 - **混合動畫架構**：
   - `m_animation`：持有一個 `Util::Animation` 實體。
   - `SetupAnimation()`：工具方法，自動從 CSV `frames` 欄位與 `AppUtil` 路徑解析器建立動畫。
 - **自動同步**：`ObjectUpdate()` 提供預設實作，若物件處於 `PAUSE` 狀態且 `frames > 1`，則自動與 `TileAnimationManager` 的全域時鐘同步。
-- **建構子**：保持 `protected` 以確保封裝。
+- **建構子**：包含座標與 ID 初始化。
+- **物件替換**：持有 `DynamicReplacementComponent`。
 
 ## 二、地圖區塊 (`MapBlock`)
-- 繼承 `AllObjects`。最精簡的地磚物件，完全依賴基底類別處理渲染與同步。
+- 繼承 `Entity`。最精簡的地磚物件，完全依賴基底類別處理渲染與同步。
 - **Z-Index**：固定為 -5。
-- **方法**：僅保留 `GetImageSize()` 與 `GetImagePath()`。
+- **方法**：僅保留 `GetImageSize()`。
 
-## 三、實體基類 (`Entity`)
-- 繼承 `AllObjects`。
+## 三、實體衍生與策略
 - **動畫策略**：
   - **NPC、Shop、Enemy**：與場景同步控制（Global Sync）。
   - **Item、Stair、Trigger**：單幀靜態顯示（Static）。
 - **覆寫方法**：不再需要覆寫 `SetObjectId` 與 `ObjectUpdate`，完全複用基底類別邏輯。
-- **組件持有**：`DynamicReplacementComponent` — 用於物件被消滅後的動態替換。
 
 ## 四、多型衍生實體 (Entity 子類)
 
@@ -731,8 +727,7 @@ classDiagram
 | `Core/AppUtil.hpp` | namespace `AppUtil` | 元數據、組件、工具、常數 |
 | `Core/FloorMap.hpp` | `FloorMap` | 多樓層地圖管理 |
 | `Objects/Actor.hpp` | `Actor` | 具備屬性之實體基類 |
-| `Objects/AllObjects.hpp` | `AllObjects` | 所有地圖物件基類 |
-| `Objects/Entity.hpp` | `Entity` | 互動實體基類 |
+| `Objects/Entity.hpp` | `Entity` | 互動實體基類 (合併原 AllObjects) |
 | `Objects/Door.hpp` | `Door` | 門實體 |
 | `Objects/Enemy.hpp` | `Enemy` | 怪物實體 |
 | `Objects/Item.hpp` | `Item` | 道具實體 |
@@ -760,9 +755,8 @@ classDiagram
 | `Core/AppUtil.cpp` | `AppUtil` | 全域註冊表、CSV 解析器、RegistryLoader |
 | `Core/FloorMap.cpp` | `FloorMap` | 地圖載入、樓層切換、物件搜尋 |
 | `Objects/Actor.cpp` | `Actor` | 屬性初始化與變動回調 |
-| `Objects/AllObjects.cpp` | `AllObjects` | 建構子實作 |
-| `Objects/Entity.cpp` | `Entity` | 建構子、屬性更新、動畫更新 |
-| `Objects/MapBlock.cpp` | `MapBlock` | ID 切換、動畫幀同步 |
+| `Objects/Entity.cpp` | `Entity` | 建構子、資源載入、動畫管理、互動邏輯 |
+| `Objects/MapBlock.cpp` | `MapBlock` | 建構子實作 |
 | `Objects/Player.cpp` | `Player` | 移動、碰撞、效果套用、動畫 |
 | `Objects/Door.cpp` | `Door` | 開門動畫、鑰匙扣除、動態替換 |
 | `Objects/Enemy.cpp` | `Enemy` | 戰鬥(TODO)、動態替換 |
