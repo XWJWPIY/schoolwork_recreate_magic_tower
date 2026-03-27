@@ -39,6 +39,9 @@ public:
   void SetCanReact(bool value) { m_can_react = value; }
 
   virtual void Reaction(std::shared_ptr<Player> player);
+  
+  // Decoupling behaviors
+  virtual bool ShouldSkipWalkAnimation() const { return false; }
 
   void SetReplacementComponent(std::shared_ptr<DynamicReplacementComponent> comp) {
     m_replacement_comp = comp;

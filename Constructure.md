@@ -43,6 +43,7 @@ classDiagram
         +GetMovable() bool
         +SetCanReact(bool)
         +CanReact() bool
+        +virtual ShouldSkipWalkAnimation() bool
     }
 
     class DialogueManager {
@@ -146,6 +147,7 @@ classDiagram
         -TriggerCallback m_on_trigger
         +Stair(id, callback)
         +Reaction(player) override
+        +ShouldSkipWalkAnimation() bool override
     }
 
     class Shop {
@@ -475,6 +477,7 @@ classDiagram
 ## 一、互動實體基類 (`Entity`)
 - 繼承 `Util::GameObject`。
 - **統一驅動核心**：`SetObjectId(int)` 現在負責從 `GlobalObjectRegistry` 載入所有屬性與動畫資源。
+- **解耦行為標記**：新增 `ShouldSkipWalkAnimation()` 等行為標記，讓 `Player` 移動邏輯能依據物件屬性自動調整，而不需硬編碼物件類型。
 - **混合動畫架構**：
   - `m_animation`：持有一個 `Util::Animation` 實體。
   - `SetupAnimation()`：工具方法，自動從 CSV `frames` 欄位與 `AppUtil` 路徑解析器建立動畫。
@@ -549,6 +552,7 @@ classDiagram
 - **屬性**：`TriggerCallback m_on_trigger` — lambda 回調，參數為 `(int value, bool isRelative)`。
 - **`Reaction()` override** — 從 `GlobalObjectRegistry` 讀取屬性 (`is_relative` 與 `relation`)：
   - 呼叫 `m_on_trigger(relation, is_relative)`。
+- **`ShouldSkipWalkAnimation()` override** — 回傳 `true`，使玩家在踏上樓梯時不播放行走動畫。
 - **設定**：`m_is_passable = true` (由 CSV 定義)。
 
 ### 4.7 `Shop` (商店)

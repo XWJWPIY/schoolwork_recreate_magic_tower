@@ -16,6 +16,7 @@ public:
   ~Stair() override = default;
 
   void Reaction(std::shared_ptr<Player> player) override;
+  bool ShouldSkipWalkAnimation() const override { return true; }
 
 private:
   TriggerCallback m_on_trigger;

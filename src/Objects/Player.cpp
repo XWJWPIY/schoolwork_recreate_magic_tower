@@ -69,28 +69,10 @@ void Player::Move(int dx, int dy, std::shared_ptr<FloorMap> roadmap,
     SetDirection(m_direction); // Still update direction to face obstacle
     return;
   }
-
   // Check collision with thingsMap (interactions)
   if (thingsmap) {
     auto target = thingsmap->GetObject(next_x, next_y);
     if (target) {
-      auto it = AppUtil::GlobalObjectRegistry.find(target->GetObjectId());
-      if (it != AppUtil::GlobalObjectRegistry.end() && it->second.GetInt(AppUtil::Attr::RELATION) != 0) {
-        // It's a stair! Move but don't animate according to requirement.
-        m_grid_x = next_x;
-        m_grid_y = next_y;
-        m_is_animating = false;
-        
-        // Use the specific transparent sprite for stairs as requested
-        m_Drawable = std::make_shared<Util::Image>(AppUtil::GetStaticResourcePath("bmp/Player/player_1.png"));
-        
-        SyncPosition(roadmap);
-        
-        auto stairEntity = std::dynamic_pointer_cast<Entity>(target);
-        if (stairEntity) stairEntity->Reaction(std::static_pointer_cast<Player>(shared_from_this()));
-        return;
-      }
-
       auto entity = std::dynamic_pointer_cast<Entity>(target);
       if (entity && entity->GetVisible()) {
         if (entity->CanReact()) {
@@ -99,6 +81,17 @@ void Player::Move(int dx, int dy, std::shared_ptr<FloorMap> roadmap,
 
         if (entity->GetVisible() && !entity->IsPassable()) {
           m_is_animating = false;
+          SetDirection(m_direction);
+          return;
+        }
+
+        // If it was a passable entity that triggered a floor change (like a stair),
+        // we might have already been moved or reset. Check if we still want to animate.
+        if (entity->ShouldSkipWalkAnimation()) {
+          m_grid_x = next_x;
+          m_grid_y = next_y;
+          m_is_animating = false;
+          SyncPosition(roadmap);
           SetDirection(m_direction);
           return;
         }
