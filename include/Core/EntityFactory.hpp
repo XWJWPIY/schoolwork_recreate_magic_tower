@@ -28,14 +28,9 @@ public:
     explicit EntityFactory(const Callbacks& callbacks);
 
     /**
-     * @brief Create a specialized entity based on its ID (ThingsMap factory).
+     * @brief Create a specialized entity based on its ID (ThingsMap or RoadMap).
      */
     std::shared_ptr<Entity> CreateEntity(int id);
-
-    /**
-     * @brief Create a basic map block (RoadMap factory).
-     */
-    std::shared_ptr<Entity> CreateRoadBlock(int id);
 
     /**
      * @brief Set the dynamic replacement component for coordinate-based replacements.
@@ -45,6 +40,15 @@ public:
     }
 
 private:
+    std::shared_ptr<Entity> CreateRoadBlock(int id);
+    std::shared_ptr<Entity> CreateItem(int id);
+    std::shared_ptr<Entity> CreateDoor(int id);
+    std::shared_ptr<Entity> CreateEnemy(int id);
+    std::shared_ptr<Entity> CreateNPC(int id);
+    std::shared_ptr<Entity> CreateShop(int id);
+    std::shared_ptr<Entity> CreateStair(int id);
+    std::shared_ptr<Entity> CreateTrigger(int id);
+
     Callbacks m_callbacks;
     std::shared_ptr<class DynamicReplacementComponent> m_replacement_comp;
 };

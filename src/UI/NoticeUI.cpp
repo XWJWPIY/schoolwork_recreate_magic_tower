@@ -24,12 +24,6 @@ NoticeUI::NoticeUI() {
 void NoticeUI::run() {
     if (!m_visible) return;
 
-    if (Util::Input::IsKeyDown(Util::Keycode::L) || 
-        Util::Input::IsKeyDown(Util::Keycode::ESCAPE)) {
-        SetVisible(false);
-        return;
-    }
-
     // Blinking Hint Logic
     m_blink_timer += Util::Time::GetDeltaTimeMs();
     if (m_blink_timer > 1000.0f) m_blink_timer -= 1000.0f;

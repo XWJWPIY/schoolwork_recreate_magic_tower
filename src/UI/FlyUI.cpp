@@ -77,10 +77,6 @@ void FlyUI::run() {
         SetVisible(false);
     }
     
-    if (Util::Input::IsKeyDown(Util::Keycode::ESCAPE) || Util::Input::IsKeyDown(Util::Keycode::F)) {
-        SetVisible(false);
-    }
-
     if (!m_visible) return;
 
     // Blinking Hint Logic

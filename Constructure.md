@@ -279,21 +279,13 @@ classDiagram
         -shared_ptr~NoticeUI~ m_notice_ui
         -shared_ptr~DialogueUI~ m_dialogue_ui
         -vector~shared_ptr~UIComponent~~ m_ui_components
-        -float m_item_notice_timer
-        -float m_loading_timer
-        -int m_loading_frame
-        -Shop* m_active_shop
         -unique_ptr~EntityFactory~ m_entity_factory
-        +GetCurrentState() STATE
         +Start()
-        +Update()
+        +Update() // 模式優先狀態機
         +End()
+        +Restart()
         +ChangeFloor(int delta)
         +TeleportToFloor(int story, int stairId)
-        +ShowItemNotice(string)
-        +HideItemNotice()
-        +Restart()
-        -ValidTask()
         -InitializeGame()
     }
 
@@ -564,14 +556,15 @@ classDiagram
 - **封裝管理**：統一管理 0~25 樓的 3D ID 網格，並提供 `SetObject` 與 `SwitchStory` 介面。
 
 ## 九、App (遊戲核心控制器)
-- **狀態機主軸**：整合所有子系統，控制遊戲在切換樓層、開啟商店與主地圖探索間的流轉。
+- **模式優先架構 (Mode-First)**：`Update()` 核心為一個大型 `switch(m_game_state)`。每個模式（PLAYING, INSTRUCTIONS, FAST_ELEVATOR）完全負責該狀態下的 UI 運行、輸入偵測與世界更新。
+- **邏輯互斥**：透過 `break` 與狀態切換，確保在同一影格內不會同時觸發多個模式的輸入（例如：防止按下 L 時同時觸發走路）。
 
 ## 十、UI 模組化介面 (`UIComponent`)
-- **全新架構**：為了統一方塊化管理，建立了抽象基類 `UIComponent`。
+- **全新架構**：建立了抽象基類 `UIComponent`。
 - **核心機制**：
-  - `run()`：執行 UI 的每幀邏輯（包含輸入處理與狀態更新）。
-  - `IsIntercepting()`：判定是否停止地圖與主角移動邏輯。
-- **統一循環**：`App` 現在維護一個 `std::vector<std::shared_ptr<UIComponent>>`，在 `Update()` 中優先執行。
+  - `run()`：執行 UI 的美幀邏輯（由 `App` 依據目前狀態在對應的 `case` 中調用）。
+  - `IsIntercepting()`：判定是否攔截後續的邏輯解析（如停止地圖物件更新）。
+- **集中管理**：`App` 維持 `m_ui_components` 列表，但在 `Update()` 中採取針對性調用。
 
 ## 十一、對話與商店系統 (UI 遷移)
 ### 11.1 `DialogueUI`
@@ -604,3 +597,8 @@ classDiagram
 ## 十六、全域常數與工具
 - **`TOTAL_STORY`**: 26 (0~25 樓)。
 - **`ResourcePath`**: 統一的資源路徑解析邏輯，支持多副檔名。
+
+## 十七、輸入控制與穩定化 (Input Guarding)
+- **集中控制**：所有的 UI 開啟/關閉偵測均由 `App::Update` 統一負責。
+- **Release Guard (放開偵測)**：在 UI 關閉後，系統會偵測該觸發按鍵是否已放開。只有在按鍵放開後，`GameState` 才會回歸 `PLAYING`，有效防止高影格率下的閃爍與重複觸發問題。
+- **影格隔離**：狀態切換發生在影格邏輯末端或使用 `break` 中斷，確保開啟與關閉動作不在同一個 `Update` 循環中發生。

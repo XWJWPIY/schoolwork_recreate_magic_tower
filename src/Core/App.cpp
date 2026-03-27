@@ -55,7 +55,7 @@ void App::InitializeGame() {
 
   // Factory for RoadMap (creates MapBlocks)
   FloorMap::ObjectFactory roadObjFactory = [this](int id) {
-    return m_entity_factory->CreateRoadBlock(id);
+    return m_entity_factory->CreateEntity(id);
   };
 
   // Factory for ThingsMap (creates specialized Entities based on ID)
@@ -116,21 +116,8 @@ void App::InitializeGame() {
 }
 
 void App::Update() {
-  // 1. Unified UI Update & Interception Check
-  bool isIntercepted = false;
-  bool wasAnyUIActiveAtStart = false;
-  for (auto& ui : m_ui_components) {
-      if (ui->IsActive()) {
-          ui->run();
-          if (ui->IsIntercepting()) {
-              isIntercepted = true;
-              wasAnyUIActiveAtStart = true;
-          }
-      }
-  }
-
-  if (!isIntercepted && !wasAnyUIActiveAtStart) {
-      switch (m_game_state) {
+  // 1. Main State Machine (Mode-First)
+  switch (m_game_state) {
   case AppUtil::GameState::MAIN_MENU:
     if (Util::Input::IsKeyDown(Util::Keycode::SPACE)) {
       m_game_state = AppUtil::GameState::LOADING;
@@ -164,131 +151,120 @@ void App::Update() {
     }
     break;
 
-  // ── SHOP: input is natively handled by DialogueUI ───────────────
-  case AppUtil::GameState::SHOP:
-    // Input handled by DialogueUI
-    break;
-
-  // ── PLAYING ───────────────────────────────────────────────────────────
   case AppUtil::GameState::PLAYING:
-    // Open shop if player stepped onto one
+    // Update active UIs (Status, item notices, etc.)
+    for (auto& ui : m_ui_components) {
+        if (ui->IsActive()) ui->run();
+    }
+
+    // Check if a dialogue or modal UI is intercepting the logic phase
+    {
+        bool isIntercepted = false;
+        for (auto& ui : m_ui_components) {
+            if (ui->IsActive() && ui->IsIntercepting()) isIntercepted = true;
+        }
+        if (isIntercepted) break; // Skip map parsing if dialogue is busy
+    }
+
+    // ── Input: Shop Check ───────────────────────────────────────────
     if (m_player->GetPendingShop() != -1) {
       int id = m_player->GetPendingShop();
       m_player->SetPendingShop(-1);
-
-      // Locate the Shop entity in thingsMap and call Open()
       auto obj = m_things_map->FindFirstObjectOfId(id);
       if (auto shop = std::dynamic_pointer_cast<Shop>(obj)) {
         shop->Open(m_player, *m_dialogue_ui, m_road_map->GetCurrentStory());
-        // State switch is handled by the onOpen callback inside Open()
+        break; 
+      }
+    }
+
+    // ── Input: Toggle Overlays ──────────────────────────────────────
+    if (Util::Input::IsKeyDown(Util::Keycode::L)) {
+      m_notice_ui->SetVisible(true);
+      m_game_state = AppUtil::GameState::INSTRUCTIONS;
+      LOG_INFO("[Toggle] Pressed L: Opening NoticeUI");
+      break;
+    }
+    if (Util::Input::IsKeyDown(Util::Keycode::F) && m_player->GetAttr(AppUtil::Effect::FLY) > 0) {
+      if (m_player->HasFly()) {
+        m_game_state = AppUtil::GameState::FAST_ELEVATOR;
+        m_fly_ui->Start(m_road_map->GetCurrentStory(), [this](int floor, int) {
+          this->m_game_state = AppUtil::GameState::PLAYING;
+          int currentStory = m_road_map->GetCurrentStory();
+          if (floor != currentStory) {
+            int targetStair = (floor < currentStory) ? 701 : 702;
+            TeleportToFloor(floor, targetStair);
+          }
+        });
         break;
       }
     }
-
-    if (Util::Input::IsKeyDown(Util::Keycode::W) ||
-        Util::Input::IsKeyDown(Util::Keycode::UP)) {
-      m_player->Move(0, -1, m_road_map, m_things_map);
-    }
-    if (Util::Input::IsKeyDown(Util::Keycode::S) ||
-        Util::Input::IsKeyDown(Util::Keycode::DOWN)) {
-      m_player->Move(0, 1, m_road_map, m_things_map);
-    }
-    if (Util::Input::IsKeyDown(Util::Keycode::A) ||
-        Util::Input::IsKeyDown(Util::Keycode::LEFT)) {
-      m_player->Move(-1, 0, m_road_map, m_things_map);
-    }
-    if (Util::Input::IsKeyDown(Util::Keycode::D) ||
-        Util::Input::IsKeyDown(Util::Keycode::RIGHT)) {
-      m_player->Move(1, 0, m_road_map, m_things_map);
-    }
-
-    if (Util::Input::IsKeyDown(Util::Keycode::W) ||
-        Util::Input::IsKeyDown(Util::Keycode::UP) ||
-        Util::Input::IsKeyDown(Util::Keycode::S) ||
-        Util::Input::IsKeyDown(Util::Keycode::DOWN) ||
-        Util::Input::IsKeyDown(Util::Keycode::A) ||
-        Util::Input::IsKeyDown(Util::Keycode::LEFT) ||
-        Util::Input::IsKeyDown(Util::Keycode::D) ||
-        Util::Input::IsKeyDown(Util::Keycode::RIGHT)) {
-      LOG_INFO("Player Position: Floor {}, Grid({}, {})",
-               m_road_map->GetCurrentStory(), m_player->GetGridX(),
-               m_player->GetGridY());
-    }
-
-    if (Util::Input::IsKeyDown(Util::Keycode::NUM_8) ||
-        Util::Input::IsKeyDown(Util::Keycode::KP_8)) {
-      ChangeFloor(1);
-    }
-    if (Util::Input::IsKeyDown(Util::Keycode::NUM_2) ||
-        Util::Input::IsKeyDown(Util::Keycode::KP_2)) {
-      ChangeFloor(-1);
-    }
-
-    if (Util::Input::IsKeyDown(Util::Keycode::F) && m_player->GetAttr(AppUtil::Effect::FLY) > 0) {
-      if (m_player->HasFly()) {
-        m_fly_ui->Start(m_road_map->GetCurrentStory(), [this](int floor, int) {
-            int currentStory = m_road_map->GetCurrentStory();
-            if (floor != currentStory) {
-                int targetStair = (floor < currentStory) ? 701 : 702;
-                TeleportToFloor(floor, targetStair);
-            }
-        });
-      }
-    }
     if (Util::Input::IsKeyDown(Util::Keycode::G)) {
-        m_fly_ui->Start(m_road_map->GetCurrentStory(), [this](int floor, int) {
-            int currentStory = m_road_map->GetCurrentStory();
-            if (floor != currentStory) {
-                int targetStair = (floor < currentStory) ? 701 : 702;
-                TeleportToFloor(floor, targetStair);
-            }
-        });
+      m_game_state = AppUtil::GameState::FAST_ELEVATOR;
+      m_fly_ui->Start(m_road_map->GetCurrentStory(), [this](int floor, int) {
+        this->m_game_state = AppUtil::GameState::PLAYING;
+        int currentStory = m_road_map->GetCurrentStory();
+        if (floor != currentStory) {
+          int targetStair = (floor < currentStory) ? 701 : 702;
+          TeleportToFloor(floor, targetStair);
+        }
+      });
+      break;
     }
 
-    if (Util::Input::IsKeyDown(Util::Keycode::L)) {
-      m_notice_ui->SetVisible(true);
-      LOG_INFO("Opened instructions overlay (NoticeUI)");
-    }
+    // ── Input: Movement ─────────────────────────────────────────────
+    if (Util::Input::IsKeyDown(Util::Keycode::W) || Util::Input::IsKeyDown(Util::Keycode::UP)) m_player->Move(0, -1, m_road_map, m_things_map);
+    else if (Util::Input::IsKeyDown(Util::Keycode::S) || Util::Input::IsKeyDown(Util::Keycode::DOWN)) m_player->Move(0, 1, m_road_map, m_things_map);
+    else if (Util::Input::IsKeyDown(Util::Keycode::A) || Util::Input::IsKeyDown(Util::Keycode::LEFT)) m_player->Move(-1, 0, m_road_map, m_things_map);
+    else if (Util::Input::IsKeyDown(Util::Keycode::D) || Util::Input::IsKeyDown(Util::Keycode::RIGHT)) m_player->Move(1, 0, m_road_map, m_things_map);
 
-    if (Util::Input::IsKeyDown(Util::Keycode::R)) {
-      Restart();
-    }
-    break;
+    // ── Input: Floor Switch ─────────────────────────────────────────
+    if (Util::Input::IsKeyDown(Util::Keycode::NUM_8) || Util::Input::IsKeyDown(Util::Keycode::KP_8)) ChangeFloor(1);
+    if (Util::Input::IsKeyDown(Util::Keycode::NUM_2) || Util::Input::IsKeyDown(Util::Keycode::KP_2)) ChangeFloor(-1);
+    if (Util::Input::IsKeyDown(Util::Keycode::R)) Restart();
 
-    break;
-  case AppUtil::GameState::INSTRUCTIONS:
-    // Handled by NoticeUI::run()
-    break;
-  case AppUtil::GameState::FAST_ELEVATOR:
-    break;
-  }
-}
-
-  if (m_game_state == AppUtil::GameState::PLAYING ||
-      m_game_state == AppUtil::GameState::SHOP ||
-      isIntercepted) {
+    // ─ World Update ──────────────────────────────────────────────────
     m_road_map->Update();
     m_things_map->Update();
-  }
-
-
-  if (m_player) {
     m_player->ObjectUpdate();
+    break;
+
+  case AppUtil::GameState::INSTRUCTIONS:
+    for (auto& ui : m_ui_components) if (ui->IsActive()) ui->run();
+    
+    if (Util::Input::IsKeyDown(Util::Keycode::L)) {
+      m_notice_ui->SetVisible(false);
+      LOG_INFO("[Toggle] Pressed L: Closing NoticeUI");
+    }
+    if (!m_notice_ui->IsActive() && !Util::Input::IsKeyDown(Util::Keycode::L)) {
+      m_game_state = AppUtil::GameState::PLAYING;
+    }
+    break;
+
+  case AppUtil::GameState::FAST_ELEVATOR:
+    for (auto& ui : m_ui_components) if (ui->IsActive()) ui->run();
+
+    if (Util::Input::IsKeyDown(Util::Keycode::F)) {
+      m_fly_ui->SetVisible(false);
+    }
+    if (!m_fly_ui->IsActive() && !Util::Input::IsKeyDown(Util::Keycode::F)) {
+      m_game_state = AppUtil::GameState::PLAYING;
+    }
+    break;
+
+  case AppUtil::GameState::SHOP:
+    for (auto& ui : m_ui_components) if (ui->IsActive()) ui->run();
+    break;
   }
 
-
-  // Note: StatusUI is now managed via m_ui_components loop
-
-  if (m_dialogue_ui) {
-    // Already updated in unified loop
-  }
-
+  // 2. Render phase
   m_root.Update();
 
-  if (Util::Input::IsKeyUp(Util::Keycode::ESCAPE) || Util::Input::IfExit()) {
-    m_current_state = STATE::END;
+  // 3. Global Terminate Check
+  if (Util::Input::IsKeyDown(Util::Keycode::ESCAPE) || Util::Input::IfExit()) {
+    m_current_state = STATE::END; 
   }
 }
+
 
 void App::End() { // NOLINT
   LOG_TRACE("End");

@@ -20,61 +20,24 @@ std::shared_ptr<Entity> EntityFactory::CreateRoadBlock(int id) {
 std::shared_ptr<Entity> EntityFactory::CreateEntity(int id) {
     std::shared_ptr<Entity> entity;
 
-    // Factory logic grouped by ID ranges
-    if (id >= 200 && id < 300) {
-        // Items
-        entity = std::make_shared<Item>(id, m_callbacks.showItemNotice);
-
-    } else if (id >= 300 && id < 400) {
-        // Doors
-        entity = std::make_shared<Door>(id);
-
-    } else if (id >= 400 && id < 500) {
-        // Enemies
-        entity = std::make_shared<Enemy>(id);
-
-    } else if (id >= 500 && id < 600) {
-        // NPCs
-        entity = std::make_shared<NPC>(
-            id, [this](std::shared_ptr<NPC> npc, const std::string& path) {
-                if (m_callbacks.startScript) {
-                    std::string scriptName = std::to_string(m_callbacks.getCurrentStory()) + "_" + path;
-                    m_callbacks.startScript(npc, scriptName);
-                }
-            });
-
-    } else if (id >= 600 && id < 700) {
-        // Shops
-        entity = std::make_shared<Shop>(
-            id,
-            [this](Shop& s) { if (m_callbacks.openShop) m_callbacks.openShop(s); },
-            [this]() { if (m_callbacks.closeShop) m_callbacks.closeShop(); });
-
-    } else if (id >= 700 && id < 800) {
-        // Stairs
-        entity = std::make_shared<Stair>(
-            id, [this](int val, bool rel) {
-                if (rel) {
-                    if (m_callbacks.changeFloor) m_callbacks.changeFloor(val);
-                } else {
-                    if (m_callbacks.setFloor) m_callbacks.setFloor(val);
-                }
-            });
-
-    } else if (id >= 800 && id < 900) {
-        // Triggers
-        entity = std::make_shared<Trigger>(
-            id, [this](std::shared_ptr<Trigger> t, const std::string& path) {
-                if (m_callbacks.startScript) {
-                    std::string scriptName = std::to_string(m_callbacks.getCurrentStory()) + "_" + path;
-                    m_callbacks.startScript(t, scriptName);
-                }
-            });
-
-    } else {
-        // Fallback for ID 0 or unknown
-        entity = std::make_shared<Entity>(id, AppUtil::GetStaticResourcePath("bmp/Road/road1.bmp"), true);
-        if (id == 0) entity->SetVisible(false);
+    // Dispatch to specialized creators based on ID ranges
+    if (id >= 1 && id < 200)         entity = CreateRoadBlock(id);
+    else if (id >= 200 && id < 300) entity = CreateItem(id);
+    else if (id >= 300 && id < 400) entity = CreateDoor(id);
+    else if (id >= 400 && id < 500) entity = CreateEnemy(id);
+    else if (id >= 500 && id < 600) entity = CreateNPC(id);
+    else if (id >= 600 && id < 700) entity = CreateShop(id);
+    else if (id >= 700 && id < 800) entity = CreateStair(id);
+    else if (id >= 800 && id < 900) entity = CreateTrigger(id);
+    else {
+        // Fallback for ID 0 or unknown: create a MapBlock for consistency if it's in the road range,
+        // otherwise just a basic Entity.
+        if (id == 0) {
+            entity = CreateRoadBlock(0);
+            entity->SetVisible(false);
+        } else {
+            entity = std::make_shared<Entity>(id, AppUtil::GetStaticResourcePath("bmp/Road/road1.bmp"), true);
+        }
     }
 
     if (entity && m_replacement_comp) {
@@ -82,4 +45,54 @@ std::shared_ptr<Entity> EntityFactory::CreateEntity(int id) {
     }
 
     return entity;
+}
+
+std::shared_ptr<Entity> EntityFactory::CreateItem(int id) {
+    return std::make_shared<Item>(id, m_callbacks.showItemNotice);
+}
+
+std::shared_ptr<Entity> EntityFactory::CreateDoor(int id) {
+    return std::make_shared<Door>(id);
+}
+
+std::shared_ptr<Entity> EntityFactory::CreateEnemy(int id) {
+    return std::make_shared<Enemy>(id);
+}
+
+std::shared_ptr<Entity> EntityFactory::CreateNPC(int id) {
+    return std::make_shared<NPC>(
+        id, [this](std::shared_ptr<NPC> npc, const std::string& path) {
+            if (m_callbacks.startScript) {
+                std::string scriptName = std::to_string(m_callbacks.getCurrentStory()) + "_" + path;
+                m_callbacks.startScript(npc, scriptName);
+            }
+        });
+}
+
+std::shared_ptr<Entity> EntityFactory::CreateShop(int id) {
+    return std::make_shared<Shop>(
+        id,
+        [this](Shop& s) { if (m_callbacks.openShop) m_callbacks.openShop(s); },
+        [this]() { if (m_callbacks.closeShop) m_callbacks.closeShop(); });
+}
+
+std::shared_ptr<Entity> EntityFactory::CreateStair(int id) {
+    return std::make_shared<Stair>(
+        id, [this](int val, bool rel) {
+            if (rel) {
+                if (m_callbacks.changeFloor) m_callbacks.changeFloor(val);
+            } else {
+                if (m_callbacks.setFloor) m_callbacks.setFloor(val);
+            }
+        });
+}
+
+std::shared_ptr<Entity> EntityFactory::CreateTrigger(int id) {
+    return std::make_shared<Trigger>(
+        id, [this](std::shared_ptr<Trigger> t, const std::string& path) {
+            if (m_callbacks.startScript) {
+                std::string scriptName = std::to_string(m_callbacks.getCurrentStory()) + "_" + path;
+                m_callbacks.startScript(t, scriptName);
+            }
+        });
 }
