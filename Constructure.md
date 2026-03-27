@@ -80,6 +80,7 @@ classDiagram
         -AppUtil::ShopData m_data
         -int m_selection
         -bool m_visible
+        -float m_blink_timer
         +ShopUI(fontPath)
         +Start(ShopData, onSelect)
         +run() override
@@ -97,6 +98,7 @@ classDiagram
         -shared_ptr~GameObject~ m_up_arrow
         -shared_ptr~GameObject~ m_down_arrow
         -bool m_visible
+        -float m_blink_timer
         +FlyUI()
         +Start(currentStory, callback)
         +run() override
@@ -108,7 +110,9 @@ classDiagram
 
     class NoticeUI {
         -shared_ptr~GameObject~ m_notice_bg
+        -shared_ptr~NumericDisplayText~ m_close_hint
         -bool m_visible
+        -float m_blink_timer
         +NoticeUI()
         +run() override
         +IsIntercepting() bool override

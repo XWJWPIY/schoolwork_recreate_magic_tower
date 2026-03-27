@@ -80,16 +80,27 @@ void FlyUI::run() {
     if (Util::Input::IsKeyDown(Util::Keycode::ESCAPE) || Util::Input::IsKeyDown(Util::Keycode::F)) {
         SetVisible(false);
     }
+
+    if (!m_visible) return;
+
+    // Blinking Hint Logic
+    m_blink_timer += Util::Time::GetDeltaTimeMs();
+    if (m_blink_timer > 1000.0f) m_blink_timer -= 1000.0f;
+    if (m_enter_text) m_enter_text->SetVisible(m_blink_timer < 500.0f);
 }
 
 void FlyUI::SetVisible(bool visible) {
     m_visible = visible;
-    m_fly_bg->SetVisible(visible);
-    m_floor_text->SetVisible(visible);
-    m_enter_text->SetVisible(visible);
-    m_quit_text->SetVisible(visible);
-    m_up_arrow->SetVisible(visible);
-    m_down_arrow->SetVisible(visible);
+    if (m_fly_bg) m_fly_bg->SetVisible(visible);
+    if (m_floor_text) m_floor_text->SetVisible(visible);
+    if (m_enter_text) m_enter_text->SetVisible(visible);
+    if (m_quit_text) m_quit_text->SetVisible(visible);
+    if (m_up_arrow) m_up_arrow->SetVisible(visible);
+    if (m_down_arrow) m_down_arrow->SetVisible(visible);
+
+    if (visible) {
+        m_blink_timer = 0.0f;
+    }
 }
 
 void FlyUI::SetTargetFloor(int floor) {
@@ -107,10 +118,10 @@ void FlyUI::UpdateArrows(int currentFloor) {
 }
 
 void FlyUI::AddToRoot(Util::Renderer& root) {
-    root.AddChild(m_fly_bg);
-    root.AddChild(m_floor_text);
-    root.AddChild(m_enter_text);
-    root.AddChild(m_quit_text);
-    root.AddChild(m_up_arrow);
-    root.AddChild(m_down_arrow);
+    if (m_fly_bg) root.AddChild(m_fly_bg);
+    if (m_floor_text) root.AddChild(m_floor_text);
+    if (m_enter_text) root.AddChild(m_enter_text);
+    if (m_quit_text) root.AddChild(m_quit_text);
+    if (m_up_arrow) root.AddChild(m_up_arrow);
+    if (m_down_arrow) root.AddChild(m_down_arrow);
 }

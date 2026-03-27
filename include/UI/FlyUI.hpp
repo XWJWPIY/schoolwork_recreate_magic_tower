@@ -47,6 +47,8 @@ private:
     std::shared_ptr<Util::Image> m_up_gray;
     std::shared_ptr<Util::Image> m_down_white;
     std::shared_ptr<Util::Image> m_down_gray;
+    
+    float m_blink_timer = 0.0f;
 };
 
 #endif // FLY_UI_HPP

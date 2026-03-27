@@ -54,13 +54,14 @@ void ShopUI::run() {
     const int opt_count = static_cast<int>(m_data.options.size());
     if (opt_count == 0) return;
 
+    bool changed = false;
     if (Util::Input::IsKeyDown(Util::Keycode::W) || Util::Input::IsKeyDown(Util::Keycode::UP)) {
         m_selection = (m_selection - 1 + opt_count) % opt_count;
-        UpdateSelectionVisuals();
+        changed = true;
     }
     else if (Util::Input::IsKeyDown(Util::Keycode::S) || Util::Input::IsKeyDown(Util::Keycode::DOWN)) {
         m_selection = (m_selection + 1) % opt_count;
-        UpdateSelectionVisuals();
+        changed = true;
     }
     else if (Util::Input::IsKeyDown(Util::Keycode::SPACE) || Util::Input::IsKeyDown(Util::Keycode::RETURN)) {
         if (m_on_select) m_on_select(m_selection);
@@ -76,6 +77,19 @@ void ShopUI::run() {
         }
         if (m_on_select) m_on_select(exitIdx);
     }
+
+    if (!m_visible) return;
+
+    if (changed) {
+        UpdateSelectionVisuals();
+        m_blink_timer = 0.0f;
+        if (m_selector) m_selector->SetVisible(true);
+    }
+
+    // Blinking Selector Logic
+    m_blink_timer += Util::Time::GetDeltaTimeMs();
+    if (m_blink_timer > 1000.0f) m_blink_timer -= 1000.0f;
+    if (m_selector) m_selector->SetVisible(m_blink_timer < 500.0f);
 }
 
 void ShopUI::Refresh(const AppUtil::ShopData& data) {
@@ -107,22 +121,25 @@ void ShopUI::Refresh(const AppUtil::ShopData& data) {
 void ShopUI::UpdateSelectionVisuals() {
     bool validSel = (m_selection >= 0 && m_selection < static_cast<int>(m_options.size()));
     if (validSel && m_selection < static_cast<int>(m_data.options.size())) {
-        m_selector->m_Transform.translation = m_options[m_selection]->m_Transform.translation + SELECTOR_OFFSET;
-        m_selector->SetVisible(m_visible);
+        if (m_selector) {
+            m_selector->m_Transform.translation = m_options[m_selection]->m_Transform.translation + SELECTOR_OFFSET;
+            m_selector->SetVisible(m_visible);
+        }
     } else {
-        m_selector->SetVisible(false);
+        if (m_selector) m_selector->SetVisible(false);
     }
 }
 
 void ShopUI::SetVisible(bool visible) {
     m_visible = visible;
+    if (visible) m_blink_timer = 0.0f;
     
     // Delegate visiblity update to Refresh logic for consistency
     Refresh(m_data);
 }
 
 void ShopUI::AddToRoot(Util::Renderer& root) {
-    for (auto& opt : m_options) root.AddChild(opt);
-    root.AddChild(m_selector);
-    root.AddChild(m_price_display);
+    for (auto& opt : m_options) if (opt) root.AddChild(opt);
+    if (m_selector) root.AddChild(m_selector);
+    if (m_price_display) root.AddChild(m_price_display);
 }
