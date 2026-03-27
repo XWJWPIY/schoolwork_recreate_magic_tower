@@ -2,6 +2,7 @@ set(SRC_FILES
     Core/App.cpp
     Core/AppUtil.cpp
     Core/FloorMap.cpp
+    Core/EntityFactory.cpp
     Objects/Actor.cpp
     Objects/Entity.cpp
     Objects/MapBlock.cpp
@@ -30,6 +31,7 @@ set(INCLUDE_FILES
     Core/App.hpp
     Core/AppUtil.hpp
     Core/FloorMap.hpp
+    Core/EntityFactory.hpp
     Objects/Actor.hpp
     Objects/Entity.hpp
     Objects/MapBlock.hpp

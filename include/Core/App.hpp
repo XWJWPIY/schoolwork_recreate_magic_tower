@@ -13,6 +13,7 @@
 #include "UI/FlyUI.hpp"
 #include "UI/NoticeUI.hpp"
 #include "UI/DialogueUI.hpp"
+#include "Core/EntityFactory.hpp"
 #include "pch.hpp" // IWYU pragma: export
 #include <memory>
 #include <vector>
@@ -69,6 +70,8 @@ private:
 
   // Active shop session (non-owning, entity is owned by FloorMap)
   Shop* m_active_shop = nullptr;
+
+  std::unique_ptr<EntityFactory> m_entity_factory;
 };
 
 #endif

@@ -283,6 +283,7 @@ classDiagram
         -float m_loading_timer
         -int m_loading_frame
         -Shop* m_active_shop
+        -unique_ptr~EntityFactory~ m_entity_factory
         +GetCurrentState() STATE
         +Start()
         +Update()
@@ -366,6 +367,15 @@ classDiagram
         <<static>>
         +LoadFromStaticFile(name) ShopData
         +LoadForShopEntity(id, floor, transCount) ShopData
+    }
+
+    class EntityFactory {
+        -Callbacks m_callbacks
+        -shared_ptr~DynamicReplacementComponent~ m_replacement_comp
+        +EntityFactory(Callbacks)
+        +CreateEntity(id) shared_ptr~Entity~
+        +CreateRoadBlock(id) shared_ptr~Entity~
+        +SetReplacementComponent(shared_ptr)
     }
 ```
 
@@ -470,12 +480,17 @@ classDiagram
     App *-- ItemNoticeUI
     App *-- DialogueUI
     App *-- UIComponent : (Managed in vector)
+    App *-- EntityFactory
     App ..> Shop
     DialogueUI *-- ScriptEngine
     DialogueUI *-- ShopUI
     DialogueUI ..> ShopSystem
     ShopSystem ..> ShopUI : (Data interface)
     Shop ..> ShopSystem
+
+    EntityFactory ..> Entity
+    EntityFactory ..> MapBlock
+    EntityFactory ..> SpecializedEntities
 
     FloorMap o-- Entity
     FloorMap ..> MapBlock
@@ -581,6 +596,11 @@ classDiagram
 ## 十四、交互觸發流程
 1. `Player::Move()` → 2. `RoadMap` 通行檢查 → 3. `ThingsMap` `CheckCondition()` → 4. 成功移動並觸發 `Reaction()`。
 
-## 十五、全域常數與工具
+## 十五、實體工廠 (`EntityFactory`)
+- **職責**：將複雜的物件創建邏輯從 `App` 中抽離，實現單一職責原則。
+- **解耦設計**：透過複數個回呼函數（Callbacks）與 `App` 系統互動，而不需直接引用 `App` 類別。
+- **統一介面**：為 `RoadMap` 與 `ThingsMap` 提供一致的物件實例化入口。
+
+## 十六、全域常數與工具
 - **`TOTAL_STORY`**: 26 (0~25 樓)。
 - **`ResourcePath`**: 統一的資源路徑解析邏輯，支持多副檔名。

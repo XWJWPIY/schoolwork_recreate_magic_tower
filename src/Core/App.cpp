@@ -33,70 +33,40 @@ void App::Start() {
 void App::InitializeGame() {
   LOG_TRACE("InitializeGame");
 
+  // Initialize Entity Factory with app-specific callbacks
+  EntityFactory::Callbacks callbacks;
+  callbacks.showItemNotice = [this](const std::string& text) { this->ShowItemNotice(text); };
+  callbacks.startScript = [this](std::shared_ptr<Entity> talker, const std::string& path) {
+    this->m_dialogue_ui->StartScript(path, talker);
+  };
+  callbacks.getCurrentStory = [this]() { return this->m_road_map->GetCurrentStory(); };
+  callbacks.changeFloor = [this](int val) { this->ChangeFloor(val); };
+  callbacks.setFloor = [this](int val) { this->SetFloor(val); };
+  callbacks.openShop = [this](Shop& s) {
+    m_active_shop = &s;
+    m_game_state = AppUtil::GameState::SHOP;
+  };
+  callbacks.closeShop = [this]() {
+    m_active_shop = nullptr;
+    m_game_state = AppUtil::GameState::PLAYING;
+  };
+
+  m_entity_factory = std::make_unique<EntityFactory>(callbacks);
+
   // Factory for RoadMap (creates MapBlocks)
-  FloorMap::ObjectFactory roadObjFactory =
-      [](int id) -> std::shared_ptr<Entity> {
-    return std::make_shared<MapBlock>(id);
+  FloorMap::ObjectFactory roadObjFactory = [this](int id) {
+    return m_entity_factory->CreateRoadBlock(id);
   };
 
   // Factory for ThingsMap (creates specialized Entities based on ID)
+  FloorMap::ObjectFactory thingsObjFactory = [this](int id) {
+    return m_entity_factory->CreateEntity(id);
+  };
+
+  // Define replacement behavior
   auto replacementComp = std::make_shared<DynamicReplacementComponent>(
       [this](int x, int y, int id) { this->m_things_map->SetObject(x, y, id); });
-
-  FloorMap::ObjectFactory thingsObjFactory =
-      [this, replacementComp](int id) -> std::shared_ptr<Entity> {
-    std::shared_ptr<Entity> entity;
-
-    if (id >= 200 && id < 300) {
-      entity = std::make_shared<Item>(
-          id, [this](const std::string& text) { this->ShowItemNotice(text); });
-    } else if (id >= 300 && id < 400) {
-      entity = std::make_shared<Door>(id);
-    } else if (id >= 400 && id < 500) {
-      entity = std::make_shared<Enemy>(id);
-    } else if (id >= 500 && id < 600) {
-      entity = std::make_shared<NPC>(
-          id, [this](std::shared_ptr<NPC> npc, const std::string& path) {
-              std::string scriptName = std::to_string(this->m_road_map->GetCurrentStory()) + "_" + path;
-              this->m_dialogue_ui->StartScript(scriptName, npc);
-          });
-    } else if (id >= 600 && id < 700) {
-      // Shop entity: inject open/close callbacks so it can drive state transitions
-      entity = std::make_shared<Shop>(
-          id,
-          // onOpen: record which shop is active and switch to SHOP state
-          [this](Shop& s) {
-              m_active_shop = &s;
-              m_game_state = AppUtil::GameState::SHOP;
-          },
-          // onClose: clear pointer and return to PLAYING
-          [this]() {
-              m_active_shop = nullptr;
-              m_game_state = AppUtil::GameState::PLAYING;
-          });
-    } else if (id >= 700 && id < 800) {
-      entity = std::make_shared<Stair>(
-          id, [this](int val, bool rel) { 
-              if (rel) this->ChangeFloor(val); 
-              else this->SetFloor(val); 
-          });
-    } else if (id >= 800 && id < 900) {
-      entity = std::make_shared<Trigger>(
-          id, [this](std::shared_ptr<Trigger> t, const std::string& path) {
-              std::string scriptName = std::to_string(this->m_road_map->GetCurrentStory()) + "_" + path;
-              this->m_dialogue_ui->StartScript(scriptName, t);
-          });
-    } else {
-      // Fallback for unknown or ID 0 (now handled by Entity itself for size templating)
-      entity = std::make_shared<Entity>(id, AppUtil::GetStaticResourcePath("bmp/Road/road1.bmp"), true);
-      if (id == 0) entity->SetVisible(false);
-    }
-
-    if (entity) {
-      entity->SetReplacementComponent(replacementComp);
-    }
-    return entity;
-  };
+  m_entity_factory->SetReplacementComponent(replacementComp);
 
   m_road_map = std::make_shared<FloorMap>(roadObjFactory, 141.0f, 0.0f, 0.735f,
                                          0.735f, -5.0f);
