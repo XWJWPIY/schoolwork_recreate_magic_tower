@@ -11,8 +11,10 @@
 #include "Objects/Shop.hpp"
 #include "Util/Renderer.hpp"
 #include "Util/Text.hpp"
+#include "UI/UIComponent.hpp"
 #include "pch.hpp" // IWYU pragma: export
 #include <memory>
+#include <vector>
 
 class DialogueManager;
 
@@ -59,6 +61,9 @@ private:
   float m_item_notice_timer = 0.0f;
   float m_loading_timer  = 0.0f;
   int   m_loading_frame  = 0;
+
+  // UI Components list for unified management
+  std::vector<std::shared_ptr<UIComponent>> m_ui_components;
 
   // Active shop session (non-owning, entity is owned by FloorMap)
   Shop* m_active_shop = nullptr;

@@ -19,6 +19,7 @@ public:
   ~FloorMap() = default;
 
   glm::vec2 GetBaseSize() const { return m_base_size; }
+  glm::vec2 GetScale() const { return {m_scale_x, m_scale_y}; }
 
   void LoadFloorData(const std::vector<std::vector<int>> &floorData,
                      int story = -1);
@@ -46,6 +47,8 @@ public:
   void SetRenderer(Util::Renderer *root) { m_root = root; }
   void AddToRenderer();
 
+  glm::vec2 GetGridAbsolutePosition(int x, int y) const;
+
 private:
   Util::Renderer *m_root = nullptr;
   ObjectFactory m_factory;
@@ -62,7 +65,6 @@ private:
   float m_z_index = -5.0f;
 
   void UpdateObjectAt(int x, int y, int id, int story);
-  glm::vec2 GetGridAbsolutePosition(int x, int y) const;
 };
 
 #endif // FLOOR_MAP_HPP

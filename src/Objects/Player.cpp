@@ -131,14 +131,8 @@ void Player::SyncPosition(std::shared_ptr<FloorMap> roadmap) {
   if (!roadmap)
     return;
 
-  auto obj = roadmap->GetObject(m_grid_x, m_grid_y);
-  if (obj) {
-    // Borrow transform (translation and scale)
-    m_Transform = obj->m_Transform;
-  } else {
-    LOG_ERROR("Player::SyncPosition: Could not find object at {}, {}", m_grid_x,
-              m_grid_y);
-  }
+  m_Transform.translation = roadmap->GetGridAbsolutePosition(m_grid_x, m_grid_y);
+  m_Transform.scale = roadmap->GetScale();
 }
 
 void Player::OnAttributeChanged(AppUtil::Effect type) {

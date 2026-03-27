@@ -126,16 +126,22 @@ void App::InitializeGame() {
   m_menu_ui->AddToRoot(m_root);
 
   m_dialogue_manager = std::make_shared<DialogueManager>(m_menu_ui);
+  m_dialogue_manager->SetPlayer(m_player);
   m_dialogue_manager->AddToRoot(m_root);
+  m_ui_components.push_back(m_dialogue_manager);
 }
 
 void App::Update() {
-  bool dialogueActive = (m_dialogue_manager && m_dialogue_manager->IsActive());
-  if (dialogueActive) {
-      m_dialogue_manager->HandleInput(m_player);
+  // 1. Unified UI Update & Interception Check
+  bool isIntercepted = false;
+  for (auto& ui : m_ui_components) {
+      if (ui->IsActive()) {
+          ui->run();
+          if (ui->IsIntercepting()) isIntercepted = true;
+      }
   }
 
-  if (!dialogueActive) {
+  if (!isIntercepted) {
       switch (m_game_state) {
   case AppUtil::GameState::MAIN_MENU:
     if (Util::Input::IsKeyDown(Util::Keycode::SPACE)) {
@@ -300,7 +306,7 @@ void App::Update() {
 
   if (m_game_state == AppUtil::GameState::PLAYING ||
       m_game_state == AppUtil::GameState::SHOP ||
-      dialogueActive) {
+      isIntercepted) {
     m_road_map->Update();
     m_things_map->Update();
   }
@@ -326,7 +332,7 @@ void App::Update() {
   }
 
   if (m_dialogue_manager) {
-    m_dialogue_manager->Update();
+    // Already updated in unified loop
   }
 
   m_root.Update();

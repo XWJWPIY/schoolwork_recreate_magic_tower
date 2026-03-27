@@ -16,10 +16,11 @@ public:
         NOTICE,
         FAST_ELEVATOR,
         ITEM_NOTICE
-        // FUTURE: MONSTER_MANUAL
     };
 
     MenuUI();
+    virtual ~MenuUI() = default;
+
     void SetVisible(bool visible, MenuType type = MenuType::NONE);
     void AddToRoot(Util::Renderer& root);
 
@@ -28,8 +29,6 @@ public:
 
     // Item Notice specific
     void SetItemNotice(const std::string& text);
-
-    // Removed: void SetShopData(...) and UpdateShopSelection(...) as they move to DialogueManager
 
     void UpdateArrows(int currentFloor);
 
@@ -60,7 +59,6 @@ private:
     std::shared_ptr<Util::GameObject> m_item_notice_bg;
     std::shared_ptr<NumericDisplayText> m_item_notice_text;
     std::shared_ptr<NumericDisplayText> m_item_confirm_text;
-
 };
 
 #endif // MENU_UI_HPP

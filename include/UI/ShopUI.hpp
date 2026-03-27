@@ -6,11 +6,12 @@
 #include "UI/NumericDisplayText.hpp"
 #include "Systems/ShopSystem.hpp"
 #include "Core/AppUtil.hpp"
+#include "UI/UIComponent.hpp"
 #include <vector>
 #include <memory>
 #include <functional>
 
-class ShopUI {
+class ShopUI : public UIComponent {
 public:
     ShopUI(const std::string& fontPath);
     
@@ -22,17 +23,22 @@ public:
     /**
      * @brief Update the internal selection and visuals.
      */
-    void HandleInput();
-    
     /**
      * @brief Sync UI components to the root renderer.
      */
-    void AddToRoot(Util::Renderer& root);
+    void AddToRoot(Util::Renderer& root) override;
     
     /**
      * @brief Set visibility of all shop-specific UI elements.
      */
-    void SetVisible(bool visible);
+    void SetVisible(bool visible) override;
+
+    /**
+     * @brief Core lifecycle
+     */
+    void run() override;
+    bool IsActive() const override { return m_visible; }
+    bool IsIntercepting() const override { return IsActive(); }
     
     /**
      * @brief Refresh displayed options (e.g., after a purchase).

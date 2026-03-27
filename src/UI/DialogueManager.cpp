@@ -100,7 +100,7 @@ void DialogueManager::StartScript(const std::string& name, std::shared_ptr<Entit
         SetVisible(true);
         
         // Initial display
-        AdvanceScript(nullptr);
+        AdvanceScript();
     }
 }
 
@@ -137,7 +137,7 @@ void DialogueManager::StartShop(const std::string& scriptName, const AppUtil::Sh
         m_mode = Mode::SCRIPT;
         m_engine.Reset();
         SetVisible(true);
-        AdvanceScript(nullptr);
+        AdvanceScript();
     }
 }
 
@@ -171,7 +171,7 @@ void DialogueManager::EndShopSelection() {
 
     if (!m_is_shop_session && m_engine.HasNext()) {
         m_mode = Mode::SCRIPT;
-        AdvanceScript(nullptr);
+        AdvanceScript();
     } else {
         m_mode = Mode::INACTIVE;
         SetVisible(false);
@@ -181,11 +181,11 @@ void DialogueManager::EndShopSelection() {
 
 // UpdateSelection removed (moved to ShopUI)
 
-void DialogueManager::HandleInput(std::shared_ptr<Player> player) {
+void DialogueManager::HandleInput() {
     if (!IsActive()) return;
 
     if (m_mode == Mode::SELECTION) {
-        if (m_shop_ui) m_shop_ui->HandleInput();
+        if (m_shop_ui) m_shop_ui->run();
         return;
     }
 
@@ -193,14 +193,18 @@ void DialogueManager::HandleInput(std::shared_ptr<Player> player) {
         Util::Input::IsKeyDown(Util::Keycode::RETURN)) {
         
         if (m_mode == Mode::SCRIPT || m_mode == Mode::NOTICE) {
-            AdvanceScript(player);
+            AdvanceScript();
         }
     }
 }
 
-void DialogueManager::Update() {
+void DialogueManager::run() {
     if (!IsActive()) return;
 
+    // 1. 處理輸入
+    HandleInput();
+
+    // 2. 更新狀態 (原本的 Update 內容)
     // Blink Space Prompt
     if (m_space_prompt && m_mode != Mode::NOTICE && m_mode != Mode::SELECTION) {
         static float timer = 0.0f;
@@ -216,7 +220,7 @@ void DialogueManager::Update() {
     }
 }
 
-void DialogueManager::AdvanceScript(std::shared_ptr<Player> player) {
+void DialogueManager::AdvanceScript() {
     if (m_mode == Mode::NOTICE) {
         m_mode = Mode::INACTIVE;
         SetVisible(false);
@@ -292,17 +296,17 @@ void DialogueManager::AdvanceScript(std::shared_ptr<Player> player) {
         m_engine.Next(); // Advance to next step
     } else if (step.command == ScriptEngine::CommandType::END) {
         m_engine.SetCurrentIndex(m_engine.GetSize());
-        AdvanceScript(player);
+        AdvanceScript();
     } else if (step.command == ScriptEngine::CommandType::HIDE) {
         if (m_source_entity) m_source_entity->TriggerReplacement(0);
         m_engine.Next();
-        AdvanceScript(player);
+        AdvanceScript();
     } else if (step.command == ScriptEngine::CommandType::ITEM) {
-        if (player) ExecuteCommand(step, player);
+        ExecuteCommand(step);
         m_engine.Next();
-        AdvanceScript(player);
+        AdvanceScript();
     } else if (step.command == ScriptEngine::CommandType::SHOP) {
-        ExecuteCommand(step, player);
+        ExecuteCommand(step);
         if (m_mode == Mode::SELECTION) {
             // If the next step is speech, use it as the shop intro text
             if (m_engine.HasNext()) {
@@ -317,13 +321,13 @@ void DialogueManager::AdvanceScript(std::shared_ptr<Player> player) {
             return;
         }
         m_engine.Next();
-        AdvanceScript(player); 
+        AdvanceScript(); 
     }
 }
 
 // ParseScript removed, now handled by m_engine.LoadScript
 
-void DialogueManager::ExecuteCommand(const ScriptStep& step, std::shared_ptr<Player> player) {
+void DialogueManager::ExecuteCommand(const ScriptStep& step) {
     if (step.command == ScriptEngine::CommandType::ITEM) {
         LOG_INFO("DialogueManager: Executing item command (id={})", step.extra);
         m_pending_notice = step.text; // Store text for end-of-script notice
@@ -336,8 +340,8 @@ void DialogueManager::ExecuteCommand(const ScriptStep& step, std::shared_ptr<Pla
         else if (step.extra == "red_key") effect = AppUtil::Effect::KEY_RED;
         else if (step.extra == "fly") effect = AppUtil::Effect::FLY;
         
-        if (player && effect != AppUtil::Effect::NONE) {
-            player->ApplyEffect(effect, 1);
+        if (m_player && effect != AppUtil::Effect::NONE) {
+            m_player->ApplyEffect(effect, 1);
         }
     } else if (step.command == ScriptEngine::CommandType::HIDE) {
         LOG_INFO("DialogueManager: Executing hide command");
@@ -355,7 +359,7 @@ void DialogueManager::ExecuteCommand(const ScriptStep& step, std::shared_ptr<Pla
             // For scripts, try to keep the NPC icon if possible
             // (The icon is already set in AdvanceScript before reaching 'shop')
             
-            m_on_selection = [this, player](int selection) {
+            m_on_selection = [this](int selection) {
                 if (selection < 0 || selection >= static_cast<int>(m_current_shop_data.options.size())) return;
                 const auto& opt = m_current_shop_data.options[selection];
                 
@@ -368,27 +372,27 @@ void DialogueManager::ExecuteCommand(const ScriptStep& step, std::shared_ptr<Pla
                 
                 // --- Simple Purchase Logic ---
                 bool canAfford = true;
-                if (player) {
+                if (m_player) {
                     for (const auto& eff : opt.effects) {
                         if (eff.value < 0) {
                             int cost = -eff.value;
                             AppUtil::Effect type = AppUtil::AttributeRegistry::ToEffect(eff.type_id);
                             switch (type) {
-                                case AppUtil::Effect::COIN: if (player->GetAttr(AppUtil::Effect::COIN) < cost) canAfford = false; break;
-                                case AppUtil::Effect::EXP: if (player->GetAttr(AppUtil::Effect::EXP) < cost) canAfford = false; break;
-                                case AppUtil::Effect::HP: if (player->GetAttr(AppUtil::Effect::HP) <= cost) canAfford = false; break;
-                                case AppUtil::Effect::KEY_YELLOW: if (player->GetAttr(AppUtil::Effect::KEY_YELLOW) < cost) canAfford = false; break;
-                                case AppUtil::Effect::KEY_BLUE: if (player->GetAttr(AppUtil::Effect::KEY_BLUE) < cost) canAfford = false; break;
-                                case AppUtil::Effect::KEY_RED: if (player->GetAttr(AppUtil::Effect::KEY_RED) < cost) canAfford = false; break;
+                                case AppUtil::Effect::COIN: if (m_player->GetAttr(AppUtil::Effect::COIN) < cost) canAfford = false; break;
+                                case AppUtil::Effect::EXP: if (m_player->GetAttr(AppUtil::Effect::EXP) < cost) canAfford = false; break;
+                                case AppUtil::Effect::HP: if (m_player->GetAttr(AppUtil::Effect::HP) <= cost) canAfford = false; break;
+                                case AppUtil::Effect::KEY_YELLOW: if (m_player->GetAttr(AppUtil::Effect::KEY_YELLOW) < cost) canAfford = false; break;
+                                case AppUtil::Effect::KEY_BLUE: if (m_player->GetAttr(AppUtil::Effect::KEY_BLUE) < cost) canAfford = false; break;
+                                case AppUtil::Effect::KEY_RED: if (m_player->GetAttr(AppUtil::Effect::KEY_RED) < cost) canAfford = false; break;
                                 default: break;
                             }
                         }
                     }
                 }
 
-                if (canAfford && player) {
+                if (canAfford && m_player) {
                     for (const auto& eff : opt.effects) {
-                        player->ApplyEffect(AppUtil::AttributeRegistry::ToEffect(eff.type_id), eff.value);
+                        m_player->ApplyEffect(AppUtil::AttributeRegistry::ToEffect(eff.type_id), eff.value);
                     }
                     RefreshShopOptions(m_current_shop_data);
                 }

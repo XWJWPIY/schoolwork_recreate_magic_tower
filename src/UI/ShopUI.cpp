@@ -48,7 +48,7 @@ void ShopUI::Start(const AppUtil::ShopData& data, std::function<void(int)> onSel
     SetVisible(true);
 }
 
-void ShopUI::HandleInput() {
+void ShopUI::run() {
     if (!m_visible) return;
 
     const int opt_count = static_cast<int>(m_data.options.size());

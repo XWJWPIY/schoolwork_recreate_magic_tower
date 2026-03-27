@@ -14,13 +14,14 @@
 #include "Systems/ScriptEngine.hpp"
 #include "Systems/ShopSystem.hpp"
 #include "UI/ShopUI.hpp"
+#include "UI/UIComponent.hpp"
 #include "Util/Image.hpp"
 
 class MenuUI;
 class Player;
 class Entity;
 
-class DialogueManager {
+class DialogueManager : public UIComponent {
 public:
     enum class Mode {
         INACTIVE,
@@ -41,21 +42,24 @@ public:
     void EndShopSelection();
     void ShowNotice(const std::string& text);
     
-    void AddToRoot(Util::Renderer& root);
-    void SetVisible(bool visible);
+    void AddToRoot(Util::Renderer& root) override;
+    void SetVisible(bool visible) override;
     
-    // Core lifecycle
-    void HandleInput(std::shared_ptr<Player> player);
-    void Update();
+    // Core lifecycle (UIComponent Interface)
+    void run() override;
     
     // Status
-    bool IsActive() const { return m_mode != Mode::INACTIVE; }
+    bool IsActive() const override { return m_mode != Mode::INACTIVE; }
+    bool IsIntercepting() const override { return IsActive(); }
     Mode GetMode() const { return m_mode; }
 
+    void SetPlayer(std::shared_ptr<Player> player) { m_player = player; }
+
 private:
-    void AdvanceScript(std::shared_ptr<Player> player);
+    void HandleInput();
+    void AdvanceScript();
     void ParseScript(const std::string& name) { m_engine.LoadScript(name); }
-    void ExecuteCommand(const ScriptStep& step, std::shared_ptr<Player> player);
+    void ExecuteCommand(const ScriptStep& step);
     void SetUIState(bool dialogueVisible);
     void ApplyDialogueLayout();
     void ApplyShopLayout();
@@ -63,6 +67,7 @@ private:
 private:
     Mode m_mode = Mode::INACTIVE;
     std::shared_ptr<MenuUI> m_ui;
+    std::shared_ptr<Player> m_player;
     std::string m_script_name;
     bool m_is_shop_session = false;
     

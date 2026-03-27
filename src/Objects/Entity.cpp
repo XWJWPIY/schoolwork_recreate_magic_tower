@@ -11,7 +11,9 @@
  * 3. Item、Stair、Trigger：由於 CSV 標註為 1 幀，系統將保持靜態顯示（STATIC）。
  */
 
-Entity::Entity(int initialId) : m_object_id(initialId) {}
+Entity::Entity(int initialId) {
+    SetObjectId(initialId);
+}
 
 Entity::Entity(int initialId, const std::string &imagePath, bool canReact) 
     : m_object_id(initialId), m_can_react(canReact) {
@@ -21,7 +23,9 @@ Entity::Entity(int initialId, const std::string &imagePath, bool canReact)
 
 Entity::Entity(const std::shared_ptr<Core::Drawable> &drawable,
                const float zIndex, int initialId)
-    : Util::GameObject(drawable, zIndex), m_object_id(initialId) {}
+    : Util::GameObject(drawable, zIndex) {
+    SetObjectId(initialId);
+}
 
 void Entity::SetObjectId(int newId) {
     m_object_id = newId;
