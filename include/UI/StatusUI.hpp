@@ -4,17 +4,25 @@
 #include "UI/NumericDisplayText.hpp"
 #include "Objects/Player.hpp"
 #include "Util/Renderer.hpp"
+#include "UI/UIComponent.hpp"
+#include "Core/FloorMap.hpp"
+#include <memory>
 
-class StatusUI {
+class StatusUI : public UIComponent {
 public:
-    StatusUI(unsigned int fontSize = 36);
-    ~StatusUI() = default;
+    StatusUI(const std::shared_ptr<Player>& player, 
+             const std::shared_ptr<FloorMap>& floorMap,
+             unsigned int fontSize = 36);
+    virtual ~StatusUI() = default;
+
+    // UIComponent Interface
+    void run() override;
+    void SetVisible(bool visible) override;
+    void AddToRoot(Util::Renderer& root) override;
+    bool IsActive() const override { return m_visible; }
+    bool IsIntercepting() const override { return false; } // Never blocks movement
 
     void Update(const std::shared_ptr<Player>& player, int floorNum);
-    void SetVisible(bool visible);
-    
-    // Getter for the root group if needed, or we can just pass the root to it
-    void AddToRoot(Util::Renderer& root);
 
 private:
     std::shared_ptr<NumericDisplayText> m_yellow_key_text;
@@ -31,6 +39,10 @@ private:
     std::shared_ptr<NumericDisplayText> m_manual_hint_text;
     
     unsigned int m_default_font_size;
+    bool m_visible = true;
+
+    std::shared_ptr<Player> m_player;
+    std::shared_ptr<FloorMap> m_road_map;
 
     // Helper to initialize text objects
     void InitNumericText(std::shared_ptr<NumericDisplayText>& text, 

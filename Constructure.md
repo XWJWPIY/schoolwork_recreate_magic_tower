@@ -321,11 +321,16 @@ classDiagram
         -shared_ptr yellow/blue/red_key_text
         -shared_ptr coin/level/hp/attack/defense/agility/exp/floor_text
         -shared_ptr manual_hint_text
+        -shared_ptr~Player~ m_player
+        -shared_ptr~FloorMap~ m_road_map
+        -bool m_visible
         -unsigned int m_default_font_size
-        +StatusUI(fontSize)
-        +Update(Player, floorNum)
-        +SetVisible(bool)
-        +AddToRoot(Renderer)
+        +StatusUI(Player, FloorMap, fontSize)
+        +run() override
+        +IsIntercepting() bool override
+        +IsActive() bool override
+        +SetVisible(bool) override
+        +AddToRoot(Renderer) override
         -InitNumericText(text, x, y, color, size)
     }
 

@@ -3,7 +3,10 @@
 #include "UI/NumericDisplayText.hpp"
 #include "Core/AppUtil.hpp"
 
-StatusUI::StatusUI(unsigned int fontSize) : m_default_font_size(fontSize) {
+StatusUI::StatusUI(const std::shared_ptr<Player>& player, 
+                   const std::shared_ptr<FloorMap>& floorMap,
+                   unsigned int fontSize) 
+    : m_default_font_size(fontSize), m_player(player), m_road_map(floorMap) {
     // Current layout based on manual adjustments in App.cpp
     // Yellow: -290, -115
     // Blue:   -290, -172
@@ -31,6 +34,14 @@ StatusUI::StatusUI(unsigned int fontSize) : m_default_font_size(fontSize) {
     m_manual_hint_text->SetPrefix("-Press (L)-");
     m_manual_hint_text->SetShowNumber(false);
     m_manual_hint_text->UpdateDisplayText();
+}
+
+void StatusUI::run() {
+    if (!m_visible) return;
+    
+    // Synchronize stats from player and current floor map
+    int floor = (m_road_map ? m_road_map->GetCurrentStory() : 0);
+    Update(m_player, floor);
 }
 
 void StatusUI::InitNumericText(std::shared_ptr<NumericDisplayText>& text, 

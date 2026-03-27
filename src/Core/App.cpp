@@ -113,33 +113,36 @@ void App::InitializeGame() {
   m_things_map->AddToRenderer();
   m_things_map->SetAllVisible(false);
 
-  // Status UI
-  m_status_ui = std::make_shared<StatusUI>();
-  m_status_ui->AddToRoot(m_root);
-
   // Player
   m_player = std::make_shared<Player>();
   m_player->SyncPosition(m_road_map);
   m_root.AddChild(m_player);
   m_player->SetVisible(false);
 
+  // Status UI
+  m_status_ui = std::make_shared<StatusUI>(m_player, m_road_map, 36);
+  m_status_ui->AddToRoot(m_root);
+
   // Dialogue & Notice UI
   m_item_notice_ui = std::make_shared<ItemNoticeUI>();
   m_item_notice_ui->AddToRoot(m_root);
-  m_ui_components.push_back(m_item_notice_ui);
 
   m_dialogue_ui = std::make_shared<DialogueUI>(m_item_notice_ui);
   m_dialogue_ui->SetPlayer(m_player);
   m_dialogue_ui->AddToRoot(m_root);
-  m_ui_components.push_back(m_dialogue_ui);
 
   m_fly_ui = std::make_shared<FlyUI>();
   m_fly_ui->AddToRoot(m_root);
-  m_ui_components.push_back(m_fly_ui);
 
   m_notice_ui = std::make_shared<NoticeUI>();
   m_notice_ui->AddToRoot(m_root);
+
+  // Register all UI Components for unified update loop
+  m_ui_components.push_back(m_status_ui);
+  m_ui_components.push_back(m_fly_ui);
   m_ui_components.push_back(m_notice_ui);
+  m_ui_components.push_back(m_item_notice_ui);
+  m_ui_components.push_back(m_dialogue_ui);
 }
 
 void App::Update() {
@@ -148,9 +151,11 @@ void App::Update() {
   bool wasAnyUIActiveAtStart = false;
   for (auto& ui : m_ui_components) {
       if (ui->IsActive()) {
-          wasAnyUIActiveAtStart = true;
           ui->run();
-          if (ui->IsIntercepting()) isIntercepted = true;
+          if (ui->IsIntercepting()) {
+              isIntercepted = true;
+              wasAnyUIActiveAtStart = true;
+          }
       }
   }
 
@@ -301,12 +306,8 @@ void App::Update() {
     m_player->ObjectUpdate();
   }
 
-  // Unified UI Update (Sync stats in real-time)
-  if (m_status_ui && m_player && (m_game_state == AppUtil::GameState::PLAYING || 
-                                  m_game_state == AppUtil::GameState::SHOP ||
-                                  m_game_state == AppUtil::GameState::ITEM_DIALOG)) {
-    m_status_ui->Update(m_player, m_road_map->GetCurrentStory());
-  }
+
+  // Note: StatusUI is now managed via m_ui_components loop
 
   if (m_dialogue_ui) {
     // Already updated in unified loop
