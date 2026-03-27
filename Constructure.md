@@ -250,6 +250,8 @@ classDiagram
         +AddToRenderer()
         +Update()
         +GetCurrentStory() int
+        -UpdateObjectAt(x, y, id, story)
+        -GetGridAbsolutePosition(x, y) vec2
     }
 
     class MenuUI {
@@ -599,9 +601,10 @@ classDiagram
   - **`LoadFloorData(floorData, story)`**: 將 `vector<vector<int>>` 的 ID 資料透過 `ObjectFactory` 轉換為實體物件矩陣。
   - **`SwitchStory(story)`**: 切換樓層，控制 `GameObject` 的 `Visible` 屬性。
   - **`GetObject(x, y, story)`**: 取得特定網格位置的物件。
-  - **`SetObject(x, y, id, story)`**: 動態替換位置上的物件（用於吃掉物品、開門）。 (由 `DynamicReplacementComponent` 呼叫)。
-  - `FindFirstObjectPosition(id)` / `FindFirstObjectOfId(id)` — 搜尋物件座標/指標。
-- **排版校準**：取樣 ID 0 物件尺寸決定 11×11 網格間距。
+  - SetObject(x, y, id, story): 動態替換位置上的物件（用於吃掉物品、開門）。 (由 DynamicReplacementComponent 呼叫)。
+  - FindFirstObjectPosition(id) / FindFirstObjectOfId(id) — 搜尋物件座標/指標。
+- **內部重構**：使用 `UpdateObjectAt` 統一處理物件創建、變換繼承與渲染器同步，並透過 `GetGridAbsolutePosition` 集中管理網格座標轉換邏輯。
+- 排版校準：取樣 ID 0 物件尺寸決定 11×11 網格間距。
 
 ## 九、App (遊戲核心控制器)
 - **狀態機**：`App::STATE` (START/UPDATE/END) 控制生命週期，`AppUtil::GameState` 控制遊戲邏輯狀態。

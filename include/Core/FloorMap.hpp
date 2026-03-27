@@ -60,6 +60,9 @@ private:
   float m_scale_x = 1.0f;
   float m_scale_y = 1.0f;
   float m_z_index = -5.0f;
+
+  void UpdateObjectAt(int x, int y, int id, int story);
+  glm::vec2 GetGridAbsolutePosition(int x, int y) const;
 };
 
 #endif // FLOOR_MAP_HPP

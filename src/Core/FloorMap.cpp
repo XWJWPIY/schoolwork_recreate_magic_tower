@@ -39,29 +39,20 @@ FloorMap::FloorMap(ObjectFactory factory, float centerX, float centerY,
     for (int y = 0; y < 11; ++y) {
       std::vector<std::shared_ptr<Entity>> row;
       for (int x = 0; x < 11; ++x) {
-        auto obj = m_factory(0);
-
-        if (obj) {
-          obj->m_Transform.scale = {scaleX, scaleY};
-          obj->SetZIndex(m_z_index);
-          float absX = centerX + (x - 5) * spacingX;
-          float absY = centerY + (5 - y) * spacingY;
-
-          obj->m_Transform.translation = {absX, absY};
-
-          // Only the current story (0) is visible initially
-          obj->SetVisible(s == m_current_story && obj->GetObjectId() != 0);
-
-          if (m_root)
-            m_root->AddChild(obj);
-
-          obj->SetGridPosition(x, y);
-        }
-        row.push_back(obj);
+        row.push_back(nullptr); // Initialize with null, will be filled by UpdateObjectAt
       }
       story_objects.push_back(row);
     }
     m_objects.push_back(story_objects);
+  }
+
+  // Populate initial layer
+  for (int s = 0; s < AppUtil::TOTAL_STORY; ++s) {
+    for (int y = 0; y < 11; ++y) {
+      for (int x = 0; x < 11; ++x) {
+        UpdateObjectAt(x, y, 0, s);
+      }
+    }
   }
 }
 
@@ -87,11 +78,6 @@ void FloorMap::LoadFloorData(const std::vector<std::vector<int>> &floorData,
     return;
   }
 
-  // Ensure m_objects has enough capacity (should be handled by constructor but safety first)
-  if (floorLevel >= static_cast<int>(m_objects.size())) {
-    m_objects.resize(floorLevel + 1);
-  }
-
   for (int y = 0; y < 11; ++y) {
     if (floorData[y].size() != 11) {
       LOG_ERROR("Floor data X size must be 11 at row {}", y);
@@ -99,62 +85,16 @@ void FloorMap::LoadFloorData(const std::vector<std::vector<int>> &floorData,
     }
 
     for (int x = 0; x < 11; ++x) {
-      int newId = floorData[y][x];
-      
-      // Safety: ensure row exists
-      if (m_objects[floorLevel].size() <= static_cast<size_t>(y)) {
-          m_objects[floorLevel].resize(11, std::vector<std::shared_ptr<Entity>>(11, nullptr));
-      }
-
-      auto old_obj = m_objects[floorLevel][y][x];
-
-      if ((!old_obj && newId == 0) ||
-          (old_obj && old_obj->GetObjectId() == newId)) {
-        continue;
-      }
-
-      // Need to replace the object
-      auto new_obj = m_factory(newId);
-
-      // If we are placing a valid object
-      if (new_obj) {
-        new_obj->SetZIndex(m_z_index);
-        // Inherit transform from the old object if it existed
-        if (old_obj) {
-          new_obj->m_Transform = old_obj->m_Transform;
-          if (m_root)
-            m_root->RemoveChild(old_obj);
-        } else {
-          // Calculate transform based on grid position
-          new_obj->m_Transform.scale = {m_scale_x, m_scale_y};
-          float spacingX = m_base_size.x * m_scale_x;
-          float spacingY = m_base_size.y * m_scale_y;
-          float absX = m_center_x + (x - 5) * spacingX;
-          float absY = m_center_y + (5 - y) * spacingY; 
-          new_obj->m_Transform.translation = {absX, absY};
-        }
-
-        // Visibility logic
-        new_obj->SetVisible(floorLevel == m_current_story && newId != 0);
-
-        if (m_root)
-          m_root->AddChild(new_obj);
-      } else if (old_obj) {
-        // If the new object is empty (id=0) but we had an object here, remove it
-        if (m_root)
-          m_root->RemoveChild(old_obj);
-      }
-
-      m_objects[floorLevel][y][x] = new_obj;
-
-      if (new_obj) {
-        new_obj->SetGridPosition(x, y);
-      }
+      UpdateObjectAt(x, y, floorData[y][x], floorLevel);
     }
   }
 }
 
 void FloorMap::SetObject(int x, int y, int id, int story) {
+  UpdateObjectAt(x, y, id, story);
+}
+
+void FloorMap::UpdateObjectAt(int x, int y, int id, int story) {
   int targetStory = (story == -1) ? m_current_story : story;
   if (targetStory < 0 || targetStory >= AppUtil::TOTAL_STORY)
     return;
@@ -176,19 +116,10 @@ void FloorMap::SetObject(int x, int y, int id, int story) {
         m_root->RemoveChild(old_obj);
     } else {
       new_obj->m_Transform.scale = {m_scale_x, m_scale_y};
-      float spacingX = m_base_size.x * m_scale_x;
-      float spacingY = m_base_size.y * m_scale_y;
-      float absX = m_center_x + (x - 5) * spacingX;
-      float absY = m_center_y + (5 - y) * spacingY;
-      new_obj->m_Transform.translation = {absX, absY};
+      new_obj->m_Transform.translation = GetGridAbsolutePosition(x, y);
     }
 
-    // Set grid position for entities
-    if (new_obj) {
-      new_obj->SetGridPosition(x, y);
-    }
-
-    // Visibility logic
+    new_obj->SetGridPosition(x, y);
     new_obj->SetVisible(targetStory == m_current_story && id != 0);
 
     if (m_root)
@@ -198,6 +129,14 @@ void FloorMap::SetObject(int x, int y, int id, int story) {
       m_root->RemoveChild(old_obj);
   }
   m_objects[targetStory][y][x] = new_obj;
+}
+
+glm::vec2 FloorMap::GetGridAbsolutePosition(int x, int y) const {
+  float spacingX = m_base_size.x * m_scale_x;
+  float spacingY = m_base_size.y * m_scale_y;
+  float absX = m_center_x + (x - 5) * spacingX;
+  float absY = m_center_y + (5 - y) * spacingY;
+  return {absX, absY};
 }
 
 std::shared_ptr<Entity> FloorMap::GetObject(int x, int y, int story) {
