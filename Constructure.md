@@ -89,6 +89,34 @@ classDiagram
         +Refresh(ShopData)
     }
 
+    class FlyUI {
+        -shared_ptr~GameObject~ m_fly_bg
+        -shared_ptr~NumericDisplayText~ m_floor_text
+        -shared_ptr~NumericDisplayText~ m_enter_text
+        -shared_ptr~NumericDisplayText~ m_quit_text
+        -shared_ptr~GameObject~ m_up_arrow
+        -shared_ptr~GameObject~ m_down_arrow
+        -bool m_visible
+        +FlyUI()
+        +Start(currentStory, callback)
+        +run() override
+        +IsIntercepting() bool override
+        +IsActive() bool override
+        +SetVisible(bool) override
+        +AddToRoot(Renderer) override
+    }
+
+    class NoticeUI {
+        -shared_ptr~GameObject~ m_notice_bg
+        -bool m_visible
+        +NoticeUI()
+        +run() override
+        +IsIntercepting() bool override
+        +IsActive() bool override
+        +SetVisible(bool) override
+        +AddToRoot(Renderer) override
+    }
+
     class Actor {
         #unordered_map~Effect, int~ m_attributes
         +Actor(id, imagePath, canReact)
@@ -208,6 +236,8 @@ classDiagram
     Actor <|-- Enemy
     UIComponent <|-- DialogueManager
     UIComponent <|-- ShopUI
+    UIComponent <|-- FlyUI
+    UIComponent <|-- NoticeUI
 ```
 
 ## 非繼承類別（管理器與 UI）
@@ -226,9 +256,10 @@ classDiagram
         -shared_ptr~StatusUI~ m_status_ui
         -shared_ptr~Player~ m_player
         -shared_ptr~MenuUI~ m_menu_ui
+        -shared_ptr~FlyUI~ m_fly_ui
+        -shared_ptr~NoticeUI~ m_notice_ui
         -shared_ptr~DialogueManager~ m_dialogue_manager
         -vector~shared_ptr~UIComponent~~ m_ui_components
-        -int m_preview_floor
         -float m_item_notice_timer
         -float m_loading_timer
         -int m_loading_frame
@@ -268,16 +299,12 @@ classDiagram
 
     class MenuUI {
         -MenuType m_current_menu
-        -shared_ptr notice_bg / fly_bg / item_notice_bg
-        -shared_ptr floor_text / enter_text / quit_text
-        -shared_ptr up_arrow / down_arrow
+        -shared_ptr item_notice_bg
         -shared_ptr item_notice_text / item_confirm_text
         +MenuUI()
         +SetVisible(bool, MenuType)
         +AddToRoot(Renderer)
-        +SetTargetFloor(int)
         +SetItemNotice(string)
-        +UpdateArrows(int)
         -InitText(text, prefix, x, y, size)
     }
 
@@ -425,6 +452,8 @@ classDiagram
     App *-- Player
     App *-- StatusUI
     App *-- MenuUI
+    App *-- FlyUI
+    App *-- NoticeUI
     App *-- DialogueManager
     App *-- UIComponent : (Managed in vector)
     App ..> Shop

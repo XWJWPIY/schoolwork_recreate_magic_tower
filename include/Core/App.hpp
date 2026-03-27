@@ -9,9 +9,9 @@
 #include "Objects/Player.hpp"
 #include "UI/StatusUI.hpp"
 #include "Objects/Shop.hpp"
-#include "Util/Renderer.hpp"
-#include "Util/Text.hpp"
 #include "UI/UIComponent.hpp"
+#include "UI/FlyUI.hpp"
+#include "UI/NoticeUI.hpp"
 #include "pch.hpp" // IWYU pragma: export
 #include <memory>
 #include <vector>
@@ -55,9 +55,10 @@ private:
   std::shared_ptr<StatusUI>    m_status_ui;
   std::shared_ptr<Player>      m_player;
   std::shared_ptr<MenuUI>      m_menu_ui;
+  std::shared_ptr<FlyUI>       m_fly_ui;
+  std::shared_ptr<NoticeUI>    m_notice_ui;
   std::shared_ptr<DialogueManager> m_dialogue_manager;
 
-  int   m_preview_floor  = 0;
   float m_item_notice_timer = 0.0f;
   float m_loading_timer  = 0.0f;
   int   m_loading_frame  = 0;

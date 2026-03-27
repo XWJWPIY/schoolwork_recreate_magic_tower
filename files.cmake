@@ -19,6 +19,8 @@ set(SRC_FILES
     UI/MenuUI.cpp
     UI/DialogueManager.cpp
     UI/ShopUI.cpp
+    UI/FlyUI.cpp
+    UI/NoticeUI.cpp
     Systems/DynamicReplacementComponent.cpp
     Systems/ScriptEngine.cpp
     Systems/ShopSystem.cpp
@@ -45,6 +47,8 @@ set(INCLUDE_FILES
     UI/MenuUI.hpp
     UI/DialogueManager.hpp
     UI/ShopUI.hpp
+    UI/FlyUI.hpp
+    UI/NoticeUI.hpp
     Systems/DynamicReplacementComponent.hpp
     Systems/ScriptEngine.hpp
     Systems/ShopSystem.hpp

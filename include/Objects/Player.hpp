@@ -31,6 +31,7 @@ public:
   void ResetStateAfterFloorChange();
   void SetDirection(PlayerDirection dir);
   void SetIsAnimating(bool animate) { m_is_animating = animate; }
+  bool HasFly() const { return GetAttr(AppUtil::Effect::FLY) > 0; }
 
   void OnAttributeChanged(AppUtil::Effect type) override;
 

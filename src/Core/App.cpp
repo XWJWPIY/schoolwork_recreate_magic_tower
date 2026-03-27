@@ -7,6 +7,8 @@
 #include "Util/Logger.hpp"
 
 #include "UI/DialogueManager.hpp"
+#include "UI/FlyUI.hpp"
+#include "UI/NoticeUI.hpp"
 #include "Objects/Door.hpp"
 #include "Objects/Enemy.hpp"
 #include "Objects/Entity.hpp"
@@ -129,19 +131,29 @@ void App::InitializeGame() {
   m_dialogue_manager->SetPlayer(m_player);
   m_dialogue_manager->AddToRoot(m_root);
   m_ui_components.push_back(m_dialogue_manager);
+
+  m_fly_ui = std::make_shared<FlyUI>();
+  m_fly_ui->AddToRoot(m_root);
+  m_ui_components.push_back(m_fly_ui);
+
+  m_notice_ui = std::make_shared<NoticeUI>();
+  m_notice_ui->AddToRoot(m_root);
+  m_ui_components.push_back(m_notice_ui);
 }
 
 void App::Update() {
   // 1. Unified UI Update & Interception Check
   bool isIntercepted = false;
+  bool wasAnyUIActiveAtStart = false;
   for (auto& ui : m_ui_components) {
       if (ui->IsActive()) {
+          wasAnyUIActiveAtStart = true;
           ui->run();
           if (ui->IsIntercepting()) isIntercepted = true;
       }
   }
 
-  if (!isIntercepted) {
+  if (!isIntercepted && !wasAnyUIActiveAtStart) {
       switch (m_game_state) {
   case AppUtil::GameState::MAIN_MENU:
     if (Util::Input::IsKeyDown(Util::Keycode::SPACE)) {
@@ -172,7 +184,6 @@ void App::Update() {
         m_player->SetVisible(true);
         m_loading_timer = 0.0f;
         m_loading_frame = 0;
-        m_menu_ui->UpdateArrows(m_road_map->GetCurrentStory());
       }
     }
     break;
@@ -238,25 +249,29 @@ void App::Update() {
     }
 
     if (Util::Input::IsKeyDown(Util::Keycode::F) && m_player->GetAttr(AppUtil::Effect::FLY) > 0) {
-      m_game_state = AppUtil::GameState::FAST_ELEVATOR;
-      m_preview_floor = m_road_map->GetCurrentStory();
-      m_menu_ui->SetTargetFloor(m_preview_floor);
-      m_menu_ui->SetVisible(true, MenuUI::MenuType::FAST_ELEVATOR);
-      LOG_INFO("Entered FAST_ELEVATOR mode at floor {}", m_preview_floor);
+      if (m_player->HasFly()) {
+        m_fly_ui->Start(m_road_map->GetCurrentStory(), [this](int floor, int) {
+            int currentStory = m_road_map->GetCurrentStory();
+            if (floor != currentStory) {
+                int targetStair = (floor < currentStory) ? 701 : 702;
+                TeleportToFloor(floor, targetStair);
+            }
+        });
+      }
     }
-
     if (Util::Input::IsKeyDown(Util::Keycode::G)) {
-      m_game_state = AppUtil::GameState::FAST_ELEVATOR;
-      m_preview_floor = m_road_map->GetCurrentStory();
-      m_menu_ui->SetTargetFloor(m_preview_floor);
-      m_menu_ui->SetVisible(true, MenuUI::MenuType::FAST_ELEVATOR);
-      LOG_INFO("Entered FAST_ELEVATOR mode at floor {} (Debug)", m_preview_floor);
+        m_fly_ui->Start(m_road_map->GetCurrentStory(), [this](int floor, int) {
+            int currentStory = m_road_map->GetCurrentStory();
+            if (floor != currentStory) {
+                int targetStair = (floor < currentStory) ? 701 : 702;
+                TeleportToFloor(floor, targetStair);
+            }
+        });
     }
 
     if (Util::Input::IsKeyDown(Util::Keycode::L)) {
-      m_game_state = AppUtil::GameState::INSTRUCTIONS;
-      m_menu_ui->SetVisible(true, MenuUI::MenuType::NOTICE);
-      LOG_INFO("Switched to INSTRUCTIONS state");
+      m_notice_ui->SetVisible(true);
+      LOG_INFO("Opened instructions overlay (NoticeUI)");
     }
 
     if (Util::Input::IsKeyDown(Util::Keycode::R)) {
@@ -264,45 +279,14 @@ void App::Update() {
     }
     break;
 
+    break;
   case AppUtil::GameState::INSTRUCTIONS:
-    if (Util::Input::IsKeyDown(Util::Keycode::L)) {
-      m_game_state = AppUtil::GameState::PLAYING;
-      m_menu_ui->SetVisible(false);
-      LOG_INFO("Switched to PLAYING state");
-    }
+    // Handled by NoticeUI::run()
     break;
-
   case AppUtil::GameState::FAST_ELEVATOR:
-    if (Util::Input::IsKeyDown(Util::Keycode::W) || Util::Input::IsKeyDown(Util::Keycode::UP)) {
-      if (m_preview_floor < AppUtil::TOTAL_STORY - 1) {
-        m_preview_floor++;
-        m_menu_ui->SetTargetFloor(m_preview_floor);
-      }
-    }
-    if (Util::Input::IsKeyDown(Util::Keycode::S) || Util::Input::IsKeyDown(Util::Keycode::DOWN)) {
-      if (m_preview_floor > 0) {
-        m_preview_floor--;
-        m_menu_ui->SetTargetFloor(m_preview_floor);
-      }
-    }
-    if (Util::Input::IsKeyDown(Util::Keycode::RETURN)) {
-      int currentStory = m_road_map->GetCurrentStory();
-      if (m_preview_floor != currentStory) {
-        int targetStair = (m_preview_floor < currentStory) ? 701 : 702;
-        TeleportToFloor(m_preview_floor, targetStair);
-      }
-      m_game_state = AppUtil::GameState::PLAYING;
-      m_menu_ui->SetVisible(false);
-      LOG_INFO("Confirmed floor switch to {}", m_preview_floor);
-    }
-    if (Util::Input::IsKeyDown(Util::Keycode::F)) {
-      m_game_state = AppUtil::GameState::PLAYING;
-      m_menu_ui->SetVisible(false);
-      LOG_INFO("Cancelled FAST_ELEVATOR mode");
-    }
     break;
-    }
   }
+}
 
   if (m_game_state == AppUtil::GameState::PLAYING ||
       m_game_state == AppUtil::GameState::SHOP ||
@@ -351,7 +335,6 @@ void App::Restart() {
   m_active_shop = nullptr;
   m_root = Util::Renderer();
   m_game_state = AppUtil::GameState::MAIN_MENU;
-  m_preview_floor = 0;
   m_item_notice_timer = 0.0f;
 
   m_background = std::make_shared<Background>();
