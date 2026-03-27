@@ -31,10 +31,17 @@ ItemNoticeUI::ItemNoticeUI() {
 void ItemNoticeUI::run() {
     if (!m_visible) return;
 
+    // Handle Closing
     if (Util::Input::IsKeyDown(Util::Keycode::SPACE) || 
         Util::Input::IsKeyDown(Util::Keycode::RETURN)) {
         SetVisible(false);
+        return;
     }
+
+    // Blinking Prompt Logic
+    m_blink_timer += Util::Time::GetDeltaTimeMs();
+    if (m_blink_timer > 1000.0f) m_blink_timer -= 1000.0f;
+    m_item_confirm_text->SetVisible(m_blink_timer < 500.0f);
 }
 
 void ItemNoticeUI::Show(const std::string& text) {
@@ -45,13 +52,17 @@ void ItemNoticeUI::Show(const std::string& text) {
 
 void ItemNoticeUI::SetVisible(bool visible) {
     m_visible = visible;
-    m_item_notice_bg->SetVisible(visible);
-    m_item_notice_text->SetVisible(visible);
-    m_item_confirm_text->SetVisible(visible);
+    if (m_item_notice_bg) m_item_notice_bg->SetVisible(visible);
+    if (m_item_notice_text) m_item_notice_text->SetVisible(visible);
+    if (m_item_confirm_text) m_item_confirm_text->SetVisible(visible);
+    
+    if (visible) {
+        m_blink_timer = 0.0f;
+    }
 }
 
 void ItemNoticeUI::AddToRoot(Util::Renderer& root) {
-    root.AddChild(m_item_notice_bg);
-    root.AddChild(m_item_notice_text);
-    root.AddChild(m_item_confirm_text);
+    if (m_item_notice_bg) root.AddChild(m_item_notice_bg);
+    if (m_item_notice_text) root.AddChild(m_item_notice_text);
+    if (m_item_confirm_text) root.AddChild(m_item_confirm_text);
 }

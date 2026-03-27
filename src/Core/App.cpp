@@ -6,7 +6,7 @@
 #include "Util/Keycode.hpp"
 #include "Util/Logger.hpp"
 
-#include "UI/DialogueManager.hpp"
+#include "UI/DialogueUI.hpp"
 #include "UI/FlyUI.hpp"
 #include "UI/NoticeUI.hpp"
 #include "Objects/Door.hpp"
@@ -58,7 +58,7 @@ void App::InitializeGame() {
       entity = std::make_shared<NPC>(
           id, [this](std::shared_ptr<NPC> npc, const std::string& path) {
               std::string scriptName = std::to_string(this->m_road_map->GetCurrentStory()) + "_" + path;
-              this->m_dialogue_manager->StartScript(scriptName, npc);
+              this->m_dialogue_ui->StartScript(scriptName, npc);
           });
     } else if (id >= 600 && id < 700) {
       // Shop entity: inject open/close callbacks so it can drive state transitions
@@ -84,7 +84,7 @@ void App::InitializeGame() {
       entity = std::make_shared<Trigger>(
           id, [this](std::shared_ptr<Trigger> t, const std::string& path) {
               std::string scriptName = std::to_string(this->m_road_map->GetCurrentStory()) + "_" + path;
-              this->m_dialogue_manager->StartScript(scriptName, t);
+              this->m_dialogue_ui->StartScript(scriptName, t);
           });
     } else {
       // Fallback for unknown or ID 0 (now handled by Entity itself for size templating)
@@ -128,10 +128,10 @@ void App::InitializeGame() {
   m_item_notice_ui->AddToRoot(m_root);
   m_ui_components.push_back(m_item_notice_ui);
 
-  m_dialogue_manager = std::make_shared<DialogueManager>(m_item_notice_ui);
-  m_dialogue_manager->SetPlayer(m_player);
-  m_dialogue_manager->AddToRoot(m_root);
-  m_ui_components.push_back(m_dialogue_manager);
+  m_dialogue_ui = std::make_shared<DialogueUI>(m_item_notice_ui);
+  m_dialogue_ui->SetPlayer(m_player);
+  m_dialogue_ui->AddToRoot(m_root);
+  m_ui_components.push_back(m_dialogue_ui);
 
   m_fly_ui = std::make_shared<FlyUI>();
   m_fly_ui->AddToRoot(m_root);
@@ -189,9 +189,9 @@ void App::Update() {
     }
     break;
 
-  // ── SHOP: input is natively handled by DialogueManager ───────────────
+  // ── SHOP: input is natively handled by DialogueUI ───────────────
   case AppUtil::GameState::SHOP:
-    // Input handled by DialogueManager
+    // Input handled by DialogueUI
     break;
 
   // ── PLAYING ───────────────────────────────────────────────────────────
@@ -204,7 +204,7 @@ void App::Update() {
       // Locate the Shop entity in thingsMap and call Open()
       auto obj = m_things_map->FindFirstObjectOfId(id);
       if (auto shop = std::dynamic_pointer_cast<Shop>(obj)) {
-        shop->Open(m_player, *m_dialogue_manager, m_road_map->GetCurrentStory());
+        shop->Open(m_player, *m_dialogue_ui, m_road_map->GetCurrentStory());
         // State switch is handled by the onOpen callback inside Open()
         break;
       }
@@ -296,14 +296,6 @@ void App::Update() {
     m_things_map->Update();
   }
 
-  // Item Dialog
-  if (m_game_state == AppUtil::GameState::ITEM_DIALOG) {
-    if (Util::Input::IsKeyDown(Util::Keycode::SPACE) ||
-        Util::Input::IsKeyDown(Util::Keycode::RETURN)) {
-      HideItemNotice();
-      m_game_state = AppUtil::GameState::PLAYING;
-    }
-  }
 
   if (m_player) {
     m_player->ObjectUpdate();
@@ -316,7 +308,7 @@ void App::Update() {
     m_status_ui->Update(m_player, m_road_map->GetCurrentStory());
   }
 
-  if (m_dialogue_manager) {
+  if (m_dialogue_ui) {
     // Already updated in unified loop
   }
 

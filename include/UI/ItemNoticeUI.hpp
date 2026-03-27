@@ -27,6 +27,7 @@ private:
     std::shared_ptr<Util::GameObject> m_item_notice_bg;
     std::shared_ptr<NumericDisplayText> m_item_notice_text;
     std::shared_ptr<NumericDisplayText> m_item_confirm_text;
+    float m_blink_timer = 0.0f;
 };
 
 #endif // ITEM_NOTICE_UI_HPP

@@ -1,8 +1,9 @@
-#ifndef DIALOGUEMANAGER_HPP
-#define DIALOGUEMANAGER_HPP
+#ifndef DIALOGUE_UI_HPP
+#define DIALOGUE_UI_HPP
 
 #include "Util/GameObject.hpp"
 #include "Util/Renderer.hpp"
+#include "Util/Image.hpp"
 
 #include <vector>
 #include <string>
@@ -15,25 +16,24 @@
 #include "Systems/ShopSystem.hpp"
 #include "UI/ShopUI.hpp"
 #include "UI/UIComponent.hpp"
-#include "Util/Image.hpp"
 
 class ItemNoticeUI;
 class Player;
 class Entity;
 
-class DialogueManager : public UIComponent {
+class DialogueUI : public UIComponent {
 public:
     enum class Mode {
         INACTIVE,
-        SCRIPT,     // Linear dialogue (Elder, etc.)
-        SELECTION,  // Menu selection (Shop, etc.)
-        NOTICE      // One-line item notice
+        SCRIPT,     // Linear dialogue
+        SELECTION,  // Menu selection (Shop)
+        NOTICE      // Item notice
     };
 
     using ScriptStep = ScriptEngine::ScriptStep;
 
-    DialogueManager(std::shared_ptr<ItemNoticeUI> ui);
-    virtual ~DialogueManager() = default;
+    DialogueUI(std::shared_ptr<ItemNoticeUI> ui);
+    virtual ~DialogueUI() = default;
 
     void StartScript(const std::string& name, std::shared_ptr<Entity> source = nullptr, bool isShop = false);
     void StartShop(const std::string& scriptName, const AppUtil::ShopData& shopData, std::function<void(int)> onSelect, std::shared_ptr<Entity> source = nullptr);
@@ -87,6 +87,7 @@ private:
     std::unique_ptr<ShopUI> m_shop_ui;
     AppUtil::ShopData m_current_shop_data;
     std::function<void(int)> m_on_selection;
+    float m_blink_timer = 0.0f;
 };
 
-#endif // DIALOGUEMANAGER_HPP
+#endif // DIALOGUE_UI_HPP

@@ -13,7 +13,6 @@ classDiagram
         +SetDrawable(drawable)
         +SetZIndex(z)
         +SetVisible(bool)
-        +GetVisible() bool
     }
 
     class UIComponent {
@@ -57,12 +56,13 @@ classDiagram
         +ForEachAttribute(callback) const
     }
 
-    class DialogueManager {
+    class DialogueUI {
         -Mode m_mode
         -ScriptEngine m_engine
         -unique_ptr~ShopUI~ m_shop_ui
         -shared_ptr~Player~ m_player
-        +DialogueManager(ItemNoticeUI)
+        -float m_blink_timer
+        +DialogueUI(ItemNoticeUI)
         +SetPlayer(shared_ptr~Player~)
         +StartScript(name, source, isShop)
         +StartShop(name, ShopData, onSelect, source)
@@ -110,6 +110,21 @@ classDiagram
         -shared_ptr~GameObject~ m_notice_bg
         -bool m_visible
         +NoticeUI()
+        +run() override
+        +IsIntercepting() bool override
+        +IsActive() bool override
+        +SetVisible(bool) override
+        +AddToRoot(Renderer) override
+    }
+    
+    class ItemNoticeUI {
+        -bool m_visible
+        -shared_ptr~GameObject~ m_item_notice_bg
+        -shared_ptr~NumericDisplayText~ m_item_notice_text
+        -shared_ptr~NumericDisplayText~ m_item_confirm_text
+        -float m_blink_timer
+        +ItemNoticeUI()
+        +Show(text)
         +run() override
         +IsIntercepting() bool override
         +IsActive() bool override
@@ -194,8 +209,8 @@ classDiagram
         -bool m_is_open
         +Shop(id, onOpen, onClose)
         +Reaction(player) override
-        +Open(player, DialogueManager, floor)
-        +Close(DialogueManager)
+        +Open(player, DialogueUI, floor)
+        +Close(DialogueUI)
         #BuildShopData(floor)
         #CanAfford(ShopOption, Player) bool
         #ExecutePurchase(ShopOption, player)
@@ -234,10 +249,11 @@ classDiagram
     Entity <|-- Actor
     Actor <|-- Player
     Actor <|-- Enemy
-    UIComponent <|-- DialogueManager
+    UIComponent <|-- DialogueUI
     UIComponent <|-- ShopUI
     UIComponent <|-- FlyUI
     UIComponent <|-- NoticeUI
+    UIComponent <|-- ItemNoticeUI
 ```
 
 ## 非繼承類別（管理器與 UI）
@@ -257,7 +273,7 @@ classDiagram
         -shared_ptr~Player~ m_player
         -shared_ptr~FlyUI~ m_fly_ui
         -shared_ptr~NoticeUI~ m_notice_ui
-        -shared_ptr~DialogueManager~ m_dialogue_manager
+        -shared_ptr~DialogueUI~ m_dialogue_ui
         -vector~shared_ptr~UIComponent~~ m_ui_components
         -float m_item_notice_timer
         -float m_loading_timer
@@ -443,12 +459,12 @@ classDiagram
     App *-- FlyUI
     App *-- NoticeUI
     App *-- ItemNoticeUI
-    App *-- DialogueManager
+    App *-- DialogueUI
     App *-- UIComponent : (Managed in vector)
     App ..> Shop
-    DialogueManager *-- ScriptEngine
-    DialogueManager *-- ShopUI
-    DialogueManager ..> ShopSystem
+    DialogueUI *-- ScriptEngine
+    DialogueUI *-- ShopUI
+    DialogueUI ..> ShopSystem
     ShopSystem ..> ShopUI : (Data interface)
     Shop ..> ShopSystem
 
@@ -461,7 +477,7 @@ classDiagram
 
     Player ..> FloorMap
     Player ..> Entity
-    Shop ..> DialogueManager
+    Shop ..> DialogueUI
     Door ..> Player
     Item ..> Actor
     Stair ..> App
@@ -534,7 +550,7 @@ classDiagram
 - **統一循環**：`App` 現在維護一個 `std::vector<std::shared_ptr<UIComponent>>`，在 `Update()` 中優先執行。
 
 ## 十一、對話與商店系統 (UI 遷移)
-### 11.1 `DialogueManager`
+### 11.1 `DialogueUI`
 - **繼承**：`UIComponent`。
 - **職責**：接管對話腳本執行與狀態切換。現在使用單一 `run()` 介面。
 
@@ -545,7 +561,7 @@ classDiagram
 ## 十二、層級控制 (Z-Index 渲染順序)
 | Z-Index | 層級 | 內容 |
 |---------|------|------|
-| 90 ~ 92 | UI 頂層選單 | `MenuUI` 背景、文字、`DialogueManager` 內容 |
+| 90 ~ 92 | UI 頂層選單 | `FlyUI` 背景、文字、`NoticeUI` 內容、`DialogueUI` 內容 |
 | 15 ~ 16 | 商店選項層 | `ShopUI` 選項與選擇箭頭 |
 | -3 | 主角層/狀態層 | `Player` 實例、`StatusUI` 數值 |
 | -5 | 地板層 | `RoadMap` 基礎地磚 |

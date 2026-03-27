@@ -12,11 +12,12 @@
 #include "UI/UIComponent.hpp"
 #include "UI/FlyUI.hpp"
 #include "UI/NoticeUI.hpp"
+#include "UI/DialogueUI.hpp"
 #include "pch.hpp" // IWYU pragma: export
 #include <memory>
 #include <vector>
 
-class DialogueManager;
+class DialogueUI;
 
 class App {
 
@@ -57,7 +58,7 @@ private:
   std::shared_ptr<FlyUI>       m_fly_ui;
   std::shared_ptr<NoticeUI>    m_notice_ui;
   std::shared_ptr<ItemNoticeUI> m_item_notice_ui;
-  std::shared_ptr<DialogueManager> m_dialogue_manager;
+  std::shared_ptr<DialogueUI> m_dialogue_ui;
 
   float m_item_notice_timer = 0.0f;
   float m_loading_timer  = 0.0f;

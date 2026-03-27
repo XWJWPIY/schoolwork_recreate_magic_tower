@@ -1,4 +1,4 @@
-#include "UI/DialogueManager.hpp"
+#include "UI/DialogueUI.hpp"
 #include "UI/ItemNoticeUI.hpp"
 #include "Objects/Player.hpp"
 #include "Core/AppUtil.hpp"
@@ -7,7 +7,7 @@
 #include "Util/Keycode.hpp"
 #include "Util/Logger.hpp"
 
-DialogueManager::DialogueManager(std::shared_ptr<ItemNoticeUI> ui) 
+DialogueUI::DialogueUI(std::shared_ptr<ItemNoticeUI> ui) 
     : m_ui(ui) {
 
     // Initialize UI Components
@@ -20,17 +20,17 @@ DialogueManager::DialogueManager(std::shared_ptr<ItemNoticeUI> ui)
 
     m_npc_icon = std::make_shared<Util::GameObject>(
         std::make_unique<Util::Image>(AppUtil::GetStaticResourcePath("bmp/NPC/elder1.bmp")), 11.0f);
-    m_npc_icon->m_Transform.translation = {-28.0f, 207.0f}; // Absolute position
+    m_npc_icon->m_Transform.translation = {-28.0f, 207.0f}; 
     m_npc_icon->m_Transform.scale = {0.735f, 0.735f}; 
 
     m_name_text = std::make_shared<NumericDisplayText>(fontPath, 24);
     m_name_text->SetZIndex(12.0f);
-    m_name_text->m_Transform.translation = {60.0f, 205.0f}; // Absolute position
+    m_name_text->m_Transform.translation = {60.0f, 205.0f}; 
     m_name_text->SetShowNumber(false);
 
     m_content_text = std::make_shared<NumericDisplayText>(fontPath, 24);
     m_content_text->SetZIndex(12.0f);
-    m_content_text->m_Transform.translation = {141.0f, 125.0f}; // Absolute position
+    m_content_text->m_Transform.translation = {141.0f, 125.0f}; 
     m_content_text->SetShowNumber(false);
 
     m_space_prompt = std::make_shared<NumericDisplayText>(fontPath, 22);
@@ -40,55 +40,52 @@ DialogueManager::DialogueManager(std::shared_ptr<ItemNoticeUI> ui)
     m_space_prompt->SetShowNumber(false);
     m_space_prompt->UpdateDisplayText();
 
-    // Shop UI (Replacing manual shop component init)
+    // Shop UI
     m_shop_ui = std::make_unique<ShopUI>(fontPath);
 
     SetUIState(false);
 }
 
-void DialogueManager::AddToRoot(Util::Renderer& root) {
+void DialogueUI::AddToRoot(Util::Renderer& root) {
     if (m_background) root.AddChild(m_background);
     if (m_npc_icon) root.AddChild(m_npc_icon);
     if (m_name_text) root.AddChild(m_name_text);
     if (m_content_text) root.AddChild(m_content_text);
     if (m_space_prompt) root.AddChild(m_space_prompt);
     
-    // Delegate shop elements to ShopUI
     if (m_shop_ui) m_shop_ui->AddToRoot(root);
 }
 
-void DialogueManager::SetVisible(bool visible) {
+void DialogueUI::SetVisible(bool visible) {
     SetUIState(visible);
 }
 
-void DialogueManager::SetUIState(bool dialogueVisible) {
+void DialogueUI::SetUIState(bool dialogueVisible) {
     if (m_background) m_background->SetVisible(dialogueVisible);
     if (m_npc_icon) m_npc_icon->SetVisible(dialogueVisible);
     if (m_name_text) m_name_text->SetVisible(dialogueVisible);
     if (m_content_text) m_content_text->SetVisible(dialogueVisible);
     if (m_space_prompt) m_space_prompt->SetVisible(dialogueVisible);
     
-    // Manage ShopUI visibility based on mode and overall visibility
     if (m_shop_ui) {
         m_shop_ui->SetVisible(dialogueVisible && m_mode == Mode::SELECTION);
     }
 }
 
-void DialogueManager::StartScript(const std::string& name, std::shared_ptr<Entity> source, bool isShop) {
-    LOG_INFO("DialogueManager: Starting script '{}' (isShop={})", name, isShop);
+void DialogueUI::StartScript(const std::string& name, std::shared_ptr<Entity> source, bool isShop) {
+    LOG_INFO("DialogueUI: Starting script '{}' (isShop={})", name, isShop);
     m_script_name = name;
     m_is_shop_session = isShop;
     m_source_entity = source;
     m_pending_notice = "";
     m_on_selection = nullptr;
-    m_current_shop_data = AppUtil::ShopData(); // Reset stale data
+    m_current_shop_data = AppUtil::ShopData(); 
     m_engine.LoadScript(name);
     
     if (m_engine.GetSize() == 0) {
-        LOG_WARN("DialogueManager: Script '{}' is empty or not found.", name);
+        LOG_WARN("DialogueUI: Script '{}' is empty or not found.", name);
         if (m_source_entity) {
-            LOG_INFO("DialogueManager: No script found for NPC, triggering default hide.");
-            m_source_entity->TriggerReplacement(0); // Replace with floor
+            m_source_entity->TriggerReplacement(0); 
         }
         return;
     }
@@ -98,29 +95,25 @@ void DialogueManager::StartScript(const std::string& name, std::shared_ptr<Entit
         m_engine.Reset();
         m_last_speaker = "";
         SetVisible(true);
-        
-        // Initial display
         AdvanceScript();
     }
 }
 
-void DialogueManager::ShowNotice(const std::string& text) {
-    m_engine.Clear();
-    m_engine.InjectStep({ScriptEngine::Speaker::SYSTEM, text, ScriptEngine::CommandType::NOTICE, ""});
+void DialogueUI::ShowNotice(const std::string& text) {
+    // We keep m_mode as NOTICE so run() knows to hide DialogueUI elements
+    // and let ItemNoticeUI take over the screen.
     m_mode = Mode::NOTICE;
-    m_engine.Reset();
     SetVisible(true);
-    SetUIState(false); // Ensure dialogue UI is off during simple notices
+    SetUIState(false); 
     
     m_ui->Show(text);
 }
 
-void DialogueManager::StartShop(const std::string& scriptName, const AppUtil::ShopData& shopData, std::function<void(int)> onSelect, std::shared_ptr<Entity> source) {
+void DialogueUI::StartShop(const std::string& scriptName, const AppUtil::ShopData& shopData, std::function<void(int)> onSelect, std::shared_ptr<Entity> source) {
     StartScript(scriptName, source, true);
     m_current_shop_data = shopData;
     m_on_selection = onSelect;
     
-    // Inject a "shop" command at the end so it knows to enter SELECTION mode
     if (m_engine.GetSize() > 0 && m_engine.GetSteps().back().command == ScriptEngine::CommandType::END) {
         auto& steps = m_engine.GetSteps();
         auto endStep = steps.back();
@@ -140,11 +133,10 @@ void DialogueManager::StartShop(const std::string& scriptName, const AppUtil::Sh
     }
 }
 
-void DialogueManager::ReplaceScriptText(const std::string& target, const std::string& replacement) {
+void DialogueUI::ReplaceScriptText(const std::string& target, const std::string& replacement) {
     m_engine.ReplaceText(target, replacement);
-    // Also update existing display if it contains the target
     if (m_content_text) {
-        std::string current = m_content_text->GetPrefix(); // Assuming GetPrefix() returns current text
+        std::string current = m_content_text->GetPrefix(); 
         size_t pos = current.find(target);
         if (pos != std::string::npos) {
             current.replace(pos, target.length(), replacement);
@@ -154,17 +146,16 @@ void DialogueManager::ReplaceScriptText(const std::string& target, const std::st
     }
 }
 
-void DialogueManager::RefreshShopOptions(const AppUtil::ShopData& shopData) {
+void DialogueUI::RefreshShopOptions(const AppUtil::ShopData& shopData) {
     m_current_shop_data = shopData;
     if (m_shop_ui) m_shop_ui->Refresh(m_current_shop_data);
     
-    // Also update text content placeholders for dynamic pricing
     if (!shopData.special_price_str.empty()) {
         ReplaceScriptText("　　　", shopData.special_price_str);
     }
 }
 
-void DialogueManager::EndShopSelection() {
+void DialogueUI::EndShopSelection() {
     m_on_selection = nullptr;
     if (m_shop_ui) m_shop_ui->SetVisible(false);
 
@@ -178,9 +169,7 @@ void DialogueManager::EndShopSelection() {
     }
 }
 
-// UpdateSelection removed (moved to ShopUI)
-
-void DialogueManager::HandleInput() {
+void DialogueUI::HandleInput() {
     if (!IsActive()) return;
 
     if (m_mode == Mode::SELECTION) {
@@ -197,29 +186,23 @@ void DialogueManager::HandleInput() {
     }
 }
 
-void DialogueManager::run() {
+void DialogueUI::run() {
     if (!IsActive()) return;
 
-    // 1. 處理輸入
     HandleInput();
 
-    // 2. 更新狀態 (原本的 Update 內容)
-    // Blink Space Prompt
+    if (!IsActive()) return;
+
     if (m_space_prompt && m_mode != Mode::NOTICE && m_mode != Mode::SELECTION) {
-        static float timer = 0.0f;
-        static bool visible = true;
-        timer += Util::Time::GetDeltaTimeMs();
-        if (timer > 500.0f) {
-            visible = !visible;
-            m_space_prompt->SetVisible(visible);
-            timer = 0.0f;
-        }
+        m_blink_timer += Util::Time::GetDeltaTimeMs();
+        if (m_blink_timer > 1000.0f) m_blink_timer -= 1000.0f;
+        m_space_prompt->SetVisible(m_blink_timer < 500.0f);
     } else if (m_space_prompt && (m_mode == Mode::SELECTION || m_mode == Mode::NOTICE)) {
         m_space_prompt->SetVisible(false);
     }
 }
 
-void DialogueManager::AdvanceScript() {
+void DialogueUI::AdvanceScript() {
     if (m_mode == Mode::NOTICE) {
         m_mode = Mode::INACTIVE;
         SetVisible(false);
@@ -232,7 +215,6 @@ void DialogueManager::AdvanceScript() {
         SetVisible(false);
         SetUIState(false);
         
-        // If there's a pending notice (item), show it now!
         if (!m_pending_notice.empty()) {
             std::string n = m_pending_notice;
             m_pending_notice = "";
@@ -244,7 +226,6 @@ void DialogueManager::AdvanceScript() {
     const auto& step = m_engine.Peek();
     
     if (step.command == ScriptEngine::CommandType::NONE) {
-        // Speech Step
         std::string name = "???";
         std::string iconPath = "";
 
@@ -292,7 +273,7 @@ void DialogueManager::AdvanceScript() {
         }
 
         SetUIState(true);
-        m_engine.Next(); // Advance to next step
+        m_engine.Next(); 
     } else if (step.command == ScriptEngine::CommandType::END) {
         m_engine.SetCurrentIndex(m_engine.GetSize());
         AdvanceScript();
@@ -307,7 +288,6 @@ void DialogueManager::AdvanceScript() {
     } else if (step.command == ScriptEngine::CommandType::SHOP) {
         ExecuteCommand(step);
         if (m_mode == Mode::SELECTION) {
-            // If the next step is speech, use it as the shop intro text
             if (m_engine.HasNext()) {
                 const auto& next = m_engine.Peek();
                 if (next.command == ScriptEngine::CommandType::NONE) {
@@ -324,16 +304,12 @@ void DialogueManager::AdvanceScript() {
     }
 }
 
-// ParseScript removed, now handled by m_engine.LoadScript
-
-void DialogueManager::ExecuteCommand(const ScriptStep& step) {
+void DialogueUI::ExecuteCommand(const ScriptStep& step) {
     if (step.command == ScriptEngine::CommandType::ITEM) {
-        LOG_INFO("DialogueManager: Executing item command (id={})", step.extra);
-        m_pending_notice = step.text; // Store text for end-of-script notice
+        m_pending_notice = step.text; 
 
-        // Map string-based item ID to Effect
         AppUtil::Effect effect = AppUtil::Effect::NONE;
-        if (step.extra == "enemy_data") effect = AppUtil::Effect::NONE; // Placeholder
+        if (step.extra == "enemy_data") effect = AppUtil::Effect::NONE; 
         else if (step.extra == "yellow_key") effect = AppUtil::Effect::KEY_YELLOW;
         else if (step.extra == "blue_key") effect = AppUtil::Effect::KEY_BLUE;
         else if (step.extra == "red_key") effect = AppUtil::Effect::KEY_RED;
@@ -343,20 +319,13 @@ void DialogueManager::ExecuteCommand(const ScriptStep& step) {
             m_player->ApplyEffect(effect, 1);
         }
     } else if (step.command == ScriptEngine::CommandType::HIDE) {
-        LOG_INFO("DialogueManager: Executing hide command");
         if (m_source_entity) {
             m_source_entity->TriggerReplacement(0);
         }
     } else if (step.command == ScriptEngine::CommandType::SHOP) {
-        // If triggered from script and no data provided, load default path
         if (m_on_selection == nullptr) {
             m_current_shop_data = ShopSystem::LoadFromStaticFile(m_script_name + "_option");
-            
-            // For scripts, the title should be the current NPC name (set in AdvanceScript)
             m_current_shop_data.title = m_name_text->GetPrefix(); 
-            
-            // For scripts, try to keep the NPC icon if possible
-            // (The icon is already set in AdvanceScript before reaching 'shop')
             
             m_on_selection = [this](int selection) {
                 if (selection < 0 || selection >= static_cast<int>(m_current_shop_data.options.size())) return;
@@ -369,7 +338,6 @@ void DialogueManager::ExecuteCommand(const ScriptStep& step) {
                     return;
                 }
                 
-                // --- Simple Purchase Logic ---
                 bool canAfford = true;
                 if (m_player) {
                     for (const auto& eff : opt.effects) {
@@ -417,16 +385,14 @@ void DialogueManager::ExecuteCommand(const ScriptStep& step) {
         }
 
         ApplyShopLayout();
-        SetUIState(true); // Ensure background and texts are visible
-        
-        // Use the manager's Refresh to trigger text replacement in dialogue
+        SetUIState(true); 
         RefreshShopOptions(m_current_shop_data);
         
         if (m_space_prompt) m_space_prompt->SetVisible(false);
     }
 }
 
-void DialogueManager::ApplyDialogueLayout() {
+void DialogueUI::ApplyDialogueLayout() {
     if (m_background) {
         m_background->SetDrawable(std::make_unique<Util::Image>(AppUtil::GetStaticResourcePath("bmp/NPC/NPCDialog.bmp")));
         m_background->m_Transform.translation = {141.0f, 150.0f}; 
@@ -436,7 +402,7 @@ void DialogueManager::ApplyDialogueLayout() {
     if (m_content_text) m_content_text->m_Transform.translation = {141.0f, 125.0f}; 
 }
 
-void DialogueManager::ApplyShopLayout() {
+void DialogueUI::ApplyShopLayout() {
     if (m_background) {
         m_background->SetDrawable(std::make_unique<Util::Image>(AppUtil::GetStaticResourcePath("bmp/Shop/ShopDialog.bmp")));
         m_background->m_Transform.translation = {141.0f, 0.0f}; 

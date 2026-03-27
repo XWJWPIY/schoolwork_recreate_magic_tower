@@ -4,7 +4,7 @@
 #include "Objects/Entity.hpp"
 #include "Core/AppUtil.hpp"
 #include "Systems/ShopSystem.hpp"
-#include "UI/DialogueManager.hpp"
+#include "UI/DialogueUI.hpp"
 #include <functional>
 #include <memory>
 #include <string>
@@ -29,8 +29,8 @@ public:
     void Reaction(std::shared_ptr<Player> player) override;
 
     // ── Session lifecycle ──────────────────────────────────────────────────
-    void Open(std::shared_ptr<Player> player, DialogueManager& ui, int floor);
-    void Close(DialogueManager& ui);
+    void Open(std::shared_ptr<Player> player, DialogueUI& ui, int floor);
+    void Close(DialogueUI& ui);
     bool IsOpen() const { return m_is_open; }
 
     int GetSelectionIndex() const { return m_selection; }

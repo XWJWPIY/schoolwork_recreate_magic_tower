@@ -1,6 +1,6 @@
 #include "Objects/Shop.hpp"
 #include "Objects/Player.hpp"
-#include "UI/DialogueManager.hpp"
+#include "UI/DialogueUI.hpp"
 #include "Systems/ShopSystem.hpp"
 #include "Core/AppUtil.hpp"
 #include "Util/Input.hpp"
@@ -17,7 +17,7 @@ void Shop::Reaction(std::shared_ptr<Player> player) {
     player->SetPendingShop(m_object_id);
 }
 
-void Shop::Open(std::shared_ptr<Player> player, DialogueManager& diag, int floor) {
+void Shop::Open(std::shared_ptr<Player> player, DialogueUI& diag, int floor) {
     auto it = AppUtil::GlobalObjectRegistry.find(m_object_id);
     if (it != AppUtil::GlobalObjectRegistry.end()) {
         m_transaction_count = it->second.GetInt(AppUtil::Attr::TRANSACTIONS);
@@ -58,9 +58,9 @@ void Shop::Open(std::shared_ptr<Player> player, DialogueManager& diag, int floor
     if (m_on_open) m_on_open(*this);
 }
 
-void Shop::Close(DialogueManager& diag) {
+void Shop::Close(DialogueUI& ui) {
     m_is_open = false;
-    diag.EndShopSelection();
+    ui.EndShopSelection();
     LOG_INFO("Shop::Close id={}", m_object_id);
     if (m_on_close) m_on_close();
 }
