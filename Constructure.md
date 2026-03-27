@@ -43,7 +43,9 @@ classDiagram
         +GetMovable() bool
         +SetCanReact(bool)
         +CanReact() bool
-        +virtual ShouldSkipWalkAnimation() bool
+        +virtual ShouldSkipWalkAnimation() const bool
+        +virtual CheckCondition(shared_ptr~Player~) const bool
+        +ForEachAttribute(callback) const
     }
 
     class DialogueManager {
@@ -87,6 +89,7 @@ classDiagram
         +GetAttr(Effect) int
         +SetAttr(Effect, value)
         +ApplyEffect(Effect, delta)
+        +MeetsRequirement(Effect, amount) bool
         +virtual OnAttributeChanged(Effect)
     }
 
@@ -116,6 +119,7 @@ classDiagram
 
     class Door {
         +Door(int id)
+        +CheckCondition(player) const bool override
         +Reaction(player) override
         +ObjectUpdate() override
     }
@@ -479,7 +483,10 @@ classDiagram
 ## 一、互動實體基類 (`Entity`)
 - 繼承 `Util::GameObject`。
 - **統一驅動核心**：`SetObjectId(int)` 現在負責從 `GlobalObjectRegistry` 載入所有屬性與動畫資源。
-- **解耦行為標記**：新增 `ShouldSkipWalkAnimation()` 等行為標記，讓 `Player` 移動邏輯能依據物件屬性自動調整，而不需硬編碼物件類型。
+- **解耦行為標記與預覽**：
+  - `ShouldSkipWalkAnimation()`：行為標記，決定玩家進入此格子時是否跳過走路動畫（用於樓梯）。
+  - `CheckCondition(player)`：**互動預覽**，在 `Player::Move` 執行 Reaction 前進行資格檢查（如門的鑰匙、怪物的能力值）。預設回傳 `true`。
+- **屬性解析工具**：提供 `ForEachAttribute(callback) const`，集中處理從 CSV 屬性到 Effect Enum 的類型安全轉換。
 - **混合動畫架構**：
   - `m_animation`：持有一個 `Util::Animation` 實體。
   - `SetupAnimation()`：工具方法，自動從 CSV `frames` 欄位與 `AppUtil` 路徑解析器建立動畫。
@@ -507,8 +514,9 @@ classDiagram
   - `GetAttr(Effect)`: 取得指定屬性，不存在則回傳 0。
   - `SetAttr(Effect, value)`: 強制設定屬性數值。
   - `ApplyEffect(Effect, delta)`: 增量/減量修改屬性（自動調用 `OnAttributeChanged`）。
+  - `MeetsRequirement(Effect, amount)`：**通用資源檢查**，判斷角色是否擁有足夠的資源（金幣、鑰匙、HP），供 `Shop` 與 `Door` 統一呼叫。
 - **掛鉤**：`virtual OnAttributeChanged(Effect)` — 供子類別監聽屬性變動。
-- **建構**：從 `GlobalObjectRegistry` 遍歷 `attributes`，並透過 `AttributeRegistry` 轉換並初始化預設數值。
+- **建構**：調用 `Entity::ForEachAttribute` 搭配 `SetAttr` 初始化所有屬性數值。
 
 ### 4.1 `Player` (主角)
 - 繼承 `Actor` 與 `std::enable_shared_from_this<Player>`。
@@ -526,7 +534,8 @@ classDiagram
 
 ### 4.2 `Door` (門)
 - **動畫切換**：建構時調用 `SetupAnimation(id, false, 100)` 進入「原生輪播」模式（One-shot）。
-- **`Reaction()` override** — 判定開門條件後調用 `m_animation->Play()`。
+- **`CheckCondition()` override** — 核心預覽邏輯：遍歷 `ForEachAttribute` 檢查玩家是否滿足鑰匙需求，若不滿足則回傳 `false` 阻擋移動。
+- **`Reaction()` override** — 通過檢查後，執行鑰匙扣除並調用 `m_animation->Play()`。
 - **`ObjectUpdate()` override** — 監聽 `Util::Animation::State::ENDED`，於動畫播完後發起 `TriggerReplacement(0)` 進行路徑打通。
 - **`Reaction()` override** — 從 `GlobalObjectRegistry` 讀取通關條件 (`yellow_key, blue_key, red_key` 與 `is_passive`)：
   - 被動門 (`is_passive`) 直接返回。
@@ -548,7 +557,7 @@ classDiagram
 - **建構**：`Item(id, NoticeCallback)` — 設定 `m_notice_callback` 處理獲得物品的單行通知。
 - **`Reaction()` override** — 從 `GlobalObjectRegistry` 讀取屬性：
   - 藉由 `GetString("Dialog")` 觸發 `m_notice_callback` 顯示提示。
-  - 解析所有動態屬性欄位並轉換為 `SubEffect`，對每個效果呼叫 `Player::ApplyEffect`。
+  - 使用 `Entity::ForEachAttribute` 搭配 `Player::ApplyEffect` 套用所有屬性效果。
   - 最後透過 `TriggerReplacement(0)` 將自身替換為空地 (消除圖示)。
 ### 4.6 `Stair` (樓梯)
 - **屬性**：`TriggerCallback m_on_trigger` — lambda 回調，參數為 `(int value, bool isRelative)`。

@@ -76,7 +76,13 @@ void Player::Move(int dx, int dy, std::shared_ptr<FloorMap> roadmap,
       auto entity = std::dynamic_pointer_cast<Entity>(target);
       if (entity && entity->GetVisible()) {
         if (entity->CanReact()) {
-          entity->Reaction(std::static_pointer_cast<Player>(shared_from_this()));
+          if (entity->CheckCondition(std::static_pointer_cast<Player>(shared_from_this()))) {
+            entity->Reaction(std::static_pointer_cast<Player>(shared_from_this()));
+          } else {
+            m_is_animating = false;
+            SetDirection(m_direction);
+            return;
+          }
         }
 
         if (entity->GetVisible() && !entity->IsPassable()) {

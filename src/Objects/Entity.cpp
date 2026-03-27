@@ -88,3 +88,22 @@ void Entity::TriggerReplacement(int targetId) {
         m_replacement_comp->ReplaceWith(m_grid_x, m_grid_y, targetId);
     }
 }
+
+void Entity::ForEachAttribute(const std::function<void(AppUtil::Effect, int)>& callback) const {
+    auto it = AppUtil::GlobalObjectRegistry.find(m_object_id);
+    if (it == AppUtil::GlobalObjectRegistry.end() || !callback) return;
+
+    const auto& meta = it->second;
+    for (const auto& [attrId, valStr] : meta.attributes) {
+        if (valStr.empty()) continue;
+        AppUtil::Effect eff = AppUtil::AttributeRegistry::ToEffect(attrId);
+        if (eff != AppUtil::Effect::NONE) {
+            try {
+                int val = std::stoi(valStr);
+                if (val != 0) callback(eff, val);
+            } catch (...) {
+                // Ignore malformed attribute values
+            }
+        }
+    }
+}

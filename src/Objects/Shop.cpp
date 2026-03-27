@@ -70,14 +70,8 @@ bool Shop::CanAfford(const AppUtil::ShopOption& opt, const Player& player) const
         if (eff.value >= 0) continue;
         int cost = -eff.value;
         AppUtil::Effect type = AppUtil::AttributeRegistry::ToEffect(eff.type_id);
-        switch (type) {
-            case AppUtil::Effect::COIN: if (player.GetAttr(AppUtil::Effect::COIN) < cost) return false; break;
-            case AppUtil::Effect::EXP: if (player.GetAttr(AppUtil::Effect::EXP) < cost) return false; break;
-            case AppUtil::Effect::HP: if (player.GetAttr(AppUtil::Effect::HP) <= cost) return false; break;
-            case AppUtil::Effect::KEY_YELLOW: if (player.GetAttr(AppUtil::Effect::KEY_YELLOW) < cost) return false; break;
-            case AppUtil::Effect::KEY_BLUE: if (player.GetAttr(AppUtil::Effect::KEY_BLUE) < cost) return false; break;
-            case AppUtil::Effect::KEY_RED: if (player.GetAttr(AppUtil::Effect::KEY_RED) < cost) return false; break;
-            default: break;
+        if (!player.MeetsRequirement(type, cost)) {
+            return false;
         }
     }
     return true;

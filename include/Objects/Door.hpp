@@ -7,6 +7,7 @@ public:
   Door(int id);
   ~Door() override = default;
 
+  bool CheckCondition(std::shared_ptr<Player> player) const override;
   void Reaction(std::shared_ptr<Player> player) override;
 
   void ObjectUpdate() override;

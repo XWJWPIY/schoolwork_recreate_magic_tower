@@ -21,17 +21,10 @@ void Item::Reaction(std::shared_ptr<Player> player) {
         m_notice_callback(dialog);
       }
 
-      // Apply all discovered attributes (Except structural ones)
-      for (const auto& [attrId, valStr] : meta.attributes) {
-          if (valStr.empty()) continue;
-          AppUtil::Effect eff = AppUtil::AttributeRegistry::ToEffect(attrId);
-          if (eff != AppUtil::Effect::NONE) {
-              try {
-                  int val = std::stoi(valStr);
-                  if (val != 0) player->ApplyEffect(eff, val);
-              } catch (...) {}
-          }
-      }
+      // Apply all discovered attributes as relative effects
+      ForEachAttribute([player](AppUtil::Effect eff, int val) {
+          player->ApplyEffect(eff, val);
+      });
     }
   }
 

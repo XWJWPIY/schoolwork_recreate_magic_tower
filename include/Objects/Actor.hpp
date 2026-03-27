@@ -28,6 +28,8 @@ public:
     OnAttributeChanged(type);
   }
 
+  bool MeetsRequirement(AppUtil::Effect type, int amount) const;
+
   virtual void OnAttributeChanged(AppUtil::Effect type) {}
 
 protected:

@@ -3,11 +3,13 @@
 
 #include "Util/GameObject.hpp"
 #include "Util/Animation.hpp"
+#include "Core/AppUtil.hpp"
 #include "pch.hpp"
 #include "Systems/DynamicReplacementComponent.hpp"
 #include <memory>
 #include <string>
 #include <vector>
+#include <functional>
 
 class Player;
 
@@ -42,6 +44,10 @@ public:
   
   // Decoupling behaviors
   virtual bool ShouldSkipWalkAnimation() const { return false; }
+  virtual bool CheckCondition(std::shared_ptr<Player> player) const { return true; }
+  
+  // Shared attribute parsing utility
+  void ForEachAttribute(const std::function<void(AppUtil::Effect, int)>& callback) const;
 
   void SetReplacementComponent(std::shared_ptr<DynamicReplacementComponent> comp) {
     m_replacement_comp = comp;
