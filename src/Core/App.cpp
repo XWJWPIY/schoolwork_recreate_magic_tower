@@ -15,8 +15,8 @@
 #include "Objects/Item.hpp"
 #include "Objects/MapBlock.hpp"
 #include "Objects/NPC.hpp"
-#include "UI/MenuUI.hpp"
 #include "Objects/Player.hpp"
+#include "UI/ItemNoticeUI.hpp"
 #include "Objects/Shop.hpp"
 #include "Objects/Stair.hpp"
 #include "UI/StatusUI.hpp"
@@ -123,11 +123,12 @@ void App::InitializeGame() {
   m_root.AddChild(m_player);
   m_player->SetVisible(false);
 
-  // Menu UI
-  m_menu_ui = std::make_shared<MenuUI>();
-  m_menu_ui->AddToRoot(m_root);
+  // Dialogue & Notice UI
+  m_item_notice_ui = std::make_shared<ItemNoticeUI>();
+  m_item_notice_ui->AddToRoot(m_root);
+  m_ui_components.push_back(m_item_notice_ui);
 
-  m_dialogue_manager = std::make_shared<DialogueManager>(m_menu_ui);
+  m_dialogue_manager = std::make_shared<DialogueManager>(m_item_notice_ui);
   m_dialogue_manager->SetPlayer(m_player);
   m_dialogue_manager->AddToRoot(m_root);
   m_ui_components.push_back(m_dialogue_manager);
@@ -380,13 +381,13 @@ void App::TeleportToFloor(int targetStory, int targetStairId) {
 }
 
 void App::ShowItemNotice(const std::string& text) {
-  if (m_dialogue_manager) {
-    m_dialogue_manager->ShowNotice(text);
+  if (m_item_notice_ui) {
+    m_item_notice_ui->Show(text);
   }
 }
 
 void App::HideItemNotice() {
-  if (m_menu_ui) {
-    m_menu_ui->SetVisible(false);
+  if (m_item_notice_ui) {
+    m_item_notice_ui->SetVisible(false);
   }
 }

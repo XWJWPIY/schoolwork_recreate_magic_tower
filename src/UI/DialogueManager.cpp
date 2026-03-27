@@ -1,5 +1,5 @@
 #include "UI/DialogueManager.hpp"
-#include "UI/MenuUI.hpp"
+#include "UI/ItemNoticeUI.hpp"
 #include "Objects/Player.hpp"
 #include "Core/AppUtil.hpp"
 #include "Systems/ScriptEngine.hpp"
@@ -7,7 +7,7 @@
 #include "Util/Keycode.hpp"
 #include "Util/Logger.hpp"
 
-DialogueManager::DialogueManager(std::shared_ptr<MenuUI> ui) 
+DialogueManager::DialogueManager(std::shared_ptr<ItemNoticeUI> ui) 
     : m_ui(ui) {
 
     // Initialize UI Components
@@ -112,8 +112,7 @@ void DialogueManager::ShowNotice(const std::string& text) {
     SetVisible(true);
     SetUIState(false); // Ensure dialogue UI is off during simple notices
     
-    m_ui->SetVisible(true, MenuUI::MenuType::ITEM_NOTICE);
-    m_ui->SetItemNotice(text);
+    m_ui->Show(text);
 }
 
 void DialogueManager::StartShop(const std::string& scriptName, const AppUtil::ShopData& shopData, std::function<void(int)> onSelect, std::shared_ptr<Entity> source) {

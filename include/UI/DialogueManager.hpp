@@ -17,7 +17,7 @@
 #include "UI/UIComponent.hpp"
 #include "Util/Image.hpp"
 
-class MenuUI;
+class ItemNoticeUI;
 class Player;
 class Entity;
 
@@ -32,7 +32,7 @@ public:
 
     using ScriptStep = ScriptEngine::ScriptStep;
 
-    DialogueManager(std::shared_ptr<MenuUI> ui);
+    DialogueManager(std::shared_ptr<ItemNoticeUI> ui);
     virtual ~DialogueManager() = default;
 
     void StartScript(const std::string& name, std::shared_ptr<Entity> source = nullptr, bool isShop = false);
@@ -66,7 +66,7 @@ private:
 
 private:
     Mode m_mode = Mode::INACTIVE;
-    std::shared_ptr<MenuUI> m_ui;
+    std::shared_ptr<ItemNoticeUI> m_ui;
     std::shared_ptr<Player> m_player;
     std::string m_script_name;
     bool m_is_shop_session = false;

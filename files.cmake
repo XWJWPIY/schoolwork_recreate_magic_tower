@@ -16,7 +16,7 @@ set(SRC_FILES
     UI/Background.cpp
     UI/NumericDisplayText.cpp
     UI/StatusUI.cpp
-    UI/MenuUI.cpp
+    UI/ItemNoticeUI.cpp
     UI/DialogueManager.cpp
     UI/ShopUI.cpp
     UI/FlyUI.cpp
@@ -44,7 +44,7 @@ set(INCLUDE_FILES
     UI/Background.hpp
     UI/NumericDisplayText.hpp
     UI/StatusUI.hpp
-    UI/MenuUI.hpp
+    UI/ItemNoticeUI.hpp
     UI/DialogueManager.hpp
     UI/ShopUI.hpp
     UI/FlyUI.hpp

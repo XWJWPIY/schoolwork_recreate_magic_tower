@@ -62,7 +62,7 @@ classDiagram
         -ScriptEngine m_engine
         -unique_ptr~ShopUI~ m_shop_ui
         -shared_ptr~Player~ m_player
-        +DialogueManager(MenuUI)
+        +DialogueManager(ItemNoticeUI)
         +SetPlayer(shared_ptr~Player~)
         +StartScript(name, source, isShop)
         +StartShop(name, ShopData, onSelect, source)
@@ -255,7 +255,6 @@ classDiagram
         -shared_ptr~FloorMap~ m_things_map
         -shared_ptr~StatusUI~ m_status_ui
         -shared_ptr~Player~ m_player
-        -shared_ptr~MenuUI~ m_menu_ui
         -shared_ptr~FlyUI~ m_fly_ui
         -shared_ptr~NoticeUI~ m_notice_ui
         -shared_ptr~DialogueManager~ m_dialogue_manager
@@ -297,16 +296,6 @@ classDiagram
         -GetGridAbsolutePosition(x, y) vec2
     }
 
-    class MenuUI {
-        -MenuType m_current_menu
-        -shared_ptr item_notice_bg
-        -shared_ptr item_notice_text / item_confirm_text
-        +MenuUI()
-        +SetVisible(bool, MenuType)
-        +AddToRoot(Renderer)
-        +SetItemNotice(string)
-        -InitText(text, prefix, x, y, size)
-    }
 
     class StatusUI {
         -shared_ptr yellow/blue/red_key_text
@@ -451,9 +440,9 @@ classDiagram
     App *-- FloorMap
     App *-- Player
     App *-- StatusUI
-    App *-- MenuUI
     App *-- FlyUI
     App *-- NoticeUI
+    App *-- ItemNoticeUI
     App *-- DialogueManager
     App *-- UIComponent : (Managed in vector)
     App ..> Shop

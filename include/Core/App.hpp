@@ -5,7 +5,7 @@
 #include "UI/Background.hpp"
 #include "Core/FloorMap.hpp"
 #include "UI/NumericDisplayText.hpp"
-#include "UI/MenuUI.hpp"
+#include "UI/ItemNoticeUI.hpp"
 #include "Objects/Player.hpp"
 #include "UI/StatusUI.hpp"
 #include "Objects/Shop.hpp"
@@ -54,9 +54,9 @@ private:
   std::shared_ptr<FloorMap>    m_things_map;
   std::shared_ptr<StatusUI>    m_status_ui;
   std::shared_ptr<Player>      m_player;
-  std::shared_ptr<MenuUI>      m_menu_ui;
   std::shared_ptr<FlyUI>       m_fly_ui;
   std::shared_ptr<NoticeUI>    m_notice_ui;
+  std::shared_ptr<ItemNoticeUI> m_item_notice_ui;
   std::shared_ptr<DialogueManager> m_dialogue_manager;
 
   float m_item_notice_timer = 0.0f;
