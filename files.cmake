@@ -19,6 +19,7 @@ set(SRC_FILES
     UI/StatusUI.cpp
     UI/ItemNoticeUI.cpp
     UI/DialogueUI.cpp
+    UI/EnemyBookUI.cpp
     UI/ShopUI.cpp
     UI/FlyUI.cpp
     UI/NoticeUI.cpp
@@ -48,6 +49,7 @@ set(INCLUDE_FILES
     UI/StatusUI.hpp
     UI/ItemNoticeUI.hpp
     UI/DialogueUI.hpp
+    UI/EnemyBookUI.hpp
     UI/ShopUI.hpp
     UI/FlyUI.hpp
     UI/NoticeUI.hpp

@@ -1,0 +1,14 @@
+Key,Value
+label_name,名稱: 
+label_special,特殊: 
+label_hp,HP: 
+label_atk,ATK: 
+label_def,DEF: 
+label_agi,AGI: 
+label_atk_time,多段: 
+label_damage,傷害: 
+label_exp,EXP: 
+label_gold,GOLD: 
+label_none,無
+hint_press_d,Press D
+msg_no_enemy,No Enemies in Registry.

@@ -60,12 +60,12 @@ void FlyUI::Start(int currentStory, TeleportCallback onTeleport) {
 void FlyUI::run() {
     if (!m_visible) return;
 
-    if (Util::Input::IsKeyDown(Util::Keycode::W) || Util::Input::IsKeyDown(Util::Keycode::UP)) {
+    if (Util::Input::IsKeyDown(Util::Keycode::UP)) {
         if (m_preview_floor < AppUtil::TOTAL_STORY - 1) {
             m_preview_floor++;
             SetTargetFloor(m_preview_floor);
         }
-    } else if (Util::Input::IsKeyDown(Util::Keycode::S) || Util::Input::IsKeyDown(Util::Keycode::DOWN)) {
+    } else if (Util::Input::IsKeyDown(Util::Keycode::DOWN)) {
         if (m_preview_floor > 0) {
             m_preview_floor--;
             SetTargetFloor(m_preview_floor);

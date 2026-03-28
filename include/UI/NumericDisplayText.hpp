@@ -15,6 +15,7 @@ public:
 
   void SetShowNumber(bool show);
   void SetShowText(bool show);
+  void SetAlignLeft(bool align);
 
   std::string GetPrefix() const { return m_prefix; }
   int GetNumber() const { return m_number; }
@@ -31,6 +32,7 @@ private:
 
   bool m_show_number = true;
   bool m_show_text = true;
+  bool m_align_left = false;
 
   bool m_needs_update = true;
 };

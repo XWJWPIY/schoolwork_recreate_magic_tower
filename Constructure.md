@@ -136,6 +136,20 @@ classDiagram
         +AddToRoot(Renderer) override
     }
 
+    class EnemyBookUI {
+        -vector~int~ m_unique_enemy_ids
+        -int m_current_page
+        -int m_total_pages
+        -bool m_visible
+        +EnemyBookUI(player, thingsMap)
+        +run() override
+        +IsIntercepting() bool override
+        +IsActive() bool override
+        +SetVisible(bool) override
+        +AddToRoot(Renderer) override
+        +Refresh()
+    }
+
     class Actor {
         #unordered_map~Effect, int~ m_attributes
         +Actor(id, imagePath, canReact)
@@ -231,11 +245,13 @@ classDiagram
         -string m_prefix
         -string m_suffix
         -int m_number
+        -bool m_align_left
         -bool m_needs_update
         +NumericDisplayText(fontPath, fontSize)
         +SetPrefix(string)
         +SetSuffix(string)
         +SetNumber(int)
+        +SetAlignLeft(bool)
         +UpdateDisplayText()
     }
 
@@ -258,6 +274,7 @@ classDiagram
     UIComponent <|-- FlyUI
     UIComponent <|-- NoticeUI
     UIComponent <|-- ItemNoticeUI
+    UIComponent <|-- EnemyBookUI
 ```
 
 ## 非繼承類別（管理器與 UI）
@@ -278,6 +295,7 @@ classDiagram
         -shared_ptr~FlyUI~ m_fly_ui
         -shared_ptr~NoticeUI~ m_notice_ui
         -shared_ptr~DialogueUI~ m_dialogue_ui
+        -shared_ptr~EnemyBookUI~ m_enemy_book_ui
         -vector~shared_ptr~UIComponent~~ m_ui_components
         -unique_ptr~EntityFactory~ m_entity_factory
         +Start()
@@ -447,6 +465,8 @@ classDiagram
         +GetPhaseImagePath(basePath, phase) string
         +GetFullResourcePath(id) string
         +GetIdString(id) string
+        +CalculateDamage(player, enemyId) long long
+        +GetGlobalString(key, defaultValue) string
     }
 
     ShopOption *-- SubEffect
@@ -471,6 +491,7 @@ classDiagram
     App *-- NoticeUI
     App *-- ItemNoticeUI
     App *-- DialogueUI
+    App *-- EnemyBookUI
     App *-- UIComponent : (Managed in vector)
     App *-- EntityFactory
     App ..> Shop
@@ -548,6 +569,14 @@ classDiagram
 
 ## 六、文字顯示 (`NumericDisplayText`)
 - 繼承 `Util::GameObject`。封裝 `Util::Text`，提供帶有前綴/後綴的數字動態更新功能。
+- **對齊支援**：新增 `SetAlignLeft(bool)`，透過自動調整 `m_Pivot` 實現左對齊，解決居中文字在不同長度下難以對齊標籤的問題。
+
+## [新增] 七、怪物手冊 (`EnemyBookUI`)
+- **繼承**：`UIComponent`。
+- **全局數據**：不再掃描單層地圖，而是直接讀取 `GlobalObjectRegistry` 中 ID 400-499 的所有怪物資訊。
+- **分頁機制**：支援使用方向鍵「左右」進行翻頁，每頁顯示 3 隻怪物。
+- **即時預估**：調用 `AppUtil::CalculateDamage` 根據玩家當前屬性即時計算預期傷害。
+- **本地化支援**：所有 UI 標籤（HP、ATK 等）皆從 `UIStrings.csv` 讀取，避免編碼問題。
 
 ## 七、動態替換組件 (`DynamicReplacementComponent`)
 - 輔助 `Entity` 在執行完 `Reaction` 後（如開門、撿道具）將地圖網格上的 ID 替換為空地（ID 0）。
@@ -571,15 +600,18 @@ classDiagram
 - **繼承**：`UIComponent`。
 - **職責**：接管對話腳本執行與狀態切換。現在使用單一 `run()` 介面。
 
-### 11.2 `ShopUI`
+### 12.2 `ShopUI`
 - **繼承**：`UIComponent`。
 - **職責**：專精於商店選項渲染與交互選擇。
 
-## 十二、層級控制 (Z-Index 渲染順序)
+### 12.3 `EnemyBookUI` (詳見第七節)
+- **職責**：數據驅動的怪物圖鑑，提供戰鬥預覽與屬性查詢。
+
+## 十三、層級控制 (Z-Index 渲染順序)
 | Z-Index | 層級 | 內容 |
 |---------|------|------|
 | 90 ~ 92 | UI 頂層選單 | `FlyUI` 背景、文字、`NoticeUI` 內容、`DialogueUI` 內容 |
-| 15 ~ 16 | 商店選項層 | `ShopUI` 選項與選擇箭頭 |
+| 15 ~ 20 | 頂層 UI / 手冊層 | `EnemyBookUI` 內容 (Z=15~20)、`ShopUI` 選項與選擇箭頭 |
 | -3 | 主角層/狀態層 | `Player` 實例、`StatusUI` 數值 |
 | -5 | 地板層 | `RoadMap` 基礎地磚 |
 

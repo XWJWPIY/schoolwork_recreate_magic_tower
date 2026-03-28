@@ -55,11 +55,11 @@ void ShopUI::run() {
     if (opt_count == 0) return;
 
     bool changed = false;
-    if (Util::Input::IsKeyDown(Util::Keycode::W) || Util::Input::IsKeyDown(Util::Keycode::UP)) {
+    if (Util::Input::IsKeyDown(Util::Keycode::UP)) {
         m_selection = (m_selection - 1 + opt_count) % opt_count;
         changed = true;
     }
-    else if (Util::Input::IsKeyDown(Util::Keycode::S) || Util::Input::IsKeyDown(Util::Keycode::DOWN)) {
+    else if (Util::Input::IsKeyDown(Util::Keycode::DOWN)) {
         m_selection = (m_selection + 1) % opt_count;
         changed = true;
     }

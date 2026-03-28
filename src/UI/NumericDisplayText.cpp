@@ -50,6 +50,13 @@ void NumericDisplayText::SetColor(const Util::Color &color) {
   m_text_drawable->SetColor(color);
 }
 
+void NumericDisplayText::SetAlignLeft(bool align) {
+  if (m_align_left != align) {
+    m_align_left = align;
+    m_needs_update = true;
+  }
+}
+
 void NumericDisplayText::UpdateDisplayText() {
   std::string result = "";
 
@@ -70,4 +77,10 @@ void NumericDisplayText::UpdateDisplayText() {
   }
 
   m_text_drawable->SetText(result);
+  
+  if (m_align_left) {
+    SetPivot({-m_text_drawable->GetSize().x / 2.0f, 0.0f});
+  } else {
+    SetPivot({0.0f, 0.0f});
+  }
 }

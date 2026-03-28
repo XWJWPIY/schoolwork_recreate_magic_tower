@@ -1,4 +1,5 @@
 #include "Core/AppUtil.hpp"
+#include "Objects/Player.hpp"
 #include "Util/Logger.hpp"
 #include <cctype>
 #include <fstream>
@@ -110,6 +111,7 @@ void RegistryLoader::LoadAllData() {
     GlobalObjectRegistry.emplace(0, ObjectMetadata("road", "Road", true));
 
     LoadSettings(GetStaticResourcePath("Datas/Data/Settings.csv"));
+    LoadSettings(GetStaticResourcePath("Datas/Data/UIStrings.csv"));
     
     // Using the Universal Flattened Loader
     LoadObjectCSV(GetStaticResourcePath("Datas/Data/Block.csv"), "Road", true);
@@ -119,6 +121,7 @@ void RegistryLoader::LoadAllData() {
     LoadObjectCSV(GetStaticResourcePath("Datas/Data/Shop.csv"), "Shop", false);
     LoadObjectCSV(GetStaticResourcePath("Datas/Data/NPC.csv"), "Road", false);
     LoadObjectCSV(GetStaticResourcePath("Datas/Data/Trigger.csv"), "Trigger", true);
+    LoadObjectCSV(GetStaticResourcePath("Datas/Data/Enemy.csv"), "Enemy", false);
 
     LOG_INFO("RegistryLoader: Total {} object types in registry.", GlobalObjectRegistry.size());
 }
@@ -182,7 +185,6 @@ void RegistryLoader::LoadSettings(const std::string& path) {
     auto data = MapParser::ParseCsvToStrings(path);
     if (data.empty()) return;
 
-    GlobalSettings.clear();
     // Header: Key,Value
     for (size_t i = 1; i < data.size(); ++i) {
         const auto& row = data[i];
@@ -457,5 +459,41 @@ std::vector<SubEffect> CSVLoader::GetRowEffects(size_t rowIndex) const {
     return effects;
 }
 
+
+long long CalculateDamage(::Player* player, int enemyId) {
+    auto it = GlobalObjectRegistry.find(enemyId);
+    if (it == GlobalObjectRegistry.end() || !player) return 0;
+
+    const auto& meta = it->second;
+    int eHP = meta.GetInt(Attr::HP);
+    int eATK = meta.GetInt(Attr::ATTACK);
+    int eDEF = meta.GetInt(Attr::DEFENSE);
+    
+    int pHP = player->GetAttr(Effect::HP);
+    int pATK = player->GetAttr(Effect::ATTACK);
+    int pDEF = player->GetAttr(Effect::DEFENSE);
+
+    // Special Abilities
+    bool ignoreDef = meta.GetInt("Ignore_DEF") > 0;
+    int atkTime = meta.GetInt("ATK_Time", 1);
+    
+    // Player's damage to enemy per hit
+    int pDamage = pATK - eDEF;
+    if (pDamage <= 0) return -1; // Invincible enemy
+
+    // Rounds to kill enemy
+    int rounds = (eHP + pDamage - 1) / pDamage;
+
+    // Enemy's damage to player per hit (or set of hits)
+    int eDamageBase = ignoreDef ? eATK : (eATK - pDEF);
+    if (eDamageBase < 0) eDamageBase = 0;
+    
+    long long totalDamage = (long long)eDamageBase * atkTime * (rounds - 1);
+
+    // Additional special logic (e.g. poisoning, critical strikes) can be added here
+    // For now, matching the standard formula
+    
+    return totalDamage;
+}
 
 } // namespace AppUtil

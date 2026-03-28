@@ -107,10 +107,14 @@ void App::InitializeGame() {
   m_notice_ui = std::make_shared<NoticeUI>();
   m_notice_ui->AddToRoot(m_root);
 
+  m_enemy_book_ui = std::make_shared<EnemyBookUI>(m_player, m_things_map);
+  m_enemy_book_ui->AddToRoot(m_root);
+
   // Register all UI Components for unified update loop
   m_ui_components.push_back(m_status_ui);
   m_ui_components.push_back(m_fly_ui);
   m_ui_components.push_back(m_notice_ui);
+  m_ui_components.push_back(m_enemy_book_ui);
   m_ui_components.push_back(m_item_notice_ui);
   m_ui_components.push_back(m_dialogue_ui);
 }
@@ -178,6 +182,12 @@ void App::Update() {
     }
 
     // ── Input: Toggle Overlays ──────────────────────────────────────
+    if (Util::Input::IsKeyDown(Util::Keycode::D)) {
+      m_enemy_book_ui->SetVisible(true);
+      m_game_state = AppUtil::GameState::ENEMY_BOOK;
+      LOG_INFO("[Toggle] Pressed D: Opening EnemyBookUI");
+      break;
+    }
     if (Util::Input::IsKeyDown(Util::Keycode::L)) {
       m_notice_ui->SetVisible(true);
       m_game_state = AppUtil::GameState::INSTRUCTIONS;
@@ -212,10 +222,10 @@ void App::Update() {
     }
 
     // ── Input: Movement ─────────────────────────────────────────────
-    if (Util::Input::IsKeyDown(Util::Keycode::W) || Util::Input::IsKeyDown(Util::Keycode::UP)) m_player->Move(0, -1, m_road_map, m_things_map);
-    else if (Util::Input::IsKeyDown(Util::Keycode::S) || Util::Input::IsKeyDown(Util::Keycode::DOWN)) m_player->Move(0, 1, m_road_map, m_things_map);
-    else if (Util::Input::IsKeyDown(Util::Keycode::A) || Util::Input::IsKeyDown(Util::Keycode::LEFT)) m_player->Move(-1, 0, m_road_map, m_things_map);
-    else if (Util::Input::IsKeyDown(Util::Keycode::D) || Util::Input::IsKeyDown(Util::Keycode::RIGHT)) m_player->Move(1, 0, m_road_map, m_things_map);
+    if (Util::Input::IsKeyDown(Util::Keycode::UP)) m_player->Move(0, -1, m_road_map, m_things_map);
+    else if (Util::Input::IsKeyDown(Util::Keycode::DOWN)) m_player->Move(0, 1, m_road_map, m_things_map);
+    else if (Util::Input::IsKeyDown(Util::Keycode::LEFT)) m_player->Move(-1, 0, m_road_map, m_things_map);
+    else if (Util::Input::IsKeyDown(Util::Keycode::RIGHT)) m_player->Move(1, 0, m_road_map, m_things_map);
 
     // ── Input: Floor Switch ─────────────────────────────────────────
     if (Util::Input::IsKeyDown(Util::Keycode::NUM_8) || Util::Input::IsKeyDown(Util::Keycode::KP_8)) ChangeFloor(1);
@@ -253,6 +263,18 @@ void App::Update() {
 
   case AppUtil::GameState::SHOP:
     for (auto& ui : m_ui_components) if (ui->IsActive()) ui->run();
+    break;
+
+  case AppUtil::GameState::ENEMY_BOOK:
+    for (auto& ui : m_ui_components) if (ui->IsActive()) ui->run();
+
+    if (Util::Input::IsKeyDown(Util::Keycode::D)) {
+      m_enemy_book_ui->SetVisible(false);
+      LOG_INFO("[Toggle] Pressed D: Closing EnemyBookUI");
+    }
+    if (!m_enemy_book_ui->IsActive() && !Util::Input::IsKeyDown(Util::Keycode::D)) {
+      m_game_state = AppUtil::GameState::PLAYING;
+    }
     break;
   }
 

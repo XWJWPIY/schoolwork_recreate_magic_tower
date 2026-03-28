@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <vector>
 
+class Player;
+
 namespace AppUtil {
 
 enum class Effect {
@@ -148,6 +150,14 @@ constexpr int TOTAL_STORY = 26;
 
 // ShopOption and ShopData moved to ShopSystem.hpp
 
+/**
+ * @brief Calculate damage the player will receive from an enemy.
+ * @param player The player object.
+ * @param enemyId The ID of the enemy.
+ * @return Total damage. Returns -1 if the player cannot defeat the enemy.
+ */
+long long CalculateDamage(Player* player, int enemyId);
+
 std::string GetIdString(int id);
 bool ProbabilityGen(int p);
 void ResetGameVariables();
@@ -167,7 +177,8 @@ enum class GameState {
   FAST_ELEVATOR = 3, // 3: Floor selection menu
   ITEM_DIALOG = 4,   // 4: Item acquisition dialog (Modal)
   LOADING = 5,       // 5: Loading state
-  SHOP = 6           // 6: Shop state
+  SHOP = 6,          // 6: Shop state
+  ENEMY_BOOK = 7     // 7: Enemy book state
 };
 
 // Removed MapCell struct as it was just a wrapper for int id
