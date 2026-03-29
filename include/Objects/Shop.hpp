@@ -4,12 +4,21 @@
 #include "Objects/Entity.hpp"
 #include "Core/AppUtil.hpp"
 #include "Systems/ShopSystem.hpp"
-#include "UI/DialogueUI.hpp"
 #include <functional>
 #include <memory>
 #include <string>
 
 class Player;
+
+/**
+ * @brief Adapter to decouple Shop from DialogueUI.
+ * Injected by App at call site, so Shop never includes UI headers.
+ */
+struct ShopUIAdapter {
+    std::function<void(const std::string&, const AppUtil::ShopData&, std::function<void(int)>, std::shared_ptr<Entity>)> startShop;
+    std::function<void(const AppUtil::ShopData&)> refreshShop;
+    std::function<void()> endShop;
+};
 
 /**
  * @brief Shop entity. Manages the full shop session lifecycle (Open, HandleInput, Close).
@@ -29,19 +38,14 @@ public:
     void Reaction(std::shared_ptr<Player> player) override;
 
     // ── Session lifecycle ──────────────────────────────────────────────────
-    void Open(std::shared_ptr<Player> player, DialogueUI& ui, int floor);
-    void Close(DialogueUI& ui);
+    void Open(std::shared_ptr<Player> player, const ShopUIAdapter& adapter, int floor);
+    void Close();
     bool IsOpen() const { return m_is_open; }
 
     int GetSelectionIndex() const { return m_selection; }
 
 protected:
-    /**
-     * @brief Populate m_session_data from CSV. 
-     * Handles specific scaling logic for IDs like Greed God (602).
-     */
     void BuildShopData(int floor);
-
     bool CanAfford(const AppUtil::ShopOption& opt, const Player& player) const;
     void ExecutePurchase(const AppUtil::ShopOption& opt, std::shared_ptr<Player> player);
 
@@ -53,6 +57,7 @@ private:
 
     OpenCallback  m_on_open;
     CloseCallback m_on_close;
+    ShopUIAdapter m_adapter; // Stored for session lifetime
 };
 
 #endif // SHOP_HPP

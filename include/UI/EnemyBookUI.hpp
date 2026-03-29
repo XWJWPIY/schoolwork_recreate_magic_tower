@@ -3,11 +3,13 @@
 
 #include "UI/UIComponent.hpp"
 #include "UI/NumericDisplayText.hpp"
-#include "Objects/Player.hpp"
-#include "Core/FloorMap.hpp"
+#include "Core/AppUtil.hpp"
 #include <vector>
 #include <memory>
 #include <string>
+
+class Player;
+class FloorMap;
 
 class EnemyBookUI : public UIComponent {
 public:
@@ -28,7 +30,7 @@ private:
         std::shared_ptr<Util::GameObject> icon;
         std::shared_ptr<NumericDisplayText> name;
         std::shared_ptr<NumericDisplayText> special;
-        std::vector<std::shared_ptr<NumericDisplayText>> stats; // hp, atk, def, agi, atkTime, damage, exp, gold
+        std::vector<std::shared_ptr<NumericDisplayText>> stats;
 
         void Initialize(const std::string& fontPath, float baseY, float bgX);
         void SetVisible(bool visible);
@@ -40,7 +42,7 @@ private:
     void UpdatePage(int pageIdx);
 
     static constexpr int ENTRIES_PER_PAGE = 3;
-    static constexpr int STAT_COUNT = 8; // hp, atk, def, agi, atkTime, damage, exp, gold
+    static constexpr int STAT_COUNT = 8;
 
     std::shared_ptr<Player> m_player;
     std::shared_ptr<FloorMap> m_things_map;

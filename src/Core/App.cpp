@@ -179,7 +179,18 @@ void App::Update() {
       m_player->SetPendingShop(-1);
       auto obj = m_things_map->FindFirstObjectOfId(id);
       if (auto shop = std::dynamic_pointer_cast<Shop>(obj)) {
-        shop->Open(m_player, *m_dialogue_ui, m_road_map->GetCurrentStory());
+        ShopUIAdapter adapter{
+          [this](const std::string& name, const AppUtil::ShopData& data, std::function<void(int)> onSelect, std::shared_ptr<Entity> src) {
+            m_dialogue_ui->StartShop(name, data, onSelect, src);
+          },
+          [this](const AppUtil::ShopData& data) {
+            m_dialogue_ui->RefreshShopOptions(data);
+          },
+          [this]() {
+            m_dialogue_ui->EndShopSelection();
+          }
+        };
+        shop->Open(m_player, adapter, m_road_map->GetCurrentStory());
         break; 
       }
     }

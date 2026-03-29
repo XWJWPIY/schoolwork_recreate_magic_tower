@@ -2,12 +2,14 @@
 #define STATUS_UI_HPP
 
 #include "UI/NumericDisplayText.hpp"
-#include "Objects/Player.hpp"
 #include "Util/Renderer.hpp"
 #include "UI/UIComponent.hpp"
-#include "Core/FloorMap.hpp"
+#include "Core/AppUtil.hpp"
 #include <memory>
 #include <vector>
+
+class Player;
+class FloorMap;
 
 class StatusUI : public UIComponent {
 public:

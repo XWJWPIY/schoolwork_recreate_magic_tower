@@ -1,5 +1,6 @@
 #include "UI/StatusUI.hpp"
 #include "Objects/Player.hpp"
+#include "Core/FloorMap.hpp"
 #include "UI/NumericDisplayText.hpp"
 #include "Core/AppUtil.hpp"
 

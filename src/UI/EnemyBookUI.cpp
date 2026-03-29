@@ -1,4 +1,5 @@
 #include "UI/EnemyBookUI.hpp"
+#include "Objects/Player.hpp"
 #include "Core/AppUtil.hpp"
 #include "Util/Input.hpp"
 #include "Util/Keycode.hpp"

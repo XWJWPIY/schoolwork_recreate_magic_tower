@@ -2,8 +2,9 @@
 #define PLAYER_HPP
 
 #include "Objects/Actor.hpp"
-#include "Core/FloorMap.hpp"
 #include <memory>
+
+class FloorMap;
 
 class Player : public Actor {
 public:

@@ -1,6 +1,5 @@
 #include "Objects/Shop.hpp"
 #include "Objects/Player.hpp"
-#include "UI/DialogueUI.hpp"
 #include "Systems/ShopSystem.hpp"
 #include "Core/AppUtil.hpp"
 #include "Util/Input.hpp"
@@ -17,7 +16,8 @@ void Shop::Reaction(std::shared_ptr<Player> player) {
     player->SetPendingShop(m_object_id);
 }
 
-void Shop::Open(std::shared_ptr<Player> player, DialogueUI& diag, int floor) {
+void Shop::Open(std::shared_ptr<Player> player, const ShopUIAdapter& adapter, int floor) {
+    m_adapter = adapter; // Store for session lifetime
     auto it = AppUtil::GlobalObjectRegistry.find(m_object_id);
     if (it != AppUtil::GlobalObjectRegistry.end()) {
         m_transaction_count = it->second.GetInt(AppUtil::Attr::TRANSACTIONS);
@@ -31,12 +31,12 @@ void Shop::Open(std::shared_ptr<Player> player, DialogueUI& diag, int floor) {
     m_selection = 0;
     m_is_open = true;
 
-    auto onSelect = [this, &diag, player, floor](int selection) {
+    auto onSelect = [this, player, floor](int selection) {
         if (selection < 0 || selection >= static_cast<int>(m_session_data.options.size())) return;
         const auto& opt = m_session_data.options[selection];
         
         if (opt.text == "Exit") {
-            Close(diag);
+            Close();
             return;
         }
         
@@ -47,20 +47,20 @@ void Shop::Open(std::shared_ptr<Player> player, DialogueUI& diag, int floor) {
                 registry_it->second.attributes[AppUtil::AttributeRegistry::GetId(AppUtil::Attr::TRANSACTIONS)] = std::to_string(m_transaction_count);
             }
             BuildShopData(floor);
-            diag.RefreshShopOptions(m_session_data);
+            m_adapter.refreshShop(m_session_data);
         }
     };
 
     std::string name = std::to_string(floor) + "_" + AppUtil::GetIdString(m_object_id);
-    diag.StartShop(name, m_session_data, onSelect, nullptr);
+    m_adapter.startShop(name, m_session_data, onSelect, nullptr);
 
     LOG_INFO("Shop::Open id={}", m_object_id);
     if (m_on_open) m_on_open(*this);
 }
 
-void Shop::Close(DialogueUI& ui) {
+void Shop::Close() {
     m_is_open = false;
-    ui.EndShopSelection();
+    m_adapter.endShop();
     LOG_INFO("Shop::Close id={}", m_object_id);
     if (m_on_close) m_on_close();
 }

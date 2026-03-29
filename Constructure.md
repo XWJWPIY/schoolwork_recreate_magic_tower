@@ -523,9 +523,9 @@ classDiagram
 
     Player ..> FloorMap
     Player ..> Entity
-    Shop ..> DialogueUI
     Door ..> Player
     Item ..> Actor
+    App ..> ShopUIAdapter : (Injects into Shop)
 
     EnemyBookUI *-- EnemyEntry
 
