@@ -6,6 +6,8 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <chrono>
+#include <random>
 
 class Player;
 
@@ -114,6 +116,10 @@ struct ObjectMetadata {
 extern std::unordered_map<int, ObjectMetadata> GlobalObjectRegistry;
 extern std::unordered_map<std::string, std::string> GlobalSettings;
 std::string GetGlobalString(const std::string& key, const std::string& defaultValue = "");
+
+// RNG Utilities
+int GetRandomInt(int min, int max);
+bool CheckProbability(int percentage);
 
 class CSVLoader {
 public:

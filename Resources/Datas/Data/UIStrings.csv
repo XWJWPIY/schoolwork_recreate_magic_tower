@@ -25,4 +25,13 @@ battle_vs,VS
 battle_retreat,退出(Q)
 battle_win,戰鬥勝利！
 battle_exp,獲得經驗: 
-battle_coin,  金幣: 
+battle_coin,  獲得金幣: 
+battle_evaded,迴避！
+battle_instant_kill,必殺攻擊！
+battle_weakened,受到衰弱攻擊！
+battle_poisoned,受到中毒攻擊！
+battle_special_kill,必殺攻擊
+battle_special_weak,衰弱
+battle_special_poison,中毒
+battle_evaded_enemy,敵人迴避！
+battle_hero_hits,勇者攻擊！

@@ -98,8 +98,19 @@ int AttributeRegistry::FromEffect(Effect effect) {
 
 std::string GetGlobalString(const std::string& key, const std::string& defaultValue) {
     auto it = GlobalSettings.find(key);
-    if (it != GlobalSettings.end()) return it->second;
-    return defaultValue;
+    return (it != GlobalSettings.end()) ? it->second : defaultValue;
+}
+
+int GetRandomInt(int min, int max) {
+    static std::mt19937 gen(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    std::uniform_int_distribution<> dis(min, max);
+    return dis(gen);
+}
+
+bool CheckProbability(int percentage) {
+    if (percentage <= 0) return false;
+    if (percentage >= 100) return true;
+    return GetRandomInt(0, 99) < percentage;
 }
 
 void RegistryLoader::LoadAllData() {

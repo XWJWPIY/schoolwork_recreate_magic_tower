@@ -159,6 +159,8 @@ classDiagram
         +IsActive() const override
         +SetVisible(bool) override
         +AddToRoot(Renderer) override
+        -RefreshStats()
+        -SetAnimation(isPlayerTurn, damage)
     }
 
     class EnemyEntry {
@@ -646,6 +648,15 @@ classDiagram
 ### 12.3 `EnemyBookUI` (詳見第七節)
 - **職責**：數據驅動的怪物圖鑑，提供戰鬥預覽與屬性查詢。
 
+### 12.4 `BattleUI`
+- **繼承**：`UIComponent`。
+- **職責**：處理回合制戰鬥演出。
+- **核心機制**：
+  - **多段攻擊**：根據 `ATK_Time` 屬性支援單回合多次傷害判定。
+  - **敏捷閃避**：利用 `AGI%` 與高精度 RNG 進行迴避判定。
+  - **保底傷害**：確保每次命中至少造成 1 點傷害。
+  - **特殊能力**：支援「無視防禦」、「必殺攻擊 (10%)」與「狀態攻擊 (1%)」判定。
+
 ## 十三、層級控制 (Z-Index 渲染順序)
 | Z-Index | 層級 | 內容 |
 |---------|------|------|
@@ -668,6 +679,7 @@ classDiagram
 ## 十六、全域常數與工具
 - **`TOTAL_STORY`**: 26 (0~25 樓)。
 - **`ResourcePath`**: 統一的資源路徑解析邏輯，支持多副檔名。
+- **`RNG Utility`**: 使用 `std::mt19937` (Mersenne Twister) 搭配微秒級時間種子，提供高品質、非寫死的隨機數生成（`GetRandomInt`, `CheckProbability`）。
 
 ## 十七、輸入控制與穩定化 (Input Guarding)
 - **集中控制**：所有的 UI 開啟/關閉偵測均由 `App::Update` 統一負責。

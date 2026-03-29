@@ -179,13 +179,22 @@ void BattleUI::run() {
         m_turn_timer = 0.0f;
 
         if (m_player_turn) {
-            int eDef = m_enemy->GetAttr(AppUtil::Effect::DEFENSE);
-            int pAtk = m_player->GetAttr(AppUtil::Effect::ATTACK);
-            int dmg = std::max(0, pAtk - eDef);
-            if (dmg <= 0) dmg = 0; // Immune
+            int eAGI = m_enemy->GetAttr(AppUtil::Effect::AGILITY);
+            int roll = AppUtil::GetRandomInt(0, 99);
+            
+            // Check Evasion
+            if (roll < eAGI) {
+                SetAnimation(true, 0); // Evasion!
+                LOG_INFO(("Enemy Evaded! (Roll: " + std::to_string(roll) + " < AGI: " + std::to_string(eAGI) + ")").c_str());
+            } else {
+                int eDef = m_enemy->GetAttr(AppUtil::Effect::DEFENSE);
+                int pAtk = m_player->GetAttr(AppUtil::Effect::ATTACK);
+                int dmg = std::max(1, pAtk - eDef); // Damage floor 1
 
-            m_enemy->ApplyEffect(AppUtil::Effect::HP, -dmg);
-            SetAnimation(true, dmg);
+                m_enemy->ApplyEffect(AppUtil::Effect::HP, -dmg);
+                SetAnimation(true, dmg);
+                LOG_INFO(("Hero Hits! (Roll: " + std::to_string(roll) + " >= AGI: " + std::to_string(eAGI) + ")").c_str());
+            }
 
             if (m_enemy->GetAttr(AppUtil::Effect::HP) <= 0) {
                 m_state = State::REWARD;
@@ -203,20 +212,61 @@ void BattleUI::run() {
             auto meta = AppUtil::GlobalObjectRegistry[m_enemy->GetObjectId()];
             bool ignoreDef = meta.GetInt("Ignore_DEF") > 0;
             int atkTime = meta.GetInt("ATK_Time", 1);
+            int pAGI = m_player->GetAttr(AppUtil::Effect::AGILITY);
+            
+            std::string specialStr = meta.GetString("Special");
+            bool isKilling = meta.GetInt("Killing_ATK") > 0 || specialStr == AppUtil::GetGlobalString("battle_special_kill", "必殺攻擊");
+            bool isWeak = specialStr == AppUtil::GetGlobalString("battle_special_weak", "衰弱");
+            bool isPoison = specialStr == AppUtil::GetGlobalString("battle_special_poison", "中毒");
 
             int pDef = m_player->GetAttr(AppUtil::Effect::DEFENSE);
             int eAtk = m_enemy->GetAttr(AppUtil::Effect::ATTACK);
             int eDmgBase = ignoreDef ? eAtk : (eAtk - pDef);
-            if (eDmgBase < 0) eDmgBase = 0;
+            if (eDmgBase < 1) eDmgBase = 1; // Damage floor 1
 
-            int totalDmg = eDmgBase * atkTime;
+            int totalDmg = 0;
+            bool evading = false;
+            
+            // Multi-attack turn
+            for (int i = 0; i < atkTime; ++i) {
+                int killRoll = AppUtil::GetRandomInt(0, 99);
+                // Check Instant Kill 10%
+                if (isKilling && killRoll < 10) {
+                    totalDmg = m_player->GetAttr(AppUtil::Effect::HP);
+                    LOG_INFO(("Instant Kill! (Roll: " + std::to_string(killRoll) + " < 10)").c_str());
+                    break;
+                }
 
-            m_player->ApplyEffect(AppUtil::Effect::HP, -totalDmg);
-            SetAnimation(false, totalDmg);
+                int evaRoll = AppUtil::GetRandomInt(0, 99);
+                // Check Evasion
+                if (evaRoll < pAGI) {
+                    LOG_INFO(("Player Evaded! (Hit " + std::to_string(i+1) + ", Roll: " + std::to_string(evaRoll) + " < AGI: " + std::to_string(pAGI) + ")").c_str());
+                    evading = true;
+                    continue;
+                }
+
+                totalDmg += eDmgBase;
+
+                int statusRoll = AppUtil::GetRandomInt(0, 99);
+                // Check Status 1%
+                if (isWeak && statusRoll < 1) {
+                    LOG_INFO(("Player Weakened! (Roll: " + std::to_string(statusRoll) + " < 1)").c_str());
+                }
+                if (isPoison && statusRoll < 1) {
+                    LOG_INFO(("Player Poisoned! (Roll: " + std::to_string(statusRoll) + " < 1)").c_str());
+                }
+            }
+
+            if (totalDmg > 0 || !evading) {
+                m_player->ApplyEffect(AppUtil::Effect::HP, -totalDmg);
+                SetAnimation(false, totalDmg);
+            } else {
+                SetAnimation(false, 0); // All evaded
+            }
 
             if (m_player->GetAttr(AppUtil::Effect::HP) <= 0) {
                 SetVisible(false);
-                if (m_on_end) m_on_end(false); // Retreat/Dead
+                if (m_on_end) m_on_end(false); // Dead
                 return;
             }
         }
