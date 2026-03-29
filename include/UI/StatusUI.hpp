@@ -7,6 +7,7 @@
 #include "UI/UIComponent.hpp"
 #include "Core/FloorMap.hpp"
 #include <memory>
+#include <vector>
 
 class StatusUI : public UIComponent {
 public:
@@ -25,16 +26,14 @@ public:
     void Update(const std::shared_ptr<Player>& player, int floorNum);
 
 private:
-    std::shared_ptr<NumericDisplayText> m_yellow_key_text;
-    std::shared_ptr<NumericDisplayText> m_blue_key_text;
-    std::shared_ptr<NumericDisplayText> m_red_key_text;
-    std::shared_ptr<NumericDisplayText> m_coin_text;
-    std::shared_ptr<NumericDisplayText> m_level_text;
-    std::shared_ptr<NumericDisplayText> m_hp_text;
-    std::shared_ptr<NumericDisplayText> m_attack_text;
-    std::shared_ptr<NumericDisplayText> m_defense_text;
-    std::shared_ptr<NumericDisplayText> m_agility_text;
-    std::shared_ptr<NumericDisplayText> m_exp_text;
+    struct StatEntry {
+        AppUtil::Effect effect;
+        std::shared_ptr<NumericDisplayText> text;
+    };
+
+    std::vector<StatEntry> m_stat_entries;
+
+    // Special fields (non-player-attribute)
     std::shared_ptr<NumericDisplayText> m_floor_text;
     std::shared_ptr<NumericDisplayText> m_manual_hint_text;
     
@@ -44,8 +43,7 @@ private:
     std::shared_ptr<FloorMap> m_road_map;
 
     // Helper to initialize text objects
-    void InitNumericText(std::shared_ptr<NumericDisplayText>& text, 
-                         float x, float y, const Util::Color& color, unsigned int size);
+    std::shared_ptr<NumericDisplayText> MakeText(float x, float y, const Util::Color& color, unsigned int size);
 };
 
 #endif // STATUS_UI_HPP

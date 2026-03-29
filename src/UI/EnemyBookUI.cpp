@@ -17,19 +17,9 @@ namespace {
     const float Z_TEXT = 18.0f;
     const float Z_HINT = 20.0f;
     
-    // Relative offsets within an entry (Relative to BG_POS + {0, baseY})
+    // Relative offsets within an entry 
     const glm::vec2 OFF_NAME    = {-165.0f, 40.0f};
     const glm::vec2 OFF_SPECIAL = {15.0f, 40.0f};
-    
-    const glm::vec2 OFF_HP      = {-165.0f, 0.0f}; 
-    const glm::vec2 OFF_ATK     = {-70.0f, 0.0f};
-    const glm::vec2 OFF_DEF     = {55.0f, 0.0f};
-    const glm::vec2 OFF_AGI     = {160.0f, 0.0f};
-    
-    const glm::vec2 OFF_ATK_TIME = {-165.0f, -40.0f};
-    const glm::vec2 OFF_DAMAGE   = {-70.0f, -40.0f};
-    const glm::vec2 OFF_EXP      = {55.0f, -40.0f};
-    const glm::vec2 OFF_COIN     = {160.0f, -40.0f};
 
     const Util::Color CLR_GREEN  = Util::Color::FromRGB(0, 255, 0);
     const Util::Color CLR_RED    = Util::Color::FromRGB(255, 0, 0);
@@ -38,6 +28,37 @@ namespace {
     const Util::Color CLR_BLUE   = Util::Color::FromRGB(0, 191, 255);
     const Util::Color CLR_YELLOW = Util::Color::FromRGB(255, 255, 0);
     const Util::Color CLR_WHITE  = Util::Color::FromRGB(255, 255, 255);
+
+    // Config table for the 8 numeric stats (index matches EnemyBookUI::STAT_COUNT)
+    // { label_key, default_label, offset, color }
+    struct StatCfg {
+        const char* labelKey;
+        const char* labelDefault;
+        glm::vec2 offset;
+        Util::Color color;
+    };
+
+    const StatCfg STAT_CONFIGS[] = {
+        {"label_hp",       "HP: ",     {-165.0f,   0.0f}, CLR_GREEN},
+        {"label_atk",      "ATK: ",    { -70.0f,   0.0f}, CLR_PINK},
+        {"label_def",      "DEF: ",    {  55.0f,   0.0f}, CLR_ORANGE},
+        {"label_agi",      "AGI: ",    { 160.0f,   0.0f}, CLR_GREEN},
+        {"label_atk_time", "Times: ",  {-165.0f, -40.0f}, CLR_BLUE},
+        {"label_damage",   "Damage: ", { -70.0f, -40.0f}, CLR_RED},
+        {"label_exp",      "EXP: ",    {  55.0f, -40.0f}, CLR_WHITE},
+        {"label_gold",     "GOLD: ",   { 160.0f, -40.0f}, CLR_YELLOW},
+    };
+
+    // Indices into stats[] for Update() logic
+    enum StatIdx { HP=0, ATK, DEF, AGI, ATK_TIME, DAMAGE, EXP, GOLD };
+
+    // Attribute keys to read from ObjectMetadata (matches StatIdx order)
+    const std::string STAT_ATTR_KEYS[] = {
+        AppUtil::Attr::HP, AppUtil::Attr::ATTACK, 
+        AppUtil::Attr::DEFENSE, AppUtil::Attr::AGILITY,
+        "ATK_Time", "", // damage is computed, not read directly
+        AppUtil::Attr::EXP, AppUtil::Attr::COIN,
+    };
 }
 
 // --- EnemyEntry Implementation ---
@@ -54,26 +75,25 @@ void EnemyBookUI::EnemyEntry::Initialize(const std::string& fontPath, float base
     icon->m_Transform.translation = frame->m_Transform.translation;
     icon->SetZIndex(Z_ICON);
 
-    auto initT = [&](std::shared_ptr<NumericDisplayText>& t, const std::string& key, const std::string& def, const glm::vec2& off, const Util::Color& clr) {
-        t = std::make_shared<NumericDisplayText>(fontPath, 22);
+    auto initT = [&](const std::string& key, const std::string& def, const glm::vec2& off, const Util::Color& clr) {
+        auto t = std::make_shared<NumericDisplayText>(fontPath, 22);
         t->SetAlignLeft(true);
         t->SetPrefix(AppUtil::GetGlobalString(key, def));
         t->SetColor(clr);
         t->m_Transform.translation = basePos + off;
         t->SetZIndex(Z_TEXT);
         t->UpdateDisplayText();
+        return t;
     };
 
-    initT(name,     "label_name", "Name: ", OFF_NAME,    CLR_WHITE);
-    initT(special,  "label_special", "Special: ", OFF_SPECIAL, CLR_RED);
-    initT(hp,       "label_hp", "HP: ",   OFF_HP,      CLR_GREEN);
-    initT(atk,      "label_atk", "ATK: ",  OFF_ATK,     CLR_PINK);
-    initT(def,      "label_def", "DEF: ",  OFF_DEF,     CLR_ORANGE);
-    initT(agi,      "label_agi", "AGI: ",  OFF_AGI,     CLR_GREEN);
-    initT(atkTime,  "label_atk_time", "Times: ", OFF_ATK_TIME,CLR_BLUE);
-    initT(damage,   "label_damage", "Damage: ", OFF_DAMAGE,  CLR_RED);
-    initT(exp,      "label_exp", "EXP: ",  OFF_EXP,     CLR_WHITE);
-    initT(gold,     "label_gold", "GOLD: ", OFF_COIN,    CLR_YELLOW);
+    name    = initT("label_name",    "Name: ",    OFF_NAME,    CLR_WHITE);
+    special = initT("label_special", "Special: ", OFF_SPECIAL, CLR_RED);
+
+    stats.resize(EnemyBookUI::STAT_COUNT);
+    for (int i = 0; i < EnemyBookUI::STAT_COUNT; ++i) {
+        stats[i] = initT(STAT_CONFIGS[i].labelKey, STAT_CONFIGS[i].labelDefault,
+                         STAT_CONFIGS[i].offset, STAT_CONFIGS[i].color);
+    }
 }
 
 void EnemyBookUI::EnemyEntry::SetVisible(bool v) {
@@ -81,23 +101,15 @@ void EnemyBookUI::EnemyEntry::SetVisible(bool v) {
     if (icon) icon->SetVisible(v);
     if (name) name->SetVisible(v);
     if (special) special->SetVisible(v);
-    if (hp) hp->SetVisible(v);
-    if (atk) atk->SetVisible(v);
-    if (def) def->SetVisible(v);
-    if (agi) agi->SetVisible(v);
-    if (atkTime) atkTime->SetVisible(v);
-    if (damage) damage->SetVisible(v);
-    if (exp) exp->SetVisible(v);
-    if (gold) gold->SetVisible(v);
+    for (auto& s : stats) { if (s) s->SetVisible(v); }
 }
 
 void EnemyBookUI::EnemyEntry::AddToRoot(Util::Renderer& root) {
-    root.AddChild(frame); root.AddChild(icon);
-    root.AddChild(name); root.AddChild(special);
-    root.AddChild(hp); root.AddChild(atk);
-    root.AddChild(def); root.AddChild(agi);
-    root.AddChild(atkTime); root.AddChild(damage);
-    root.AddChild(exp); root.AddChild(gold);
+    root.AddChild(frame); 
+    root.AddChild(icon);
+    root.AddChild(name); 
+    root.AddChild(special);
+    for (auto& s : stats) root.AddChild(s);
 }
 
 void EnemyBookUI::EnemyEntry::Update(const AppUtil::ObjectMetadata& meta, Player* player) {
@@ -111,34 +123,35 @@ void EnemyBookUI::EnemyEntry::Update(const AppUtil::ObjectMetadata& meta, Player
     special->SetSuffix(meta.GetString("Special", AppUtil::GetGlobalString("label_none", "None")));
     special->SetShowNumber(false);
 
-    hp->SetNumber(meta.GetInt(AppUtil::Attr::HP));
-    atk->SetNumber(meta.GetInt(AppUtil::Attr::ATTACK));
-    def->SetNumber(meta.GetInt(AppUtil::Attr::DEFENSE));
-    agi->SetNumber(meta.GetInt(AppUtil::Attr::AGILITY));
+    // Set numbers from metadata for direct-read stats
+    stats[HP]->SetNumber(meta.GetInt(AppUtil::Attr::HP));
+    stats[ATK]->SetNumber(meta.GetInt(AppUtil::Attr::ATTACK));
+    stats[DEF]->SetNumber(meta.GetInt(AppUtil::Attr::DEFENSE));
+    stats[AGI]->SetNumber(meta.GetInt(AppUtil::Attr::AGILITY));
+
+    stats[ATK_TIME]->SetPrefix(AppUtil::GetGlobalString("label_atk_time", "Times: "));
+    stats[ATK_TIME]->SetNumber(meta.GetInt("ATK_Time", 1));
+    stats[ATK_TIME]->SetShowNumber(true);
     
-    atkTime->SetPrefix(AppUtil::GetGlobalString("label_atk_time", "Times: "));
-    atkTime->SetNumber(meta.GetInt("ATK_Time", 1));
-    atkTime->SetShowNumber(true);
-    
+    // Damage is computed
     long long dmg = AppUtil::CalculateDamage(player, meta.GetInt(AppUtil::Attr::ID));
     if (dmg < 0) { 
-        damage->SetPrefix(AppUtil::GetGlobalString("label_damage", "Dmg: ") + "???"); 
-        damage->SetShowNumber(false); 
+        stats[DAMAGE]->SetPrefix(AppUtil::GetGlobalString("label_damage", "Dmg: ") + "???"); 
+        stats[DAMAGE]->SetShowNumber(false); 
     }
     else { 
-        damage->SetPrefix(AppUtil::GetGlobalString("label_damage", "Dmg: ")); 
-        damage->SetNumber(static_cast<int>(dmg)); 
-        damage->SetShowNumber(true); 
+        stats[DAMAGE]->SetPrefix(AppUtil::GetGlobalString("label_damage", "Dmg: ")); 
+        stats[DAMAGE]->SetNumber(static_cast<int>(dmg)); 
+        stats[DAMAGE]->SetShowNumber(true); 
     }
 
-    exp->SetNumber(meta.GetInt(AppUtil::Attr::EXP));
-    gold->SetNumber(meta.GetInt(AppUtil::Attr::COIN));
+    stats[EXP]->SetNumber(meta.GetInt(AppUtil::Attr::EXP));
+    stats[GOLD]->SetNumber(meta.GetInt(AppUtil::Attr::COIN));
 
-    name->UpdateDisplayText(); special->UpdateDisplayText();
-    hp->UpdateDisplayText(); atk->UpdateDisplayText();
-    def->UpdateDisplayText(); agi->UpdateDisplayText();
-    atkTime->UpdateDisplayText(); damage->UpdateDisplayText();
-    exp->UpdateDisplayText(); gold->UpdateDisplayText();
+    // Batch update all text
+    name->UpdateDisplayText(); 
+    special->UpdateDisplayText();
+    for (auto& s : stats) s->UpdateDisplayText();
 }
 
 // --- EnemyBookUI Implementation ---

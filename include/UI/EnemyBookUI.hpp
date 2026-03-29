@@ -28,14 +28,7 @@ private:
         std::shared_ptr<Util::GameObject> icon;
         std::shared_ptr<NumericDisplayText> name;
         std::shared_ptr<NumericDisplayText> special;
-        std::shared_ptr<NumericDisplayText> hp;
-        std::shared_ptr<NumericDisplayText> atk;
-        std::shared_ptr<NumericDisplayText> def;
-        std::shared_ptr<NumericDisplayText> agi;
-        std::shared_ptr<NumericDisplayText> atkTime;
-        std::shared_ptr<NumericDisplayText> damage;
-        std::shared_ptr<NumericDisplayText> exp;
-        std::shared_ptr<NumericDisplayText> gold;
+        std::vector<std::shared_ptr<NumericDisplayText>> stats; // hp, atk, def, agi, atkTime, damage, exp, gold
 
         void Initialize(const std::string& fontPath, float baseY, float bgX);
         void SetVisible(bool visible);
@@ -47,6 +40,7 @@ private:
     void UpdatePage(int pageIdx);
 
     static constexpr int ENTRIES_PER_PAGE = 3;
+    static constexpr int STAT_COUNT = 8; // hp, atk, def, agi, atkTime, damage, exp, gold
 
     std::shared_ptr<Player> m_player;
     std::shared_ptr<FloorMap> m_things_map;

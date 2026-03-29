@@ -147,6 +147,18 @@ classDiagram
         +Refresh()
     }
 
+    class EnemyEntry {
+        -shared_ptr~GameObject~ frame
+        -shared_ptr~GameObject~ icon
+        -shared_ptr~NumericDisplayText~ name
+        -shared_ptr~NumericDisplayText~ special
+        -vector~shared_ptr~NumericDisplayText~~ stats
+        +Initialize(fontPath, baseY, bgX)
+        +SetVisible(bool)
+        +AddToRoot(Renderer)
+        +Update(ObjectMetadata, Player)
+    }
+
     class Actor {
         #unordered_map~Effect, int~ m_attributes
         +Actor(id, imagePath, canReact)
@@ -322,9 +334,9 @@ classDiagram
 
 
     class StatusUI {
-        -shared_ptr yellow/blue/red_key_text
-        -shared_ptr coin/level/hp/attack/defense/agility/exp/floor_text
-        -shared_ptr manual_hint_text
+        -vector~StatEntry~ m_stat_entries
+        -shared_ptr~NumericDisplayText~ m_floor_text
+        -shared_ptr~NumericDisplayText~ m_manual_hint_text
         -shared_ptr~Player~ m_player
         -shared_ptr~FloorMap~ m_road_map
         -unsigned int m_default_font_size
@@ -334,7 +346,7 @@ classDiagram
         +IsActive() bool override
         +SetVisible(bool) override
         +AddToRoot(Renderer) override
-        -InitNumericText(text, x, y, color, size)
+        -MakeText(x, y, color, size) shared_ptr~NumericDisplayText~
     }
 
     class DynamicReplacementComponent {
@@ -495,7 +507,12 @@ classDiagram
 
     EntityFactory ..> Entity
     EntityFactory ..> MapBlock
-    EntityFactory ..> SpecializedEntities
+    EntityFactory ..> Door
+    EntityFactory ..> Enemy
+    EntityFactory ..> Item
+    EntityFactory ..> NPC
+    EntityFactory ..> Shop
+    EntityFactory ..> Stair
 
     FloorMap o-- Entity
     FloorMap ..> MapBlock
@@ -509,7 +526,8 @@ classDiagram
     Shop ..> DialogueUI
     Door ..> Player
     Item ..> Actor
-    Stair ..> App
+
+    EnemyBookUI *-- EnemyEntry
 
     RegistryLoader ..> AppUtil
     AppUtil o-- ObjectMetadata
