@@ -7,6 +7,7 @@ StatusUI::StatusUI(const std::shared_ptr<Player>& player,
                    const std::shared_ptr<FloorMap>& floorMap,
                    unsigned int fontSize) 
     : m_default_font_size(fontSize), m_player(player), m_road_map(floorMap) {
+    m_visible = true; // StatusUI defaults to visible
     // Current layout based on manual adjustments in App.cpp
     // Yellow: -290, -115
     // Blue:   -290, -172
@@ -88,6 +89,7 @@ void StatusUI::Update(const std::shared_ptr<Player>& player, int floorNum) {
 }
 
 void StatusUI::SetVisible(bool visible) {
+    m_visible = visible;
     m_yellow_key_text->SetVisible(visible);
     m_blue_key_text->SetVisible(visible);
     m_red_key_text->SetVisible(visible);

@@ -20,7 +20,7 @@
 #include "Objects/Shop.hpp"
 #include "Objects/Stair.hpp"
 #include "UI/StatusUI.hpp"
-#include "Objects/Trigger.hpp"
+
 
 void App::Start() {
   m_current_state = STATE::UPDATE;
@@ -120,6 +120,14 @@ void App::InitializeGame() {
 }
 
 void App::Update() {
+  // 0. Unified UI update: run all active UI components
+  if (m_game_state != AppUtil::GameState::MAIN_MENU && 
+      m_game_state != AppUtil::GameState::LOADING) {
+    for (auto& ui : m_ui_components) {
+      if (ui->IsActive()) ui->run();
+    }
+  }
+
   // 1. Main State Machine (Mode-First)
   switch (m_game_state) {
   case AppUtil::GameState::MAIN_MENU:
@@ -156,11 +164,6 @@ void App::Update() {
     break;
 
   case AppUtil::GameState::PLAYING:
-    // Update active UIs (Status, item notices, etc.)
-    for (auto& ui : m_ui_components) {
-        if (ui->IsActive()) ui->run();
-    }
-
     // Check if a dialogue or modal UI is intercepting the logic phase
     {
         bool isIntercepted = false;
@@ -239,7 +242,6 @@ void App::Update() {
     break;
 
   case AppUtil::GameState::INSTRUCTIONS:
-    for (auto& ui : m_ui_components) if (ui->IsActive()) ui->run();
     
     if (Util::Input::IsKeyDown(Util::Keycode::L)) {
       m_notice_ui->SetVisible(false);
@@ -251,7 +253,6 @@ void App::Update() {
     break;
 
   case AppUtil::GameState::FAST_ELEVATOR:
-    for (auto& ui : m_ui_components) if (ui->IsActive()) ui->run();
 
     if (Util::Input::IsKeyDown(Util::Keycode::F)) {
       m_fly_ui->SetVisible(false);
@@ -262,11 +263,9 @@ void App::Update() {
     break;
 
   case AppUtil::GameState::SHOP:
-    for (auto& ui : m_ui_components) if (ui->IsActive()) ui->run();
     break;
 
   case AppUtil::GameState::ENEMY_BOOK:
-    for (auto& ui : m_ui_components) if (ui->IsActive()) ui->run();
 
     if (Util::Input::IsKeyDown(Util::Keycode::D)) {
       m_enemy_book_ui->SetVisible(false);

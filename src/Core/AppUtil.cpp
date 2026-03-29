@@ -120,7 +120,7 @@ void RegistryLoader::LoadAllData() {
     LoadObjectCSV(GetStaticResourcePath("Datas/Data/Stair.csv"), "Stair", true);
     LoadObjectCSV(GetStaticResourcePath("Datas/Data/Shop.csv"), "Shop", false);
     LoadObjectCSV(GetStaticResourcePath("Datas/Data/NPC.csv"), "Road", false);
-    LoadObjectCSV(GetStaticResourcePath("Datas/Data/Trigger.csv"), "Trigger", true);
+
     LoadObjectCSV(GetStaticResourcePath("Datas/Data/Enemy.csv"), "Enemy", false);
 
     LOG_INFO("RegistryLoader: Total {} object types in registry.", GlobalObjectRegistry.size());

@@ -13,7 +13,7 @@ set(SRC_FILES
     Objects/Door.cpp
     Objects/Enemy.cpp
     Objects/NPC.cpp
-    Objects/Trigger.cpp
+
     UI/Background.cpp
     UI/NumericDisplayText.cpp
     UI/StatusUI.cpp
@@ -43,7 +43,7 @@ set(INCLUDE_FILES
     Objects/Door.hpp
     Objects/Enemy.hpp
     Objects/NPC.hpp
-    Objects/Trigger.hpp
+
     UI/Background.hpp
     UI/NumericDisplayText.hpp
     UI/StatusUI.hpp

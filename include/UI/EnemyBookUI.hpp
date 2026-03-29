@@ -62,7 +62,6 @@ private:
     
     int m_current_page = 0;
     int m_total_pages = 0;
-    bool m_visible = false;
 };
 
 #endif // ENEMY_BOOK_UI_HPP

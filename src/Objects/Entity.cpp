@@ -8,7 +8,7 @@
  *    透過 GLOBAL_SYNC 模式與「地磚/場景物件」進行全域同步控制。
  * 2. Enemy：未來實作呼吸動畫時，同樣需在 CSV 標註 Animation > 1，
  *    系統將自動納入全域同步軌道。
- * 3. Item、Stair、Trigger：由於 CSV 標註為 1 幀，系統將保持靜態顯示（STATIC）。
+ * 3. Item、Stair：由於 CSV 標註為 1 幀，系統將保持靜態顯示（STATIC）。
  */
 
 Entity::Entity(int initialId) {

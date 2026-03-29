@@ -47,7 +47,7 @@ private:
     std::shared_ptr<Entity> CreateNPC(int id);
     std::shared_ptr<Entity> CreateShop(int id);
     std::shared_ptr<Entity> CreateStair(int id);
-    std::shared_ptr<Entity> CreateTrigger(int id);
+
 
     Callbacks m_callbacks;
     std::shared_ptr<class DynamicReplacementComponent> m_replacement_comp;

@@ -39,7 +39,6 @@ private:
     std::shared_ptr<NumericDisplayText> m_manual_hint_text;
     
     unsigned int m_default_font_size;
-    bool m_visible = true;
 
     std::shared_ptr<Player> m_player;
     std::shared_ptr<FloorMap> m_road_map;

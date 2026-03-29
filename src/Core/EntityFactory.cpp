@@ -7,7 +7,7 @@
 #include "Objects/NPC.hpp"
 #include "Objects/Shop.hpp"
 #include "Objects/Stair.hpp"
-#include "Objects/Trigger.hpp"
+
 #include "Systems/DynamicReplacementComponent.hpp"
 
 EntityFactory::EntityFactory(const Callbacks& callbacks)
@@ -28,7 +28,7 @@ std::shared_ptr<Entity> EntityFactory::CreateEntity(int id) {
     else if (id >= 500 && id < 600) entity = CreateNPC(id);
     else if (id >= 600 && id < 700) entity = CreateShop(id);
     else if (id >= 700 && id < 800) entity = CreateStair(id);
-    else if (id >= 800 && id < 900) entity = CreateTrigger(id);
+    else if (id >= 800 && id < 900) entity = CreateNPC(id);
     else {
         // Fallback for ID 0 or unknown: create a MapBlock for consistency if it's in the road range,
         // otherwise just a basic Entity.
@@ -87,12 +87,4 @@ std::shared_ptr<Entity> EntityFactory::CreateStair(int id) {
         });
 }
 
-std::shared_ptr<Entity> EntityFactory::CreateTrigger(int id) {
-    return std::make_shared<Trigger>(
-        id, [this](std::shared_ptr<Trigger> t, const std::string& path) {
-            if (m_callbacks.startScript) {
-                std::string scriptName = std::to_string(m_callbacks.getCurrentStory()) + "_" + path;
-                m_callbacks.startScript(t, scriptName);
-            }
-        });
-}
+

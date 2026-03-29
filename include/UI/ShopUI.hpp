@@ -57,7 +57,6 @@ private:
     AppUtil::ShopData m_data;
     int m_selection = 0;
     std::function<void(int)> m_on_select;
-    bool m_visible = false;
     float m_blink_timer = 0.0f;
 };
 

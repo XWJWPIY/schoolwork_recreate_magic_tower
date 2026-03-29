@@ -17,6 +17,7 @@ classDiagram
 
     class UIComponent {
         <<interface>>
+        #bool m_visible
         +virtual run()*
         +virtual IsIntercepting()* bool
         +virtual IsActive()* bool
@@ -79,7 +80,6 @@ classDiagram
         -shared_ptr~NumericDisplayText~ m_price_display
         -AppUtil::ShopData m_data
         -int m_selection
-        -bool m_visible
         -float m_blink_timer
         +ShopUI(fontPath)
         +Start(ShopData, onSelect)
@@ -97,7 +97,6 @@ classDiagram
         -shared_ptr~NumericDisplayText~ m_quit_text
         -shared_ptr~GameObject~ m_up_arrow
         -shared_ptr~GameObject~ m_down_arrow
-        -bool m_visible
         -float m_blink_timer
         +FlyUI()
         +Start(currentStory, callback)
@@ -111,7 +110,6 @@ classDiagram
     class NoticeUI {
         -shared_ptr~GameObject~ m_notice_bg
         -shared_ptr~NumericDisplayText~ m_close_hint
-        -bool m_visible
         -float m_blink_timer
         +NoticeUI()
         +run() override
@@ -122,7 +120,6 @@ classDiagram
     }
     
     class ItemNoticeUI {
-        -bool m_visible
         -shared_ptr~GameObject~ m_item_notice_bg
         -shared_ptr~NumericDisplayText~ m_item_notice_text
         -shared_ptr~NumericDisplayText~ m_item_confirm_text
@@ -141,7 +138,6 @@ classDiagram
         -vector~int~ m_unique_enemy_ids
         -int m_current_page
         -int m_total_pages
-        -bool m_visible
         +EnemyBookUI(player, thingsMap)
         +run() override
         +IsIntercepting() const override
@@ -203,11 +199,7 @@ classDiagram
         +Reaction(player) override
     }
 
-    class Trigger {
-        -TriggerCallback m_trigger_callback
-        +Trigger(id, TriggerCallback)
-        +Reaction(player) override
-    }
+
 
     class Item {
         -NoticeCallback m_notice_callback
@@ -266,7 +258,7 @@ classDiagram
     Entity <|-- Item
     Entity <|-- Stair
     Entity <|-- Shop
-    Entity <|-- Trigger
+
     Entity <|-- Actor
     Actor <|-- Player
     Actor <|-- Enemy
@@ -335,7 +327,6 @@ classDiagram
         -shared_ptr manual_hint_text
         -shared_ptr~Player~ m_player
         -shared_ptr~FloorMap~ m_road_map
-        -bool m_visible
         -unsigned int m_default_font_size
         +StatusUI(Player, FloorMap, fontSize)
         +run() override
@@ -546,7 +537,7 @@ classDiagram
 ## 三、實體衍生與策略
 - **動畫策略**：
   - **NPC、Shop、Enemy**：與場景同步控制（Global Sync）。
-  - **Item、Stair、Trigger**：單幀靜態顯示（Static）。
+  - **Item、Stair**：單幀靜態顯示（Static）。
 - **覆寫方法**：不再需要覆寫 `SetObjectId` 與 `ObjectUpdate`，完全複用基底類別邏輯。
 
 ## 四、多型衍生實體 (Entity 子類)
@@ -563,7 +554,9 @@ classDiagram
 ### 4.2 `Door` (門)
 - **數據驅動**：不再手動判斷鑰匙類型，完全透過 `ForEachAttribute` 與 `CheckCondition` 進行通用資源扣除。
 
-### ... (NPC, Enemy, Item, Stair, Shop, Trigger 保持既有邏輯架構)
+### ... (NPC, Enemy, Item, Stair, Shop 保持既有邏輯架構)
+
+> **注意**：原 `Trigger` 類別已併入 `NPC`（ID 800-899 範圍現由 `NPC` 處理），因兩者行為完全相同。
 
 ## 五、背景 (`Background`)
 - 繼承 `Util::GameObject`。管理主要遊戲背景圖與載入遮罩。
@@ -587,15 +580,17 @@ classDiagram
 - **封裝管理**：統一管理 0~25 樓的 3D ID 網格，並提供 `SetObject` 與 `SwitchStory` 介面。
 
 ## 九、App (遊戲核心控制器)
-- **模式優先架構 (Mode-First)**：`Update()` 核心為一個大型 `switch(m_game_state)`。每個模式（PLAYING, INSTRUCTIONS, FAST_ELEVATOR）完全負責該狀態下的 UI 運行、輸入偵測與世界更新。
-- **邏輯互斥**：透過 `break` 與狀態切換，確保在同一影格內不會同時觸發多個模式的輸入（例如：防止按下 L 時同時觸發走路）。
+- **模式優先架構 (Mode-First)**：`Update()` 核心為一個大型 `switch(m_game_state)`。每個模式（PLAYING, INSTRUCTIONS, FAST_ELEVATOR）負責該狀態下的輸入偵測與世界更新。
+- **統一 UI 驅動**：所有活動中的 `UIComponent` 在 switch 之前統一調用 `run()`（排除 MAIN_MENU 與 LOADING），避免各 case 重複迴圈。
+- **邏輯互斥**：透過 `break` 與狀態切換，確保在同一影格內不會同時觸發多個模式的輸入。
 
 ## 十、UI 模組化介面 (`UIComponent`)
 - **全新架構**：建立了抽象基類 `UIComponent`。
 - **核心機制**：
-  - `run()`：執行 UI 的美幀邏輯（由 `App` 依據目前狀態在對應的 `case` 中調用）。
+  - `run()`：執行 UI 的每幀邏輯（由 `App::Update()` 在 switch 之前統一調用）。
   - `IsIntercepting()`：判定是否攔截後續的邏輯解析（如停止地圖物件更新）。
-- **集中管理**：`App` 維持 `m_ui_components` 列表，但在 `Update()` 中採取針對性調用。
+  - `m_visible`：由基底 `UIComponent` 統一管理的可見狀態，所有子類共用，不再各自宣告。
+- **集中管理**：`App` 維持 `m_ui_components` 列表進行統一更新。
 
 ## 十一、對話與商店系統 (UI 遷移)
 ### 11.1 `DialogueUI`

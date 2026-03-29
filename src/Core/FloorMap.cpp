@@ -24,11 +24,6 @@ FloorMap::FloorMap(ObjectFactory factory, float centerX, float centerY,
     currentBaseSize = {DEFAULT_SIZE, DEFAULT_SIZE};
   }
 
-  // Fallback if somehow still 0
-  if (currentBaseSize.x <= 0 || currentBaseSize.y <= 0) {
-    currentBaseSize = {DEFAULT_SIZE, DEFAULT_SIZE};
-  }
-
   m_base_size = currentBaseSize; 
 
   float spacingX = currentBaseSize.x * scaleX;
@@ -152,19 +147,8 @@ std::shared_ptr<Entity> FloorMap::GetObject(int x, int y, int story) {
 
 bool FloorMap::IsPassable(int x, int y, int story) {
   auto obj = GetObject(x, y, story);
-  if (!obj) {
-    return true; // Empty space is passable by default
-  }
-
-  if (obj) {
-    // Entities like doors or monsters might have different passability logic.
-    // For now, if it's an entity, we assume it's NOT passable if it's visible.
-    // In the future, we can add a reaction system.
-    //return !obj->GetVisible();
-    return obj->IsPassable();
-  }
-
-  return true;
+  if (!obj) return true; // Empty space is passable by default
+  return obj->IsPassable();
 }
 
 void FloorMap::SwitchStory(int story) {

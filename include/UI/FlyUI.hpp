@@ -30,7 +30,6 @@ private:
     void UpdateArrows(int currentFloor);
 
 private:
-    bool m_visible = false;
     int m_current_story = 0;
     int m_preview_floor = 0;
     TeleportCallback m_on_teleport;

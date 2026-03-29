@@ -23,7 +23,6 @@ public:
     void Show(const std::string& text);
 
 private:
-    bool m_visible = false;
     std::shared_ptr<Util::GameObject> m_item_notice_bg;
     std::shared_ptr<NumericDisplayText> m_item_notice_text;
     std::shared_ptr<NumericDisplayText> m_item_confirm_text;
