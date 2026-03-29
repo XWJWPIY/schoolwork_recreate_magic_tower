@@ -40,6 +40,109 @@ namespace {
     const Util::Color CLR_WHITE  = Util::Color::FromRGB(255, 255, 255);
 }
 
+// --- EnemyEntry Implementation ---
+
+void EnemyBookUI::EnemyEntry::Initialize(const std::string& fontPath, float baseY, float bgX) {
+    glm::vec2 basePos = {bgX, baseY};
+
+    frame = std::make_shared<Util::GameObject>();
+    frame->SetDrawable(std::make_shared<Util::Image>(AppUtil::GetStaticResourcePath("bmp/Special/EnemyFrame.bmp")));
+    frame->m_Transform.translation = basePos + glm::vec2(ICON_OFFSET_X, 20.0f);
+    frame->SetZIndex(Z_FRAME);
+
+    icon = std::make_shared<Util::GameObject>();
+    icon->m_Transform.translation = frame->m_Transform.translation;
+    icon->SetZIndex(Z_ICON);
+
+    auto initT = [&](std::shared_ptr<NumericDisplayText>& t, const std::string& key, const std::string& def, const glm::vec2& off, const Util::Color& clr) {
+        t = std::make_shared<NumericDisplayText>(fontPath, 22);
+        t->SetAlignLeft(true);
+        t->SetPrefix(AppUtil::GetGlobalString(key, def));
+        t->SetColor(clr);
+        t->m_Transform.translation = basePos + off;
+        t->SetZIndex(Z_TEXT);
+        t->UpdateDisplayText();
+    };
+
+    initT(name,     "label_name", "Name: ", OFF_NAME,    CLR_WHITE);
+    initT(special,  "label_special", "Special: ", OFF_SPECIAL, CLR_RED);
+    initT(hp,       "label_hp", "HP: ",   OFF_HP,      CLR_GREEN);
+    initT(atk,      "label_atk", "ATK: ",  OFF_ATK,     CLR_PINK);
+    initT(def,      "label_def", "DEF: ",  OFF_DEF,     CLR_ORANGE);
+    initT(agi,      "label_agi", "AGI: ",  OFF_AGI,     CLR_GREEN);
+    initT(atkTime,  "label_atk_time", "Times: ", OFF_ATK_TIME,CLR_BLUE);
+    initT(damage,   "label_damage", "Damage: ", OFF_DAMAGE,  CLR_RED);
+    initT(exp,      "label_exp", "EXP: ",  OFF_EXP,     CLR_WHITE);
+    initT(gold,     "label_gold", "GOLD: ", OFF_COIN,    CLR_YELLOW);
+}
+
+void EnemyBookUI::EnemyEntry::SetVisible(bool v) {
+    if (frame) frame->SetVisible(v);
+    if (icon) icon->SetVisible(v);
+    if (name) name->SetVisible(v);
+    if (special) special->SetVisible(v);
+    if (hp) hp->SetVisible(v);
+    if (atk) atk->SetVisible(v);
+    if (def) def->SetVisible(v);
+    if (agi) agi->SetVisible(v);
+    if (atkTime) atkTime->SetVisible(v);
+    if (damage) damage->SetVisible(v);
+    if (exp) exp->SetVisible(v);
+    if (gold) gold->SetVisible(v);
+}
+
+void EnemyBookUI::EnemyEntry::AddToRoot(Util::Renderer& root) {
+    root.AddChild(frame); root.AddChild(icon);
+    root.AddChild(name); root.AddChild(special);
+    root.AddChild(hp); root.AddChild(atk);
+    root.AddChild(def); root.AddChild(agi);
+    root.AddChild(atkTime); root.AddChild(damage);
+    root.AddChild(exp); root.AddChild(gold);
+}
+
+void EnemyBookUI::EnemyEntry::Update(const AppUtil::ObjectMetadata& meta, Player* player) {
+    icon->SetDrawable(std::make_shared<Util::Image>(AppUtil::GetFullResourcePath(meta.GetInt(AppUtil::Attr::ID))));
+    
+    name->SetPrefix(AppUtil::GetGlobalString("label_name", "Name: "));
+    name->SetSuffix(meta.GetString(AppUtil::Attr::TITLE));
+    name->SetShowNumber(false);
+
+    special->SetPrefix(AppUtil::GetGlobalString("label_special", "Spec: "));
+    special->SetSuffix(meta.GetString("Special", AppUtil::GetGlobalString("label_none", "None")));
+    special->SetShowNumber(false);
+
+    hp->SetNumber(meta.GetInt(AppUtil::Attr::HP));
+    atk->SetNumber(meta.GetInt(AppUtil::Attr::ATTACK));
+    def->SetNumber(meta.GetInt(AppUtil::Attr::DEFENSE));
+    agi->SetNumber(meta.GetInt(AppUtil::Attr::AGILITY));
+    
+    atkTime->SetPrefix(AppUtil::GetGlobalString("label_atk_time", "Times: "));
+    atkTime->SetNumber(meta.GetInt("ATK_Time", 1));
+    atkTime->SetShowNumber(true);
+    
+    long long dmg = AppUtil::CalculateDamage(player, meta.GetInt(AppUtil::Attr::ID));
+    if (dmg < 0) { 
+        damage->SetPrefix(AppUtil::GetGlobalString("label_damage", "Dmg: ") + "???"); 
+        damage->SetShowNumber(false); 
+    }
+    else { 
+        damage->SetPrefix(AppUtil::GetGlobalString("label_damage", "Dmg: ")); 
+        damage->SetNumber(static_cast<int>(dmg)); 
+        damage->SetShowNumber(true); 
+    }
+
+    exp->SetNumber(meta.GetInt(AppUtil::Attr::EXP));
+    gold->SetNumber(meta.GetInt(AppUtil::Attr::COIN));
+
+    name->UpdateDisplayText(); special->UpdateDisplayText();
+    hp->UpdateDisplayText(); atk->UpdateDisplayText();
+    def->UpdateDisplayText(); agi->UpdateDisplayText();
+    atkTime->UpdateDisplayText(); damage->UpdateDisplayText();
+    exp->UpdateDisplayText(); gold->UpdateDisplayText();
+}
+
+// --- EnemyBookUI Implementation ---
+
 EnemyBookUI::EnemyBookUI(const std::shared_ptr<Player>& player, 
                          const std::shared_ptr<FloorMap>& thingsMap)
     : m_player(player), m_things_map(thingsMap) {
@@ -53,40 +156,9 @@ EnemyBookUI::EnemyBookUI(const std::shared_ptr<Player>& player,
     m_background->SetZIndex(Z_BG);
 
     for (int i = 0; i < ENTRIES_PER_PAGE; ++i) {
-        float baseY = ENTRY_START_Y - i * ENTRY_SPACING_Y;
-        glm::vec2 basePos = {BG_POS.x, baseY};
-
-        auto frame = std::make_shared<Util::GameObject>();
-        frame->SetDrawable(std::make_shared<Util::Image>(AppUtil::GetStaticResourcePath("bmp/Special/EnemyFrame.bmp")));
-        frame->m_Transform.translation = basePos + glm::vec2(ICON_OFFSET_X, 20.0f);
-        frame->SetZIndex(Z_FRAME);
-        m_frames.push_back(frame);
-
-        auto icon = std::make_shared<Util::GameObject>();
-        icon->m_Transform.translation = frame->m_Transform.translation;
-        icon->SetZIndex(Z_ICON);
-        m_icons.push_back(icon);
-
-        auto initT = [&](std::vector<std::shared_ptr<NumericDisplayText>>& vec, const std::string& key, const std::string& def, const glm::vec2& off, const Util::Color& clr) {
-            auto t = std::make_shared<NumericDisplayText>(fontPath, 22);
-            t->SetAlignLeft(true);
-            t->SetPrefix(AppUtil::GetGlobalString(key, def)); t->SetColor(clr);
-            t->m_Transform.translation = basePos + off;
-            t->SetZIndex(Z_TEXT);
-            t->UpdateDisplayText();
-            vec.push_back(t);
-        };
-
-        initT(m_names,    "label_name", "Name: ", OFF_NAME,    CLR_WHITE);
-        initT(m_specials, "label_special", "Special: ", OFF_SPECIAL, CLR_RED);
-        initT(m_hps,      "label_hp", "HP: ",   OFF_HP,      CLR_GREEN);
-        initT(m_atks,     "label_atk", "ATK: ",  OFF_ATK,     CLR_PINK);
-        initT(m_defs,     "label_def", "DEF: ",  OFF_DEF,     CLR_ORANGE);
-        initT(m_agis,     "label_agi", "AGI: ",  OFF_AGI,     CLR_GREEN);
-        initT(m_atkTimes, "label_atk_time", "Times: ", OFF_ATK_TIME,CLR_BLUE);
-        initT(m_damages,  "label_damage", "Damage: ", OFF_DAMAGE,  CLR_RED);
-        initT(m_exps,     "label_exp", "EXP: ",  OFF_EXP,     CLR_WHITE);
-        initT(m_coins,    "label_gold", "GOLD: ", OFF_COIN,    CLR_YELLOW);
+        EnemyEntry entry;
+        entry.Initialize(fontPath, ENTRY_START_Y - i * ENTRY_SPACING_Y, BG_POS.x);
+        m_entries.push_back(entry);
     }
 
     m_space_hint = std::make_shared<NumericDisplayText>(fontPath, 22);
@@ -132,60 +204,12 @@ void EnemyBookUI::UpdatePage(int pageIdx) {
         int idx = pageIdx * ENTRIES_PER_PAGE + i;
         bool inRange = hasAny && (idx < static_cast<int>(m_unique_enemy_ids.size()));
         
-        m_frames[i]->SetVisible(m_visible && inRange);
-        m_icons[i]->SetVisible(m_visible && inRange);
-        m_names[i]->SetVisible(m_visible && inRange);
-        m_specials[i]->SetVisible(m_visible && inRange);
-        m_hps[i]->SetVisible(m_visible && inRange);
-        m_atks[i]->SetVisible(m_visible && inRange);
-        m_defs[i]->SetVisible(m_visible && inRange);
-        m_agis[i]->SetVisible(m_visible && inRange);
-        m_atkTimes[i]->SetVisible(m_visible && inRange);
-        m_damages[i]->SetVisible(m_visible && inRange);
-        m_exps[i]->SetVisible(m_visible && inRange);
-        m_coins[i]->SetVisible(m_visible && inRange);
+        m_entries[i].SetVisible(m_visible && inRange);
 
         if (inRange) {
             int id = m_unique_enemy_ids[idx];
             auto const& meta = AppUtil::GlobalObjectRegistry[id];
-            m_icons[i]->SetDrawable(std::make_shared<Util::Image>(AppUtil::GetFullResourcePath(id)));
-            
-            m_names[i]->SetPrefix(AppUtil::GetGlobalString("label_name", "Name: "));
-            m_names[i]->SetSuffix(meta.GetString(AppUtil::Attr::TITLE));
-            m_names[i]->SetShowNumber(false);
-
-            m_specials[i]->SetPrefix(AppUtil::GetGlobalString("label_special", "Spec: "));
-            m_specials[i]->SetSuffix(meta.GetString("Special", AppUtil::GetGlobalString("label_none", "None")));
-            m_specials[i]->SetShowNumber(false);
-
-            m_hps[i]->SetNumber(meta.GetInt(AppUtil::Attr::HP));
-            m_atks[i]->SetNumber(meta.GetInt(AppUtil::Attr::ATTACK));
-            m_defs[i]->SetNumber(meta.GetInt(AppUtil::Attr::DEFENSE));
-            m_agis[i]->SetNumber(meta.GetInt(AppUtil::Attr::AGILITY));
-            
-            m_atkTimes[i]->SetPrefix(AppUtil::GetGlobalString("label_atk_time", "Times: "));
-            m_atkTimes[i]->SetNumber(meta.GetInt("ATK_Time", 1));
-            m_atkTimes[i]->SetShowNumber(true);
-            
-            long long dmg = AppUtil::CalculateDamage(m_player.get(), id);
-            if (dmg < 0) { 
-                m_damages[i]->SetPrefix(AppUtil::GetGlobalString("label_damage", "Dmg: ") + "???"); 
-                m_damages[i]->SetShowNumber(false); 
-            }
-            else { 
-                m_damages[i]->SetPrefix(AppUtil::GetGlobalString("label_damage", "Dmg: ")); 
-                m_damages[i]->SetNumber(static_cast<int>(dmg)); 
-                m_damages[i]->SetShowNumber(true); 
-            }
-
-            m_exps[i]->SetNumber(meta.GetInt(AppUtil::Attr::EXP));
-            m_coins[i]->SetNumber(meta.GetInt(AppUtil::Attr::COIN));
-
-            m_names[i]->UpdateDisplayText(); m_specials[i]->UpdateDisplayText();
-            m_hps[i]->UpdateDisplayText(); m_atks[i]->UpdateDisplayText();
-            m_defs[i]->UpdateDisplayText(); m_agis[i]->UpdateDisplayText();
-            m_atkTimes[i]->UpdateDisplayText(); m_damages[i]->UpdateDisplayText();
-            m_exps[i]->UpdateDisplayText(); m_coins[i]->UpdateDisplayText();
+            m_entries[i].Update(meta, m_player.get());
         }
     }
 
@@ -210,12 +234,7 @@ void EnemyBookUI::SetVisible(bool visible) {
         if (m_left_arrow) m_left_arrow->SetVisible(false);
         if (m_right_arrow) m_right_arrow->SetVisible(false);
         for (int i = 0; i < ENTRIES_PER_PAGE; ++i) {
-            m_frames[i]->SetVisible(false); m_icons[i]->SetVisible(false);
-            m_names[i]->SetVisible(false); m_specials[i]->SetVisible(false);
-            m_hps[i]->SetVisible(false); m_atks[i]->SetVisible(false);
-            m_defs[i]->SetVisible(false); m_agis[i]->SetVisible(false);
-            m_atkTimes[i]->SetVisible(false); m_damages[i]->SetVisible(false);
-            m_exps[i]->SetVisible(false); m_coins[i]->SetVisible(false);
+            m_entries[i].SetVisible(false);
         }
     }
 }
@@ -224,12 +243,7 @@ void EnemyBookUI::AddToRoot(Util::Renderer& root) {
     if (m_background) root.AddChild(m_background);
     if (m_no_enemy_text) root.AddChild(m_no_enemy_text);
     for (int i = 0; i < ENTRIES_PER_PAGE; ++i) {
-        root.AddChild(m_frames[i]); root.AddChild(m_icons[i]);
-        root.AddChild(m_names[i]); root.AddChild(m_specials[i]);
-        root.AddChild(m_hps[i]); root.AddChild(m_atks[i]);
-        root.AddChild(m_defs[i]); root.AddChild(m_agis[i]);
-        root.AddChild(m_atkTimes[i]); root.AddChild(m_damages[i]);
-        root.AddChild(m_exps[i]); root.AddChild(m_coins[i]);
+        m_entries[i].AddToRoot(root);
     }
     if (m_space_hint) root.AddChild(m_space_hint);
     if (m_left_arrow) root.AddChild(m_left_arrow);

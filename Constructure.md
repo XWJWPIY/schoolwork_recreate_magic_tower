@@ -137,14 +137,15 @@ classDiagram
     }
 
     class EnemyBookUI {
+        -struct EnemyEntry m_entries[3]
         -vector~int~ m_unique_enemy_ids
         -int m_current_page
         -int m_total_pages
         -bool m_visible
         +EnemyBookUI(player, thingsMap)
         +run() override
-        +IsIntercepting() bool override
-        +IsActive() bool override
+        +IsIntercepting() const override
+        +IsActive() const override
         +SetVisible(bool) override
         +AddToRoot(Renderer) override
         +Refresh()
@@ -573,6 +574,7 @@ classDiagram
 
 ## [新增] 七、怪物手冊 (`EnemyBookUI`)
 - **繼承**：`UIComponent`。
+- **結構優化 (EnemyEntry)**：內部實作了 `EnemyEntry` 結構，將每一列怪物的框架、圖示、以及各個屬性（HP、ATK、DEF 等）文字組件封裝成單一管理單元，大幅簡化頁面更新與顯示邏輯。
 - **全局數據**：不再掃描單層地圖，而是直接讀取 `GlobalObjectRegistry` 中 ID 400-499 的所有怪物資訊。
 - **分頁機制**：支援使用方向鍵「左右」進行翻頁，每頁顯示 3 隻怪物。
 - **即時預估**：調用 `AppUtil::CalculateDamage` 根據玩家當前屬性即時計算預期傷害。
