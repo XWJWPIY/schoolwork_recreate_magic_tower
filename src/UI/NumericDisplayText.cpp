@@ -51,8 +51,12 @@ void NumericDisplayText::SetColor(const Util::Color &color) {
 }
 
 void NumericDisplayText::SetAlignLeft(bool align) {
-  if (m_align_left != align) {
-    m_align_left = align;
+  SetAlignment(align ? Align::LEFT : Align::CENTER);
+}
+
+void NumericDisplayText::SetAlignment(Align align) {
+  if (m_align != align) {
+    m_align = align;
     m_needs_update = true;
   }
 }
@@ -78,8 +82,10 @@ void NumericDisplayText::UpdateDisplayText() {
 
   m_text_drawable->SetText(result);
   
-  if (m_align_left) {
+  if (m_align == Align::LEFT) {
     SetPivot({-m_text_drawable->GetSize().x / 2.0f, 0.0f});
+  } else if (m_align == Align::RIGHT) {
+    SetPivot({m_text_drawable->GetSize().x / 2.0f, 0.0f});
   } else {
     SetPivot({0.0f, 0.0f});
   }

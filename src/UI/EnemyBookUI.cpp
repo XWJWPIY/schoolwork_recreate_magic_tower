@@ -114,7 +114,7 @@ void EnemyBookUI::EnemyEntry::AddToRoot(Util::Renderer& root) {
 }
 
 void EnemyBookUI::EnemyEntry::Update(const AppUtil::ObjectMetadata& meta, Player* player) {
-    icon->SetDrawable(std::make_shared<Util::Image>(AppUtil::GetFullResourcePath(meta.GetInt(AppUtil::Attr::ID))));
+    icon->SetDrawable(std::make_shared<Util::Image>(AppUtil::GetFullResourcePath(meta.GetInt("Icon_ID", meta.GetInt(AppUtil::Attr::ID)))));
     
     name->SetPrefix(AppUtil::GetGlobalString("label_name", "Name: "));
     name->SetSuffix(meta.GetString(AppUtil::Attr::TITLE));
@@ -204,7 +204,11 @@ void EnemyBookUI::Refresh() {
 void EnemyBookUI::UpdateEnemyList() {
     m_unique_enemy_ids.clear();
     for (auto const& [id, meta] : AppUtil::GlobalObjectRegistry) {
-        if (id >= 400 && id < 500) m_unique_enemy_ids.push_back(id);
+        if (id >= 400 && id < 500) {
+            // If it's a giant monster part (has a Core_ID pointing elsewhere), skip it
+            if (meta.GetInt("Core_ID", 0) != 0) continue;
+            m_unique_enemy_ids.push_back(id);
+        }
     }
     std::sort(m_unique_enemy_ids.begin(), m_unique_enemy_ids.end());
     m_total_pages = (static_cast<int>(m_unique_enemy_ids.size()) + ENTRIES_PER_PAGE - 1) / ENTRIES_PER_PAGE;

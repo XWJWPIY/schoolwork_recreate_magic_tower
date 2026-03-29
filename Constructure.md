@@ -147,6 +147,20 @@ classDiagram
         +Refresh()
     }
 
+    class BattleUI {
+        -shared_ptr~Player~ m_player
+        -shared_ptr~Enemy~ m_enemy
+        -State m_state
+        -bool m_is_frozen
+        +BattleUI(player, fontPath)
+        +Start(player, enemy, onEnd)
+        +run() override
+        +IsIntercepting() const override
+        +IsActive() const override
+        +SetVisible(bool) override
+        +AddToRoot(Renderer) override
+    }
+
     class EnemyEntry {
         -shared_ptr~GameObject~ frame
         -shared_ptr~GameObject~ icon
@@ -202,6 +216,14 @@ classDiagram
 
     class Enemy {
         +Enemy(int id)
+        +Reaction(player) override
+        +OnDefeated() 
+    }
+
+    class EnemyPart {
+        -shared_ptr~DynamicReplacementComponent~ m_replacement_comp
+        -int m_core_id
+        +EnemyPart(id, coreId)
         +Reaction(player) override
     }
 
@@ -280,6 +302,7 @@ classDiagram
     UIComponent <|-- NoticeUI
     UIComponent <|-- ItemNoticeUI
     UIComponent <|-- EnemyBookUI
+    UIComponent <|-- BattleUI
 ```
 
 ## 非繼承類別（管理器與 UI）
@@ -301,6 +324,7 @@ classDiagram
         -shared_ptr~NoticeUI~ m_notice_ui
         -shared_ptr~DialogueUI~ m_dialogue_ui
         -shared_ptr~EnemyBookUI~ m_enemy_book_ui
+        -shared_ptr~BattleUI~ m_battle_ui
         -vector~shared_ptr~UIComponent~~ m_ui_components
         -unique_ptr~EntityFactory~ m_entity_factory
         +Start()

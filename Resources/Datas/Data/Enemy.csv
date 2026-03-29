@@ -1,4 +1,4 @@
-﻿ID,Path,Folder,Passable,Animation,Title,HP,ATK,DEF,AGI,EXP,Coin,Weak,Poison,ATK_Time,Ignore_DEF,Next_Enemy,Killing_ATK,Special
+﻿ID,Path,Folder,Passable,Animation,Title,HP,ATK,DEF,AGI,EXP,Coin,Weak,Poison,ATK_Time,Ignore_DEF,Next_Enemy,Killing_ATK,Special,Boss_Width,Boss_Height,Core_ID,Icon_ID
 401,green_slime,Enemy,false,2,綠色史萊姆,40,18,1,0,1,1,0,0,1,0,0,0,沒有
 402,red_slime,Enemy,false,2,紅色史萊姆,50,20,4,0,1,2,0,0,1,0,0,0,沒有
 403,big_slime,Enemy,false,2,黑色史萊姆,80,37,9,0,1,5,0,0,1,0,0,0,沒有
@@ -24,4 +24,13 @@
 423,soul_skeleton_knight,Enemy,false,2,靈骷髏兵,800,602,560,4,4,30,0,0,1,0,22,0,被擊殺後再生靈骷髏
 424,knight,Enemy,false,2,騎士,130,115,43,4,2,17,0,0,1,0,0,0,必殺攻擊
 425,swordsman,Enemy,false,2,雙手劍兵,280,210,110,4,4,34,0,0,2,0,0,0,二段攻擊
-490,princess,Enemy,false,2,公主,1000,100,100,10,10,100,0,0,1,0,0,0,沒有
+490,princess,Enemy,false,2,公主,1000,100,100,10,10,100,0,0,1,0,0,0,沒有,1,1,
+491,octopus_1,Enemy,false,2,巨大章魚,9999,1000,500,0,100,50,0,0,1,0,0,0,沒有,3,3,,498
+492,octopus_2,Enemy,false,2,巨大章魚,0,0,0,0,0,0,0,0,1,0,0,0,沒有,,,491
+493,octopus_3,Enemy,false,2,巨大章魚,0,0,0,0,0,0,0,0,1,0,0,0,沒有,,,491
+494,octopus_4,Enemy,false,2,巨大章魚,0,0,0,0,0,0,0,0,1,0,0,0,沒有,,,491
+495,octopus_5,Enemy,false,2,巨大章魚,0,0,0,0,0,0,0,0,1,0,0,0,沒有,,,491
+496,octopus_6,Enemy,false,2,巨大章魚,0,0,0,0,0,0,0,0,1,0,0,0,沒有,,,491
+497,octopus_7,Enemy,false,2,巨大章魚,0,0,0,0,0,0,0,0,1,0,0,0,沒有,,,491
+498,octopus_8,Enemy,false,2,巨大章魚,0,0,0,0,0,0,0,0,1,0,0,0,沒有,,,491
+499,octopus_9,Enemy,false,2,巨大章魚,0,0,0,0,0,0,0,0,1,0,0,0,沒有,,,491

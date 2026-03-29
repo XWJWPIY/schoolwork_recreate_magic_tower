@@ -178,7 +178,8 @@ enum class GameState {
   ITEM_DIALOG = 4,   // 4: Item acquisition dialog (Modal)
   LOADING = 5,       // 5: Loading state
   SHOP = 6,          // 6: Shop state
-  ENEMY_BOOK = 7     // 7: Enemy book state
+  ENEMY_BOOK = 7,    // 7: Enemy book state
+  BATTLE = 8         // 8: Battle state
 };
 
 // Removed MapCell struct as it was just a wrapper for int id

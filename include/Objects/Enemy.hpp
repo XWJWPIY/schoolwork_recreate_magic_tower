@@ -6,6 +6,7 @@
 #include "pch.hpp"
 
 #include <string>
+#include <functional>
 
 class Player;
 
@@ -14,6 +15,20 @@ public:
   Enemy(int id);
   ~Enemy() override = default;
 
+  void Reaction(std::shared_ptr<Player> player) override;
+  void OnDefeated(std::shared_ptr<Player> player);
+  void SetBattleCallback(std::function<void(std::shared_ptr<Enemy>)> cb) { m_start_battle_cb = cb; }
+
+private:
+  std::function<void(std::shared_ptr<Enemy>)> m_start_battle_cb;
+};
+
+class EnemyPart : public Entity {
+public:
+  EnemyPart(int id);
+  ~EnemyPart() override = default;
+
+  bool CheckCondition(std::shared_ptr<Player> player) const override;
   void Reaction(std::shared_ptr<Player> player) override;
 };
 

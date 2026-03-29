@@ -8,6 +8,7 @@
 
 // Forward declarations
 class Shop;
+class Enemy;
 
 /**
  * @brief Factory class to centralize and decouple the creation of game entities.
@@ -23,6 +24,7 @@ public:
         std::function<void(int)> setFloor;
         std::function<void(Shop&)> openShop;
         std::function<void()> closeShop;
+        std::function<void(std::shared_ptr<Enemy>)> startBattle;
     };
 
     explicit EntityFactory(const Callbacks& callbacks);

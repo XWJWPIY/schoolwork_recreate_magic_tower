@@ -12,3 +12,17 @@ label_gold,GOLD:
 label_none,無
 hint_press_d,Press D
 msg_no_enemy,No Enemies in Registry.
+battle_enemy_hp,體力:   
+battle_enemy_atk,攻擊力: 
+battle_enemy_def,防禦力: 
+battle_enemy_agi,敏捷:   
+battle_player_hp, :體力
+battle_player_atk, :攻擊力
+battle_player_def, :防禦力
+battle_player_agi, :敏捷
+battle_player_name,勇者
+battle_vs,VS
+battle_retreat,退出(Q)
+battle_win,戰鬥勝利！
+battle_exp,獲得經驗: 
+battle_coin,  金幣: 

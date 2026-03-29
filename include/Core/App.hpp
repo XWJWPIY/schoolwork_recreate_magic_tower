@@ -14,6 +14,7 @@
 #include "UI/NoticeUI.hpp"
 #include "UI/DialogueUI.hpp"
 #include "UI/EnemyBookUI.hpp"
+#include "UI/BattleUI.hpp"
 #include "Core/EntityFactory.hpp"
 #include "pch.hpp" // IWYU pragma: export
 #include <memory>
@@ -62,6 +63,7 @@ private:
   std::shared_ptr<ItemNoticeUI> m_item_notice_ui;
   std::shared_ptr<DialogueUI> m_dialogue_ui;
   std::shared_ptr<EnemyBookUI> m_enemy_book_ui;
+  std::shared_ptr<BattleUI> m_battle_ui;
 
   float m_item_notice_timer = 0.0f;
   float m_loading_timer  = 0.0f;

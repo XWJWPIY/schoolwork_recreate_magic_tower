@@ -50,6 +50,16 @@ void App::InitializeGame() {
     m_active_shop = nullptr;
     m_game_state = AppUtil::GameState::PLAYING;
   };
+  callbacks.startBattle = [this](std::shared_ptr<Enemy> enemy) {
+      if (m_game_state != AppUtil::GameState::PLAYING) return;
+      m_game_state = AppUtil::GameState::BATTLE;
+      m_battle_ui->Start(m_player, enemy, [this, enemy](bool defeated) {
+          if (defeated) {
+              enemy->OnDefeated(m_player);
+          }
+          m_game_state = AppUtil::GameState::PLAYING;
+      });
+  };
 
   m_entity_factory = std::make_unique<EntityFactory>(callbacks);
 
@@ -65,7 +75,9 @@ void App::InitializeGame() {
 
   // Define replacement behavior
   auto replacementComp = std::make_shared<DynamicReplacementComponent>(
-      [this](int x, int y, int id) { this->m_things_map->SetObject(x, y, id); });
+      [this](int x, int y, int id) { this->m_things_map->SetObject(x, y, id); },
+      [this](int id) { return this->m_things_map->FindFirstObjectOfId(id, this->m_road_map->GetCurrentStory()); }
+  );
   m_entity_factory->SetReplacementComponent(replacementComp);
 
   m_road_map = std::make_shared<FloorMap>(roadObjFactory, 141.0f, 0.0f, 0.735f,
@@ -117,6 +129,10 @@ void App::InitializeGame() {
   m_ui_components.push_back(m_enemy_book_ui);
   m_ui_components.push_back(m_item_notice_ui);
   m_ui_components.push_back(m_dialogue_ui);
+
+  m_battle_ui = std::make_shared<BattleUI>(AppUtil::GetStaticResourcePath("Font/Cubic_11.ttf"));
+  m_battle_ui->AddToRoot(m_root);
+  m_ui_components.push_back(m_battle_ui);
 }
 
 void App::Update() {
@@ -286,6 +302,9 @@ void App::Update() {
       m_game_state = AppUtil::GameState::PLAYING;
     }
     break;
+
+  case AppUtil::GameState::BATTLE:
+    break; // Handled by BattleUI::run()
   }
 
   // 2. Render phase

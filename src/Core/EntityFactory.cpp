@@ -56,7 +56,15 @@ std::shared_ptr<Entity> EntityFactory::CreateDoor(int id) {
 }
 
 std::shared_ptr<Entity> EntityFactory::CreateEnemy(int id) {
-    return std::make_shared<Enemy>(id);
+    auto it = AppUtil::GlobalObjectRegistry.find(id);
+    if (it != AppUtil::GlobalObjectRegistry.end()) {
+        if (it->second.GetInt("Core_ID", 0) > 0) {
+            return std::make_shared<EnemyPart>(id);
+        }
+    }
+    auto enemy = std::make_shared<Enemy>(id);
+    enemy->SetBattleCallback(m_callbacks.startBattle);
+    return enemy;
 }
 
 std::shared_ptr<Entity> EntityFactory::CreateNPC(int id) {
