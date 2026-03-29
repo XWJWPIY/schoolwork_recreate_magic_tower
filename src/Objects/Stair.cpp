@@ -4,7 +4,7 @@
 #include "Util/Logger.hpp"
 
 Stair::Stair(int id, TriggerCallback callback)
-    : Entity(id, "", true),
+    : Entity(id, true),
       m_on_trigger(std::move(callback)) {}
 
 void Stair::Reaction(std::shared_ptr<Player> player) {

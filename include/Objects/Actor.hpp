@@ -9,7 +9,7 @@ class Player;
 
 class Actor : public Entity {
 public:
-  Actor(int initialId, const std::string &imagePath, bool canReact = true);
+  Actor(int initialId, bool canReact = true);
   ~Actor() override = default;
 
   // Unified Attribute Accessors

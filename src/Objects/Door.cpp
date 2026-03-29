@@ -4,7 +4,7 @@
 #include "Util/Logger.hpp"
 
 Door::Door(int id)
-    : Entity(id, "", true) {
+    : Entity(id, true) {
   SetupAnimation(id, false, 100); // looping=false, 100ms/frame, one-shot
 }
 

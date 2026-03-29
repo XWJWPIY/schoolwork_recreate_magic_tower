@@ -1,8 +1,8 @@
 #include "Objects/Actor.hpp"
 #include "Core/AppUtil.hpp"
 
-Actor::Actor(int initialId, const std::string &imagePath, bool canReact)
-    : Entity(initialId, imagePath, canReact) {
+Actor::Actor(int initialId, bool canReact)
+    : Entity(initialId, canReact) {
   
   // Load initial attributes from the registry using absolute assignment
   ForEachAttribute([this](AppUtil::Effect eff, int val) {

@@ -35,7 +35,7 @@ classDiagram
         #bool m_can_react
         #bool m_is_movable
         #shared_ptr~DynamicReplacementComponent~ m_replacement_comp
-        +Entity(id, imagePath, canReact)
+        +Entity(id, canReact)
         +virtual ~Entity()
         +virtual SetObjectId(int newId)
         +GetObjectId() int
@@ -161,7 +161,7 @@ classDiagram
 
     class Actor {
         #unordered_map~Effect, int~ m_attributes
-        +Actor(id, imagePath, canReact)
+        +Actor(id, canReact)
         +GetAttr(Effect) int
         +SetAttr(Effect, value)
         +ApplyEffect(Effect, delta)

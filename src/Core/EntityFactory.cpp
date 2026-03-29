@@ -36,7 +36,7 @@ std::shared_ptr<Entity> EntityFactory::CreateEntity(int id) {
             entity = CreateRoadBlock(0);
             entity->SetVisible(false);
         } else {
-            entity = std::make_shared<Entity>(id, AppUtil::GetStaticResourcePath("bmp/Road/road1.bmp"), true);
+            entity = std::make_shared<Entity>(id, true);
         }
     }
 

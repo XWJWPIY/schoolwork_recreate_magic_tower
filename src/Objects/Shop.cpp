@@ -7,7 +7,7 @@
 #include "Util/Logger.hpp"
 
 Shop::Shop(int id, OpenCallback onOpen, CloseCallback onClose)
-    : Entity(id, "", true),
+    : Entity(id, true),
       m_on_open(std::move(onOpen)),
       m_on_close(std::move(onClose)) {}
 

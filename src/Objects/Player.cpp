@@ -5,7 +5,7 @@
 #include "Util/Logger.hpp"
 
 Player::Player()
-    : Actor(0, AppUtil::GetPhaseImagePath("bmp/Player/player_1", 1), false) {
+    : Actor(0, false) {
   // Player layer is -3 based on Constructure.md
   SetZIndex(-3.0f);
 

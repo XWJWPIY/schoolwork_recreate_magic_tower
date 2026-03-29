@@ -4,7 +4,7 @@
 #include "Util/Logger.hpp"
 
 Item::Item(int id, NoticeCallback callback)
-    : Entity(id, "", true), m_notice_callback(std::move(callback)) {}
+    : Entity(id, true), m_notice_callback(std::move(callback)) {}
 
 void Item::Reaction(std::shared_ptr<Player> player) {
   LOG_INFO("Item collected! ID: {} ({})", m_object_id,

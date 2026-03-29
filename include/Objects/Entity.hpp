@@ -17,7 +17,7 @@ class Entity : public Util::GameObject, public std::enable_shared_from_this<Enti
 public:
   // Using protected constructor so it can't be instantiated accidentally as a base
   Entity(int initialId = 0);
-  Entity(int initialId, const std::string &imagePath, bool canReact = true);
+  Entity(int initialId, bool canReact);
   
   // Forward constructor to GameObject to handle Drawable and ZIndex
   Entity(const std::shared_ptr<Core::Drawable> &drawable,

@@ -15,7 +15,7 @@ Entity::Entity(int initialId) {
     SetObjectId(initialId);
 }
 
-Entity::Entity(int initialId, const std::string &imagePath, bool canReact) 
+Entity::Entity(int initialId, bool canReact) 
     : m_object_id(initialId), m_can_react(canReact) {
     SetZIndex(-4);
     SetObjectId(initialId); // 觸發資源載入與動畫初始化

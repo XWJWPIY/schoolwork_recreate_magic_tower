@@ -4,7 +4,7 @@
 #include "Util/Logger.hpp"
 
 NPC::NPC(int id, TalkCallback callback)
-    : Entity(id, "", true), m_talk_callback(callback) {}
+    : Entity(id, true), m_talk_callback(callback) {}
 
 void NPC::Reaction(std::shared_ptr<Player> player) {
   LOG_INFO("Talking to NPC... ID: {} ({})", m_object_id,
