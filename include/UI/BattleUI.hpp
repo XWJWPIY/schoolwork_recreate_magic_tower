@@ -67,6 +67,7 @@ private:
     std::shared_ptr<Util::GameObject> m_reward_bg;
     std::shared_ptr<NumericDisplayText> m_reward_text1;
     std::shared_ptr<NumericDisplayText> m_reward_text2;
+    std::shared_ptr<NumericDisplayText> m_reward_hint;
 };
 
 #endif // BATTLE_UI_HPP

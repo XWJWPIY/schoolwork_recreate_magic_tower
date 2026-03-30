@@ -7,7 +7,7 @@
 #include <algorithm>
 
 namespace {
-    const glm::vec2 BG_POS = {141.0f, 0.0f};
+    const glm::vec2 BG_POS = {141.0f, 25.0f};
     const float Z_BG = 20.0f;
     const float Z_AVATAR = 21.0f;
     const float Z_TEXT = 22.0f;
@@ -28,9 +28,9 @@ BattleUI::BattleUI(const std::string& fontPath) {
 
     m_reward_bg = std::make_shared<Util::GameObject>();
     m_reward_bg->SetDrawable(std::make_shared<Util::Image>(AppUtil::GetStaticResourcePath("bmp/Enemy/Reward.bmp")));
-    m_reward_bg->m_Transform.translation = BG_POS;
+    m_reward_bg->m_Transform.translation = BG_POS + glm::vec2(0.0f, -142.0f);
     m_reward_bg->m_Transform.scale = {0.75f, 0.75f};
-    m_reward_bg->SetZIndex(Z_BG + 5.0f);
+    m_reward_bg->SetZIndex(Z_BG);
 
     auto makeText = [&](float x, float y, const Util::Color& clr, NumericDisplayText::Align align = NumericDisplayText::Align::LEFT) {
         auto t = std::make_shared<NumericDisplayText>(fontPath, 24);
@@ -91,10 +91,12 @@ BattleUI::BattleUI(const std::string& fontPath) {
     m_floating_text->SetZIndex(Z_TEXT + 1.0f);
 
     // Reward elements
-    m_reward_text1 = makeText(BG_POS.x, BG_POS.y + 20.0f, CLR_WHITE, NumericDisplayText::Align::CENTER); 
+    m_reward_text1 = makeText(BG_POS.x - 250.0f, BG_POS.y -140.0f, CLR_WHITE, NumericDisplayText::Align::CENTER); 
     m_reward_text1->SetShowNumber(false); m_reward_text1->SetZIndex(Z_BG + 6.0f);
-    m_reward_text2 = makeText(BG_POS.x, BG_POS.y - 20.0f, CLR_WHITE, NumericDisplayText::Align::CENTER); 
+    m_reward_text2 = makeText(BG_POS.x + 20.0f, BG_POS.y - 140.0f, CLR_WHITE, NumericDisplayText::Align::CENTER); 
     m_reward_text2->SetShowNumber(false); m_reward_text2->SetZIndex(Z_BG + 6.0f);
+    m_reward_hint = makeText(BG_POS.x + 280.0f, BG_POS.y - 140.0f, CLR_WHITE, NumericDisplayText::Align::CENTER);
+    m_reward_hint->SetShowNumber(false); m_reward_hint->SetZIndex(Z_BG + 6.0f);
 
     SetVisible(false);
 }
@@ -115,8 +117,10 @@ void BattleUI::Start(std::shared_ptr<Player> player, std::shared_ptr<Enemy> enem
 
     m_floating_text->SetVisible(false);
     m_reward_bg->SetVisible(false);
+    m_reward_bg->SetVisible(false);
     m_reward_text1->SetVisible(false);
     m_reward_text2->SetVisible(false);
+    m_reward_hint->SetVisible(false);
 
     SetVisible(true);
     RefreshStats();
@@ -160,6 +164,7 @@ void BattleUI::run() {
     if (m_is_frozen) return;
 
     if (m_state == State::REWARD) {
+        m_reward_hint->SetVisible(((static_cast<int>(Util::Time::GetElapsedTimeMs()) / 500) % 2) == 0);
         if (Util::Input::IsKeyDown(Util::Keycode::SPACE)) {
             SetVisible(false);
             if (m_on_end) m_on_end(true); // Win confirmed
@@ -206,6 +211,10 @@ void BattleUI::run() {
                 m_reward_text2->SetPrefix(AppUtil::GetGlobalString("battle_exp", "EXP: ") + std::to_string(meta.GetInt(AppUtil::Attr::EXP)) + AppUtil::GetGlobalString("battle_coin", " Coin: ") + std::to_string(meta.GetInt(AppUtil::Attr::COIN)));
                 m_reward_text2->UpdateDisplayText(); 
                 m_reward_text2->SetVisible(true);
+                m_reward_hint->SetPrefix(AppUtil::GetGlobalString("battle_reward_hint", "-SPACE-"));
+                m_reward_hint->UpdateDisplayText();
+                m_reward_hint->SetVisible(true);
+                m_floating_text->SetVisible(false);
                 m_floating_text->SetVisible(false);
             }
         } else {
@@ -303,6 +312,7 @@ void BattleUI::SetVisible(bool visible) {
         if (m_reward_bg) m_reward_bg->SetVisible(false);
         if (m_reward_text1) m_reward_text1->SetVisible(false);
         if (m_reward_text2) m_reward_text2->SetVisible(false);
+        if (m_reward_hint) m_reward_hint->SetVisible(false);
     }
 }
 
@@ -311,6 +321,7 @@ void BattleUI::AddToRoot(Util::Renderer& root) {
     if (m_reward_bg) root.AddChild(m_reward_bg);
     if (m_reward_text1) root.AddChild(m_reward_text1);
     if (m_reward_text2) root.AddChild(m_reward_text2);
+    if (m_reward_hint) root.AddChild(m_reward_hint);
 
     if (m_player_avatar) root.AddChild(m_player_avatar);
     if (m_player_name) root.AddChild(m_player_name);
