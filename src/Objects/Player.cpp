@@ -137,7 +137,12 @@ void Player::SyncPosition(std::shared_ptr<FloorMap> roadmap) {
 }
 
 void Player::OnAttributeChanged(AppUtil::Effect type) {
-    // Add special logic if needed, e.g. death check or audio feedback
+    if (m_is_super_mode && m_normal_stats.count(type)) {
+        if (type == AppUtil::Effect::ENEMY_BOOK || type == AppUtil::Effect::FLY) {
+            m_normal_stats[type] = GetAttr(type);
+        }
+    }
+
     if (type == AppUtil::Effect::HP && GetAttr(AppUtil::Effect::HP) <= 0) {
         LOG_INFO("Player has died!");
         // TODO: Trigger Game Over
@@ -177,12 +182,16 @@ void Player::ToggleSuperMode() {
         m_normal_stats[AppUtil::Effect::ATTACK] = GetAttr(AppUtil::Effect::ATTACK);
         m_normal_stats[AppUtil::Effect::DEFENSE] = GetAttr(AppUtil::Effect::DEFENSE);
         m_normal_stats[AppUtil::Effect::AGILITY] = GetAttr(AppUtil::Effect::AGILITY);
+        m_normal_stats[AppUtil::Effect::ENEMY_BOOK] = GetAttr(AppUtil::Effect::ENEMY_BOOK);
+        m_normal_stats[AppUtil::Effect::FLY] = GetAttr(AppUtil::Effect::FLY);
 
         // Set super stats
-        SetAttr(AppUtil::Effect::HP, 99999);
-        SetAttr(AppUtil::Effect::ATTACK, 9999);
-        SetAttr(AppUtil::Effect::DEFENSE, 9999);
-        SetAttr(AppUtil::Effect::AGILITY, 100);
+        SetAttr(AppUtil::Effect::HP, 999999);
+        SetAttr(AppUtil::Effect::ATTACK, 999);
+        SetAttr(AppUtil::Effect::DEFENSE, 999);
+        SetAttr(AppUtil::Effect::AGILITY, 50);
+        SetAttr(AppUtil::Effect::ENEMY_BOOK, 1);
+        SetAttr(AppUtil::Effect::FLY, 1);
     } else {
         LOG_INFO("Super Mode: DEACTIVATED");
         // Restore normal stats
@@ -190,6 +199,8 @@ void Player::ToggleSuperMode() {
         SetAttr(AppUtil::Effect::ATTACK, m_normal_stats[AppUtil::Effect::ATTACK]);
         SetAttr(AppUtil::Effect::DEFENSE, m_normal_stats[AppUtil::Effect::DEFENSE]);
         SetAttr(AppUtil::Effect::AGILITY, m_normal_stats[AppUtil::Effect::AGILITY]);
+        SetAttr(AppUtil::Effect::ENEMY_BOOK, m_normal_stats[AppUtil::Effect::ENEMY_BOOK]);
+        SetAttr(AppUtil::Effect::FLY, m_normal_stats[AppUtil::Effect::FLY]);
         m_normal_stats.clear();
     }
 }

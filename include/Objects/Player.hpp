@@ -33,6 +33,7 @@ public:
   void SetDirection(PlayerDirection dir);
   void SetIsAnimating(bool animate) { m_is_animating = animate; }
   bool HasFly() const { return GetAttr(AppUtil::Effect::FLY) > 0; }
+  bool IsSuperMode() const { return m_is_super_mode; }
 
   void OnAttributeChanged(AppUtil::Effect type) override;
 

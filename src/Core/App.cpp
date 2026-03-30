@@ -228,7 +228,7 @@ void App::Update() {
       LOG_INFO("[Toggle] Pressed L: Opening NoticeUI");
       break;
     }
-    if (Util::Input::IsKeyDown(Util::Keycode::F) && m_player->GetAttr(AppUtil::Effect::FLY) > 0) {
+    if (Util::Input::IsKeyDown(Util::Keycode::F)) {
       if (m_player->HasFly()) {
         m_game_state = AppUtil::GameState::FAST_ELEVATOR;
         m_fly_ui->Start(m_road_map->GetCurrentStory(), [this](int floor, int) {
@@ -242,21 +242,8 @@ void App::Update() {
         break;
       }
     }
-    if (Util::Input::IsKeyDown(Util::Keycode::G)) {
-      m_game_state = AppUtil::GameState::FAST_ELEVATOR;
-      m_fly_ui->Start(m_road_map->GetCurrentStory(), [this](int floor, int) {
-        this->m_game_state = AppUtil::GameState::PLAYING;
-        int currentStory = m_road_map->GetCurrentStory();
-        if (floor != currentStory) {
-          int targetStair = (floor < currentStory) ? 701 : 702;
-          TeleportToFloor(floor, targetStair);
-        }
-      });
-      break;
-    }
-
     // ── Input: Debug Cheat Mode ─────────────────────────────────────
-    if (Util::Input::IsKeyDown(Util::Keycode::M)) {
+    if (Util::Input::IsKeyDown(Util::Keycode::G)) {
         m_player->ToggleSuperMode();
         break;
     }

@@ -143,6 +143,8 @@ classDiagram
         +IsIntercepting() const override
         +IsActive() const override
         +SetVisible(bool) override
+        +Unlock() // Set ENEMY_BOOK attribute to 1
+    }
         +AddToRoot(Renderer) override
         +Refresh()
     }
@@ -590,8 +592,17 @@ classDiagram
 - 繼承 `Entity`。所有具備屬性（HP、ATK、DEF 等）實體的共同基類。
 - **核心介面**：提供 `ApplyEffect` 與 `MeetsRequirement` 作為通用的資源操作介面。
 
-### 4.1 `Player` (主角)
-- 繼承 `Actor`。
+### 4. 特殊道具與解鎖機制
+- **心境 (Enemy Book)**:
+    - 預設未解鎖，玩家按 `D` 會失敗。
+    - 需透過劇情 CSV 腳本給予 `enemy_book` (或 `enemy_data`) 屬性解鎖。
+- **傳送器 (Fly)**:
+    - 按 `F` 可開啟，需擁有 `fly` 屬性。
+- **超級模式 (Super Mode)**:
+    - 按 `G` 鍵切換。
+    - HP 變為 999,999，ATK/DEF 變為 999。
+    - **屬性連動**: 開啟時自動賦予 `ENEMY_BOOK` 與 `FLY` 屬性。
+    - **獎勵保留**: 若在超級模式下獲得道具，關閉後仍會保留獲得狀態。
 - **核心邏輯**：整合了邊界檢查、`RoadMap` 碰撞與 `ThingsMap` 互動。
 - **動畫驅動**：`ObjectUpdate` 負責驅動玩家的四方向行走與靜止圖切換。
 
