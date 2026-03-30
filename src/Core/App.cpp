@@ -213,9 +213,13 @@ void App::Update() {
 
     // ── Input: Toggle Overlays ──────────────────────────────────────
     if (Util::Input::IsKeyDown(Util::Keycode::D)) {
-      m_enemy_book_ui->SetVisible(true);
-      m_game_state = AppUtil::GameState::ENEMY_BOOK;
-      LOG_INFO("[Toggle] Pressed D: Opening EnemyBookUI");
+      if (m_player->GetAttr(AppUtil::Effect::ENEMY_BOOK) > 0) {
+          m_enemy_book_ui->SetVisible(true);
+          m_game_state = AppUtil::GameState::ENEMY_BOOK;
+          LOG_INFO("[Toggle] Pressed D: Opening EnemyBookUI");
+      } else {
+          LOG_INFO("[Toggle] Pressed D: Heart Mirror not unlocked yet.");
+      }
       break;
     }
     if (Util::Input::IsKeyDown(Util::Keycode::L)) {
@@ -249,6 +253,12 @@ void App::Update() {
         }
       });
       break;
+    }
+
+    // ── Input: Debug Cheat Mode ─────────────────────────────────────
+    if (Util::Input::IsKeyDown(Util::Keycode::M)) {
+        m_player->ToggleSuperMode();
+        break;
     }
 
     // ── Input: Movement ─────────────────────────────────────────────

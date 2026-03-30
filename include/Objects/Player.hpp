@@ -43,6 +43,11 @@ public:
   std::shared_ptr<Util::Animation> m_animations[4]; // 0:Down, 1:Up, 2:Left, 3:Right
 
   int m_pending_shop_id = -1;
+
+  void ToggleSuperMode();
+private:
+  bool m_is_super_mode = false;
+  std::unordered_map<AppUtil::Effect, int> m_normal_stats;
 };
 
 

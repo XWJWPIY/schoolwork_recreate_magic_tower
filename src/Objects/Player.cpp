@@ -25,6 +25,7 @@ Player::Player()
   SetAttr(AppUtil::Effect::KEY_BLUE, 1);
   SetAttr(AppUtil::Effect::KEY_RED, 1);
   SetAttr(AppUtil::Effect::COIN, 1000);
+  SetAttr(AppUtil::Effect::ENEMY_BOOK, 0);
 
   // Pre-load 4-directional animations (4 frames each)
   for (int i = 1; i <= 4; i++) {
@@ -164,4 +165,31 @@ void Player::SetDirection(PlayerDirection dir) {
     std::string path = "bmp/Player/player_" + std::to_string(static_cast<int>(dir)) + ".png";
     m_Drawable = std::make_shared<Util::Image>(AppUtil::GetStaticResourcePath(path));
   }
+}
+
+void Player::ToggleSuperMode() {
+    m_is_super_mode = !m_is_super_mode;
+
+    if (m_is_super_mode) {
+        LOG_INFO("Super Mode: ACTIVATED");
+        // Save normal stats
+        m_normal_stats[AppUtil::Effect::HP] = GetAttr(AppUtil::Effect::HP);
+        m_normal_stats[AppUtil::Effect::ATTACK] = GetAttr(AppUtil::Effect::ATTACK);
+        m_normal_stats[AppUtil::Effect::DEFENSE] = GetAttr(AppUtil::Effect::DEFENSE);
+        m_normal_stats[AppUtil::Effect::AGILITY] = GetAttr(AppUtil::Effect::AGILITY);
+
+        // Set super stats
+        SetAttr(AppUtil::Effect::HP, 99999);
+        SetAttr(AppUtil::Effect::ATTACK, 9999);
+        SetAttr(AppUtil::Effect::DEFENSE, 9999);
+        SetAttr(AppUtil::Effect::AGILITY, 100);
+    } else {
+        LOG_INFO("Super Mode: DEACTIVATED");
+        // Restore normal stats
+        SetAttr(AppUtil::Effect::HP, m_normal_stats[AppUtil::Effect::HP]);
+        SetAttr(AppUtil::Effect::ATTACK, m_normal_stats[AppUtil::Effect::ATTACK]);
+        SetAttr(AppUtil::Effect::DEFENSE, m_normal_stats[AppUtil::Effect::DEFENSE]);
+        SetAttr(AppUtil::Effect::AGILITY, m_normal_stats[AppUtil::Effect::AGILITY]);
+        m_normal_stats.clear();
+    }
 }

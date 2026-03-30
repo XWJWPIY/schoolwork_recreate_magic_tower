@@ -308,15 +308,17 @@ void DialogueUI::ExecuteCommand(const ScriptStep& step) {
     if (step.command == ScriptEngine::CommandType::ITEM) {
         m_pending_notice = step.text; 
 
-        AppUtil::Effect effect = AppUtil::Effect::NONE;
-        if (step.extra == "enemy_data") effect = AppUtil::Effect::NONE; 
-        else if (step.extra == "yellow_key") effect = AppUtil::Effect::KEY_YELLOW;
-        else if (step.extra == "blue_key") effect = AppUtil::Effect::KEY_BLUE;
-        else if (step.extra == "red_key") effect = AppUtil::Effect::KEY_RED;
-        else if (step.extra == "fly") effect = AppUtil::Effect::FLY;
-        
-        if (m_player && effect != AppUtil::Effect::NONE) {
-            m_player->ApplyEffect(effect, 1);
+        if (m_player) {
+            // Get attribute ID from registry (this handles "enemy_book", "fly", etc. dynamically)
+            int attrId = AppUtil::AttributeRegistry::GetId(step.extra);
+            AppUtil::Effect effect = AppUtil::AttributeRegistry::ToEffect(attrId);
+
+            if (effect != AppUtil::Effect::NONE) {
+                m_player->ApplyEffect(effect, 1);
+                LOG_INFO("DialogueUI: Applied effect {} (+1) to player", step.extra);
+            } else {
+                LOG_WARN("DialogueUI: Unknown attribute reward '{}' in script.", step.extra);
+            }
         }
     } else if (step.command == ScriptEngine::CommandType::HIDE) {
         if (m_source_entity) {

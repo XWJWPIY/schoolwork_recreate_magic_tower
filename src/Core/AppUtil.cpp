@@ -50,7 +50,9 @@ void AttributeRegistry::Initialize() {
     reg(Attr::COIN,       10, Effect::COIN);
     reg(Attr::WEAK,       11, Effect::WEAK);
     reg(Attr::POISON,     12, Effect::POISON);
-    reg("Fly",            13, Effect::FLY);
+    reg("fly",            13, Effect::FLY);
+    reg(Attr::ENEMY_BOOK, 14, Effect::ENEMY_BOOK);
+    reg("enemy_data",     14, Effect::ENEMY_BOOK); // Alias for legacy scripts
     
     // Aliases or special structural attributes
     reg(Attr::FLOOR_DELTA, 100);
