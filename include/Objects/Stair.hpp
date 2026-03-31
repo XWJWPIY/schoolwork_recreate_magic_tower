@@ -18,6 +18,7 @@ public:
   void Reaction(std::shared_ptr<Player> player) override;
   bool ShouldSkipWalkAnimation() const override { return true; }
   bool IsRelative() const { return m_isRelative; }
+  bool InterruptsMovementSync() const override { return !m_isRelative; }
 
 private:
   TriggerCallback m_on_trigger;

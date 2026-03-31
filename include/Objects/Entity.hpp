@@ -45,6 +45,7 @@ public:
   // Decoupling behaviors
   virtual bool ShouldSkipWalkAnimation() const { return false; }
   virtual bool CheckCondition(std::shared_ptr<Player> player) const { return true; }
+  virtual bool InterruptsMovementSync() const { return false; }
   
   // Shared attribute parsing utility
   void ForEachAttribute(const std::function<void(AppUtil::Effect, int)>& callback) const;

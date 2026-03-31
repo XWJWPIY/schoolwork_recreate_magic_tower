@@ -1,5 +1,41 @@
 # 魔塔專案架構概覽
 
+## 簡明繼承架構圖 (Hierarchy Overview)
+
+這是一份省略了屬性與方法的純繼承關聯圖，供快速掌握類別層級關係：
+
+```mermaid
+classDiagram
+    direction TB
+    class GameObject["Util::GameObject"]
+    class Entity
+    class UIComponent
+
+    GameObject <|-- Entity
+    GameObject <|-- Background
+    GameObject <|-- NumericDisplayText
+    
+    Entity <|-- MapBlock
+    Entity <|-- Actor
+    Entity <|-- Door
+    Entity <|-- NPC
+    Entity <|-- Item
+    Entity <|-- Stair
+    Entity <|-- Shop
+    Entity <|-- EnemyPart
+
+    Actor <|-- Player
+    Actor <|-- Enemy
+
+    UIComponent <|-- DialogueUI
+    UIComponent <|-- ShopUI
+    UIComponent <|-- FlyUI
+    UIComponent <|-- NoticeUI
+    UIComponent <|-- ItemNoticeUI
+    UIComponent <|-- EnemyBookUI
+    UIComponent <|-- BattleUI
+```
+
 ## 完整類別圖（繼承、屬性、方法）
 
 ```mermaid
@@ -55,6 +91,7 @@ classDiagram
         +CanReact() bool
         +virtual ShouldSkipWalkAnimation() const bool
         +virtual CheckCondition(shared_ptr~Player~) const bool
+        +virtual InterruptsMovementSync() const bool
         +ForEachAttribute(callback) const
     }
 
@@ -253,6 +290,7 @@ classDiagram
         +Reaction(player) override
         +ShouldSkipWalkAnimation() const bool override
         +IsRelative() const bool
+        +InterruptsMovementSync() const bool override
     }
 
     class Shop {
@@ -573,6 +611,7 @@ classDiagram
 - **解耦行為標記與預覽**：
   - `ShouldSkipWalkAnimation()`：行為標記，決定玩家進入此格子時是否跳過走路動畫（用於樓梯）。
   - `CheckCondition(player)`：**互動預覽**，在 `Player::Move` 執行 Reaction 前進行資格檢查（如門的鑰匙、怪物的能力值）。預設回傳 `true`。
+  - `InterruptsMovementSync()`：**多型位移中斷**，讓物件決定在 `Reaction` 觸發後是否強制中斷玩家後續的座標同步。預設回傳 `false`。
 - **屬性解析工具**：提供 `ForEachAttribute(callback) const`，集中處理從 CSV 屬性到 Effect Enum 的類型安全轉換。
 - **混合動畫架構**：
   - `m_animation`：持有一個 `Util::Animation` 實體。
@@ -617,8 +656,8 @@ classDiagram
 - **數據驅動傳送**：
   - 資源檔透過 `is_relative` 屬性區分**相對上下樓梯** (如 701/702) 還是**絕對座標傳送門** (如 703/704)。
   - 絕對傳送會額外讀取 `target_x` 與 `target_y`。
-- **中斷機制防覆蓋 (-Move 中斷)**：
-  - 若 `Stair::IsRelative()` 為 `false`，`Player::Move` 會在觸發 `Reaction()` 跳轉後立即 `return`，防止函數末尾的 `SyncPosition` 使用源樓層的相對向量蓋過目標樓層的新座標。
+- **多型位移中斷防覆蓋**：
+  - 覆寫了 `InterruptsMovementSync()`，若 `m_isRelative` 為 `false`，則回傳 `true`。這使得 `Player::Move` 能夠在完全不依賴 (Downcast) 到具體類別的情況下，透過多型自動於觸發樓層跳轉後立即 `return`，防止函數末尾的 `SyncPosition` 蓋過目標樓層的新座標。
 
 ### ... (NPC, Enemy, Item, Shop 保持既有邏輯架構)
 
