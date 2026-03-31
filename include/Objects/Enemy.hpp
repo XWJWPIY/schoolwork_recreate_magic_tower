@@ -23,13 +23,4 @@ private:
   std::function<void(std::shared_ptr<Enemy>)> m_start_battle_cb;
 };
 
-class EnemyPart : public Entity {
-public:
-  EnemyPart(int id);
-  ~EnemyPart() override = default;
-
-  bool CheckCondition(std::shared_ptr<Player> player) const override;
-  void Reaction(std::shared_ptr<Player> player) override;
-};
-
 #endif // ENEMY_HPP

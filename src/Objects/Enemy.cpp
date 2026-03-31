@@ -41,29 +41,3 @@ void Enemy::OnDefeated(std::shared_ptr<Player> player) {
   }
 }
 
-EnemyPart::EnemyPart(int id) : Entity(id, true) {}
-
-bool EnemyPart::CheckCondition(std::shared_ptr<Player> player) const {
-  auto meta = AppUtil::GlobalObjectRegistry[m_object_id];
-  int core_id = meta.GetInt("Core_ID", 0);
-  if (m_replacement_comp && core_id > 0) {
-    auto core = m_replacement_comp->FindEntityById(core_id);
-    if (core) {
-      return core->CheckCondition(player);
-    }
-  }
-  return false;
-}
-
-void EnemyPart::Reaction(std::shared_ptr<Player> player) {
-  auto meta = AppUtil::GlobalObjectRegistry[m_object_id];
-  int core_id = meta.GetInt("Core_ID", 0);
-  if (m_replacement_comp && core_id > 0) {
-    auto core = m_replacement_comp->FindEntityById(core_id);
-    if (core) {
-      core->Reaction(player);
-    } else {
-      LOG_ERROR("EnemyPart {} cannot find Core_ID {}", m_object_id, core_id);
-    }
-  }
-}

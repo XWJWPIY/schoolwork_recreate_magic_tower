@@ -22,7 +22,7 @@ classDiagram
     Entity <|-- Item
     Entity <|-- Stair
     Entity <|-- Shop
-    Entity <|-- EnemyPart
+    Entity <|-- ActorPart
 
     Actor <|-- Player
     Actor <|-- Enemy
@@ -262,11 +262,12 @@ classDiagram
         +OnDefeated() 
     }
 
-    class EnemyPart {
+    class ActorPart {
         -shared_ptr~DynamicReplacementComponent~ m_replacement_comp
         -int m_core_id
-        +EnemyPart(id, coreId)
+        +ActorPart(id, coreId)
         +Reaction(player) override
+        +CheckCondition(player) const override
     }
 
     class NPC {
@@ -337,6 +338,7 @@ classDiagram
     Entity <|-- Item
     Entity <|-- Stair
     Entity <|-- Shop
+    Entity <|-- ActorPart
 
     Entity <|-- Actor
     Actor <|-- Player
@@ -459,6 +461,12 @@ classDiagram
         +EntityFactory(Callbacks)
         +CreateEntity(id) shared_ptr~Entity~
         +CreateRoadBlock(id) shared_ptr~Entity~
+        +CreateItem(id) shared_ptr~Entity~
+        +CreateDoor(id) shared_ptr~Entity~
+        +CreateEnemy(id) shared_ptr~Entity~
+        +CreateNPC(id) shared_ptr~Entity~
+        +CreateShop(id) shared_ptr~Entity~
+        +CreateStair(id) shared_ptr~Entity~
         +SetReplacementComponent(shared_ptr)
     }
 ```
@@ -579,6 +587,7 @@ classDiagram
     EntityFactory ..> MapBlock
     EntityFactory ..> Door
     EntityFactory ..> Enemy
+    EntityFactory ..> ActorPart
     EntityFactory ..> Item
     EntityFactory ..> NPC
     EntityFactory ..> Shop
@@ -678,18 +687,18 @@ classDiagram
 - **即時預估**：調用 `AppUtil::CalculateDamage` 根據玩家當前屬性即時計算預期傷害。
 - **本地化支援**：所有 UI 標籤（HP、ATK 等）皆從 `UIStrings.csv` 讀取，避免編碼問題。
 
-## 七、動態替換組件 (`DynamicReplacementComponent`)
+## 八、動態替換組件 (`DynamicReplacementComponent`)
 - 輔助 `Entity` 在執行完 `Reaction` 後（如開門、撿道具）將地圖網格上的 ID 替換為空地（ID 0）。
 
-## 八、地圖系統 (`FloorMap`)
+## 九、地圖系統 (`FloorMap`)
 - **封裝管理**：統一管理 0~25 樓的 3D ID 網格，並提供 `SetObject` 與 `SwitchStory` 介面。
 
-## 九、App (遊戲核心控制器)
+## 十、App (遊戲核心控制器)
 - **模式優先架構 (Mode-First)**：`Update()` 核心為一個大型 `switch(m_game_state)`。每個模式（PLAYING, INSTRUCTIONS, FAST_ELEVATOR）負責該狀態下的輸入偵測與世界更新。
 - **統一 UI 驅動**：所有活動中的 `UIComponent` 在 switch 之前統一調用 `run()`（排除 MAIN_MENU 與 LOADING），避免各 case 重複迴圈。
 - **邏輯互斥**：透過 `break` 與狀態切換，確保在同一影格內不會同時觸發多個模式的輸入。
 
-## 十、UI 模組化介面 (`UIComponent`)
+## 十一、UI 模組化介面 (`UIComponent`)
 - **全新架構**：建立了抽象基類 `UIComponent`。
 - **核心機制**：
   - `run()`：執行 UI 的每幀邏輯（由 `App::Update()` 在 switch 之前統一調用）。
@@ -697,8 +706,8 @@ classDiagram
   - `m_visible`：由基底 `UIComponent` 統一管理的可見狀態，所有子類共用，不再各自宣告。
 - **集中管理**：`App` 維持 `m_ui_components` 列表進行統一更新。
 
-## 十一、對話與商店系統 (UI 遷移)
-### 11.1 `DialogueUI`
+## 十二、對話與商店系統 (UI 遷移)
+### 12.1 `DialogueUI`
 - **繼承**：`UIComponent`。
 - **職責**：接管對話腳本執行與狀態切換。現在使用單一 `run()` 介面。
 - **腳本擴充**：
@@ -730,23 +739,23 @@ classDiagram
 | -3 | 主角層/狀態層 | `Player` 實例、`StatusUI` 數值 |
 | -5 | 地板層 | `RoadMap` 基礎地磚 |
 
-## 十三、數據驅動層 (`AppUtil::RegistryLoader`)
+## 十四、數據驅動層 (`AppUtil::RegistryLoader`)
 - **Registry 中心**：`GlobalObjectRegistry` 存儲從 CSV 解析的所有物件元數據與屬性，為 `Entity` 資源載入的唯一依據。
 
-## 十四、交互觸發流程
+## 十五、交互觸發流程
 1. `Player::Move()` → 2. `RoadMap` 通行檢查 → 3. `ThingsMap` `CheckCondition()` → 4. 成功移動並觸發 `Reaction()`。
 
-## 十五、實體工廠 (`EntityFactory`)
+## 十六、實體工廠 (`EntityFactory`)
 - **職責**：將複雜的物件創建邏輯從 `App` 中抽離，實現單一職責原則。
 - **解耦設計**：透過複數個回呼函數（Callbacks）與 `App` 系統互動，而不需直接引用 `App` 類別。
 - **統一介面**：為 `RoadMap` 與 `ThingsMap` 提供一致的物件實例化入口。
 
-## 十六、全域常數與工具
+## 十七、全域常數與工具
 - **`TOTAL_STORY`**: 26 (0~25 樓)。
 - **`ResourcePath`**: 統一的資源路徑解析邏輯，支持多副檔名。
 - **`RNG Utility`**: 使用 `std::mt19937` (Mersenne Twister) 搭配微秒級時間種子，提供高品質、非寫死的隨機數生成（`GetRandomInt`, `CheckProbability`）。
 
-## 十七、輸入控制與穩定化 (Input Guarding)
+## 十八、輸入控制與穩定化 (Input Guarding)
 - **集中控制**：所有的 UI 開啟/關閉偵測均由 `App::Update` 統一負責。
 - **Release Guard (放開偵測)**：在 UI 關閉後，系統會偵測該觸發按鍵是否已放開。只有在按鍵放開後，`GameState` 才會回歸 `PLAYING`，有效防止高影格率下的閃爍與重複觸發問題。
 - **影格隔離**：狀態切換發生在影格邏輯末端或使用 `break` 中斷，確保開啟與關閉動作不在同一個 `Update` 循環中發生。

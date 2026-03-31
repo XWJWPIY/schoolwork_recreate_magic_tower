@@ -12,6 +12,7 @@ set(SRC_FILES
     Objects/Item.cpp
     Objects/Door.cpp
     Objects/Enemy.cpp
+    Objects/ActorPart.cpp
     Objects/NPC.cpp
 
     UI/Background.cpp
@@ -43,6 +44,7 @@ set(INCLUDE_FILES
     Objects/Item.hpp
     Objects/Door.hpp
     Objects/Enemy.hpp
+    Objects/ActorPart.hpp
     Objects/NPC.hpp
 
     UI/Background.hpp

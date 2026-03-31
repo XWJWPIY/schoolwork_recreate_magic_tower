@@ -2,6 +2,7 @@
 #include "Core/AppUtil.hpp"
 #include "Objects/Door.hpp"
 #include "Objects/Enemy.hpp"
+#include "Objects/ActorPart.hpp"
 #include "Objects/Item.hpp"
 #include "Objects/MapBlock.hpp"
 #include "Objects/NPC.hpp"
@@ -59,7 +60,7 @@ std::shared_ptr<Entity> EntityFactory::CreateEnemy(int id) {
     auto it = AppUtil::GlobalObjectRegistry.find(id);
     if (it != AppUtil::GlobalObjectRegistry.end()) {
         if (it->second.GetInt("Core_ID", 0) > 0) {
-            return std::make_shared<EnemyPart>(id);
+            return std::make_shared<ActorPart>(id);
         }
     }
     auto enemy = std::make_shared<Enemy>(id);
