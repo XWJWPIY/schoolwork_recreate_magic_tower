@@ -3,6 +3,7 @@
 #include "Core/FloorMap.hpp" // Required to get target entities for interaction
 #include "Util/Image.hpp"
 #include "Util/Logger.hpp"
+#include "Objects/Stair.hpp"
 
 Player::Player()
     : Actor(0, false) {
@@ -79,6 +80,13 @@ void Player::Move(int dx, int dy, std::shared_ptr<FloorMap> roadmap,
         if (entity->CanReact()) {
           if (entity->CheckCondition(std::static_pointer_cast<Player>(shared_from_this()))) {
             entity->Reaction(std::static_pointer_cast<Player>(shared_from_this()));
+            
+            // Check if this was an absolute portal (is_relative = false)
+            auto stair = std::dynamic_pointer_cast<Stair>(entity);
+            if (stair && !stair->IsRelative()) {
+                LOG_INFO("Player Move: Absolute Portal detected, aborting sync.");
+                return;
+            }
           } else {
             m_is_animating = false;
             SetDirection(m_direction);

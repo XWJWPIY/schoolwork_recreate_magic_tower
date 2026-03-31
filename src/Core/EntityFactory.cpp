@@ -86,11 +86,11 @@ std::shared_ptr<Entity> EntityFactory::CreateShop(int id) {
 
 std::shared_ptr<Entity> EntityFactory::CreateStair(int id) {
     return std::make_shared<Stair>(
-        id, [this](int val, bool rel) {
+        id, [this](int val, bool rel, int x, int y) {
             if (rel) {
                 if (m_callbacks.changeFloor) m_callbacks.changeFloor(val);
             } else {
-                if (m_callbacks.setFloor) m_callbacks.setFloor(val);
+                if (m_callbacks.setFloor) m_callbacks.setFloor(val, x, y);
             }
         });
 }

@@ -1,3 +1,5 @@
-ID,Path,Folder,Name,Passable,Animation,is_relative,relation
-701,upstair,Stair,upstair,true,1,true,1
-702,downstair,Stair,downstair,true,1,true,-1
+ID,Path,Folder,Name,Passable,Animation,is_relative,relation,target_x,target_y
+701,upstair,Stair,upstair,true,1,true,1,-1,-1
+702,downstair,Stair,downstair,true,1,true,-1,-1
+703,road,Road,secret_portal,true,1,false,21,5,10
+704,road,Road,trap_portal,true,1,false,17,3,0

@@ -21,7 +21,7 @@ public:
         std::function<void(std::shared_ptr<Entity>, const std::string&)> startScript;
         std::function<int()> getCurrentStory;
         std::function<void(int)> changeFloor;
-        std::function<void(int)> setFloor;
+        std::function<void(int, int, int)> setFloor;
         std::function<void(Shop&)> openShop;
         std::function<void()> closeShop;
         std::function<void(std::shared_ptr<Enemy>)> startBattle;

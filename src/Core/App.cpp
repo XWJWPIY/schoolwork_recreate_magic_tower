@@ -41,7 +41,7 @@ void App::InitializeGame() {
   };
   callbacks.getCurrentStory = [this]() { return this->m_road_map->GetCurrentStory(); };
   callbacks.changeFloor = [this](int val) { this->ChangeFloor(val); };
-  callbacks.setFloor = [this](int val) { this->SetFloor(val); };
+  callbacks.setFloor = [this](int story, int x, int y) { this->SetFloor(story, x, y); };
   callbacks.openShop = [this](Shop& s) {
     m_active_shop = &s;
     m_game_state = AppUtil::GameState::SHOP;
@@ -342,16 +342,24 @@ void App::ChangeFloor(int delta) {
   SetFloor(m_road_map->GetCurrentStory() + delta);
 }
 
-void App::SetFloor(int nextStory) {
+void App::SetFloor(int nextStory, int x, int y) {
   if (nextStory >= 0 && nextStory < AppUtil::TOTAL_STORY) {
     m_road_map->SwitchStory(nextStory);
     m_things_map->SwitchStory(nextStory);
-    LOG_INFO("Switched to story {}", nextStory);
+    LOG_INFO("App: Switched to story {}", nextStory);
+
     if (m_player) {
-      m_player->ResetStateAfterFloorChange();
+      m_player->ResetStateAfterFloorChange(); 
+      if (x >= 0 && y >= 0) {
+        LOG_INFO("App: Portal Teleporting to ({}, {})", x, y);
+        m_player->SetGridPosition(x, y);
+      } else {
+        LOG_INFO("App: Standard Stair Teleporting (Auto-sync)");
+      }
       m_player->SyncPosition(m_road_map);
     }
-    LOG_INFO("Player Position (Floor Switch): Floor {}, Grid({}, {})",
+
+    LOG_INFO("App: Final Player Position: Floor {}, Grid({}, {})",
              m_road_map->GetCurrentStory(), m_player->GetGridX(),
              m_player->GetGridY());
   }

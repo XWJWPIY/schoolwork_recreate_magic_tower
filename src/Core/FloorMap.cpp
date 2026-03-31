@@ -131,6 +131,10 @@ glm::vec2 FloorMap::GetGridAbsolutePosition(int x, int y) const {
   float spacingY = m_base_size.y * m_scale_y;
   float absX = m_center_x + (x - 5) * spacingX;
   float absY = m_center_y + (5 - y) * spacingY;
+  
+  LOG_DEBUG("FloorMap: Calc Pos({}, {}) using scale({}), center({}), base_size({}) -> ({}, {})",
+            x, y, m_scale_x, m_center_x, m_base_size.x, absX, absY);
+            
   return {absX, absY};
 }
 
