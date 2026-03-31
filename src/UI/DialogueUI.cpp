@@ -285,6 +285,10 @@ void DialogueUI::AdvanceScript() {
         ExecuteCommand(step);
         m_engine.Next();
         AdvanceScript();
+    } else if (step.command == ScriptEngine::CommandType::SWITCH) {
+        ExecuteCommand(step);
+        m_engine.Next();
+        AdvanceScript();
     } else if (step.command == ScriptEngine::CommandType::SHOP) {
         ExecuteCommand(step);
         if (m_mode == Mode::SELECTION) {
@@ -320,9 +324,20 @@ void DialogueUI::ExecuteCommand(const ScriptStep& step) {
                 LOG_WARN("DialogueUI: Unknown attribute reward '{}' in script.", step.extra);
             }
         }
-    } else if (step.command == ScriptEngine::CommandType::HIDE) {
         if (m_source_entity) {
             m_source_entity->TriggerReplacement(0);
+        }
+    } else if (step.command == ScriptEngine::CommandType::SWITCH) {
+        if (m_on_switch_object && m_source_entity) {
+            int targetId = 0;
+            try {
+                targetId = std::stoi(step.extra);
+            } catch (...) {
+                LOG_ERROR("DialogueUI: Invalid target ID '{}' for switch_to command.", step.extra);
+            }
+            if (targetId > 0) {
+                m_on_switch_object(m_source_entity, targetId);
+            }
         }
     } else if (step.command == ScriptEngine::CommandType::SHOP) {
         if (m_on_selection == nullptr) {

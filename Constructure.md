@@ -48,6 +48,7 @@ classDiagram
         +TriggerReplacement(targetId)
         +SetGridPosition(x, y)
         +GetGridX/Y() int
+        +GetGridPosition() ivec2
         +SetMovable(bool)
         +GetMovable() bool
         +SetCanReact(bool)
@@ -67,6 +68,7 @@ classDiagram
         +SetPlayer(shared_ptr~Player~)
         +StartScript(name, source, isShop)
         +StartShop(name, ShopData, onSelect, source)
+        +SetOnSwitchObject(callback)
         +run() override
         +IsIntercepting() bool override
         +IsActive() bool override
@@ -144,7 +146,6 @@ classDiagram
         +IsActive() const override
         +SetVisible(bool) override
         +Unlock() // Set ENEMY_BOOK attribute to 1
-    }
         +AddToRoot(Renderer) override
         +Refresh()
     }
@@ -651,6 +652,9 @@ classDiagram
 ### 11.1 `DialogueUI`
 - **繼承**：`UIComponent`。
 - **職責**：接管對話腳本執行與狀態切換。現在使用單一 `run()` 介面。
+- **腳本擴充**：
+  - 支援 `switch_to` / `switch_to_fight` 指令。
+  - **解耦設計**：透過 `SetOnSwitchObject` 回調函數與 `App` 通訊，實現原地更換地圖物件（如 NPC 變身怪物）而不會產生循環依賴。
 
 ### 12.2 `ShopUI`
 - **繼承**：`UIComponent`。

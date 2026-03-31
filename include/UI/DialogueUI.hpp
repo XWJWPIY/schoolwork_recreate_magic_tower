@@ -54,6 +54,7 @@ public:
     Mode GetMode() const { return m_mode; }
 
     void SetPlayer(std::shared_ptr<Player> player) { m_player = player; }
+    void SetOnSwitchObject(std::function<void(std::shared_ptr<Entity>, int)> callback) { m_on_switch_object = callback; }
 
 private:
     void HandleInput();
@@ -87,6 +88,7 @@ private:
     std::unique_ptr<ShopUI> m_shop_ui;
     AppUtil::ShopData m_current_shop_data;
     std::function<void(int)> m_on_selection;
+    std::function<void(std::shared_ptr<Entity>, int)> m_on_switch_object;
     float m_blink_timer = 0.0f;
 };
 

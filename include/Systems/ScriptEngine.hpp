@@ -19,6 +19,7 @@ public:
         HIDE,
         SHOP,
         NOTICE,
+        SWITCH,
         END
     };
 

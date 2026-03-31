@@ -56,6 +56,11 @@ void ScriptEngine::LoadScript(const std::string& name) {
         else if (first == "shop") {
             m_steps.push_back({Speaker::SYSTEM, "", CommandType::SHOP, ""});
         } 
+        else if (first == "switch_to" || first == "switch_to_fight") {
+            if (row.size() >= 2) {
+                m_steps.push_back({Speaker::SYSTEM, "", CommandType::SWITCH, row[1]});
+            }
+        }
         else {
             // Fallback for custom or old labels
             m_steps.push_back({Speaker::NPC, row.size() > 1 ? row[1] : "", CommandType::NONE, ""});

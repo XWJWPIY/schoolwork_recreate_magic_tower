@@ -111,6 +111,13 @@ void App::InitializeGame() {
 
   m_dialogue_ui = std::make_shared<DialogueUI>(m_item_notice_ui);
   m_dialogue_ui->SetPlayer(m_player);
+  m_dialogue_ui->SetOnSwitchObject([this](std::shared_ptr<Entity> source, int targetId) {
+      if (source && m_things_map) {
+          glm::ivec2 pos = source->GetGridPosition();
+          m_things_map->SetObject(pos.x, pos.y, targetId);
+          LOG_INFO("App: Switched object at ({}, {}) to ID {}", pos.x, pos.y, targetId);
+      }
+  });
   m_dialogue_ui->AddToRoot(m_root);
 
   m_fly_ui = std::make_shared<FlyUI>();

@@ -60,6 +60,7 @@ public:
   }
   int GetGridX() const { return m_grid_x; }
   int GetGridY() const { return m_grid_y; }
+  glm::ivec2 GetGridPosition() const { return {m_grid_x, m_grid_y}; }
 
   void SetMovable(bool value) { m_is_movable = value; }
   bool GetMovable() const { return m_is_movable; }
