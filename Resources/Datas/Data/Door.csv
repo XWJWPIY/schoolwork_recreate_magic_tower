@@ -3,4 +3,4 @@ ID,Path,Folder,Name,Passable,Animation,yellow_key,blue_key,red_key,is_passive
 302,blue_door,Door,blue_door,false,5,0,1,0,false
 303,red_door,Door,red_door,false,5,0,0,1,false
 304,iron_fence,Door,iron_fence,false,5,0,0,0,false
-305,green_door,Door,green_door,false,5,0,0,0,true
+305,green_door,Door,green_door,false,5,1,1,1,false
