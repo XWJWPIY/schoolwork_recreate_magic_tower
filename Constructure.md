@@ -248,9 +248,11 @@ classDiagram
 
     class Stair {
         -TriggerCallback m_on_trigger
+        -bool m_isRelative
         +Stair(id, callback)
         +Reaction(player) override
-        +ShouldSkipWalkAnimation() bool override
+        +ShouldSkipWalkAnimation() const bool override
+        +IsRelative() const bool
     }
 
     class Shop {
@@ -337,7 +339,8 @@ classDiagram
         +End()
         +Restart()
         +ChangeFloor(int delta)
-        +TeleportToFloor(int story, int stairId)
+        +SetFloor(int story, int x, int y)
+        +TeleportToFloor(int targetStory, int targetStairId)
         -InitializeGame()
     }
 
@@ -610,7 +613,14 @@ classDiagram
 ### 4.2 `Door` (門)
 - **數據驅動**：不再手動判斷鑰匙類型，完全透過 `ForEachAttribute` 與 `CheckCondition` 進行通用資源扣除。
 
-### ... (NPC, Enemy, Item, Stair, Shop 保持既有邏輯架構)
+### 4.3 `Stair` (樓梯與傳送門)
+- **數據驅動傳送**：
+  - 資源檔透過 `is_relative` 屬性區分**相對上下樓梯** (如 701/702) 還是**絕對座標傳送門** (如 703/704)。
+  - 絕對傳送會額外讀取 `target_x` 與 `target_y`。
+- **中斷機制防覆蓋 (-Move 中斷)**：
+  - 若 `Stair::IsRelative()` 為 `false`，`Player::Move` 會在觸發 `Reaction()` 跳轉後立即 `return`，防止函數末尾的 `SyncPosition` 使用源樓層的相對向量蓋過目標樓層的新座標。
+
+### ... (NPC, Enemy, Item, Shop 保持既有邏輯架構)
 
 > **注意**：原 `Trigger` 類別已併入 `NPC`（ID 800-899 範圍現由 `NPC` 處理），因兩者行為完全相同。
 
