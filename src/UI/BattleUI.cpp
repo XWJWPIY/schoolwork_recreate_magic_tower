@@ -142,12 +142,12 @@ void BattleUI::SetAnimation(bool isPlayerTurn, int damage) {
 void BattleUI::RefreshStats() {
     if (!m_player || !m_enemy) return;
 
-    m_player_hp->SetNumber(m_player->GetAttr(AppUtil::Effect::HP)); m_player_hp->UpdateDisplayText();
+    m_player_hp->SetNumber(std::max(0, m_player->GetAttr(AppUtil::Effect::HP))); m_player_hp->UpdateDisplayText();
     m_player_atk->SetNumber(m_player->GetAttr(AppUtil::Effect::ATTACK)); m_player_atk->UpdateDisplayText();
     m_player_def->SetNumber(m_player->GetAttr(AppUtil::Effect::DEFENSE)); m_player_def->UpdateDisplayText();
     m_player_agi->SetNumber(m_player->GetAttr(AppUtil::Effect::AGILITY)); m_player_agi->UpdateDisplayText();
 
-    m_enemy_hp->SetNumber(m_enemy->GetAttr(AppUtil::Effect::HP)); m_enemy_hp->UpdateDisplayText();
+    m_enemy_hp->SetNumber(std::max(0, m_enemy->GetAttr(AppUtil::Effect::HP))); m_enemy_hp->UpdateDisplayText();
     m_enemy_atk->SetNumber(m_enemy->GetAttr(AppUtil::Effect::ATTACK)); m_enemy_atk->UpdateDisplayText();
     m_enemy_def->SetNumber(m_enemy->GetAttr(AppUtil::Effect::DEFENSE)); m_enemy_def->UpdateDisplayText();
     m_enemy_agi->SetNumber(m_enemy->GetAttr(AppUtil::Effect::AGILITY)); m_enemy_agi->UpdateDisplayText();
@@ -202,6 +202,7 @@ void BattleUI::run() {
             }
 
             if (m_enemy->GetAttr(AppUtil::Effect::HP) <= 0) {
+                RefreshStats(); // Ensure the HP: 0 is reflected in UI
                 m_state = State::REWARD;
                 auto meta = AppUtil::GlobalObjectRegistry[m_enemy->GetObjectId()];
                 m_reward_bg->SetVisible(true);
