@@ -34,6 +34,7 @@ classDiagram
     UIComponent <|-- ItemNoticeUI
     UIComponent <|-- EnemyBookUI
     UIComponent <|-- BattleUI
+    UIComponent <|-- EndSceneUI
 ```
 
 ## 完整類別圖（繼承、屬性、方法）
@@ -218,9 +219,9 @@ classDiagram
     class Actor {
         #unordered_map~Effect, int~ m_attributes
         +Actor(id, canReact)
-        +GetAttr(Effect) int
-        +SetAttr(Effect, value)
-        +ApplyEffect(Effect, delta)
+        +virtual GetAttr(Effect) int
+        +virtual SetAttr(Effect, value)
+        +virtual ApplyEffect(Effect, delta)
         +MeetsRequirement(Effect, amount) bool
         +virtual OnAttributeChanged(Effect)
     }
@@ -236,6 +237,8 @@ classDiagram
         -bool m_is_animating
         -shared_ptr~Animation~ m_animations[4]
         -int m_pending_shop_id
+        -bool m_is_super_mode
+        -unordered_map~Effect, int~ m_super_attributes
         +Player()
         +Move(dx, dy, roadmap, thingsmap)
         +SyncPosition(roadmap)
@@ -246,7 +249,21 @@ classDiagram
         +ResetStateAfterFloorChange()
         +SetDirection(PlayerDirection)
         +SetIsAnimating(bool)
+        +ToggleSuperMode()
+        +GetAttr/SetAttr/ApplyEffect() override
         +OnAttributeChanged(Effect) override
+    }
+
+    class EndSceneUI {
+        -bool m_is_win
+        -shared_ptr~GameObject~ m_end_bg
+        -shared_ptr~NumericDisplayText~ m_status_text
+        -shared_ptr~NumericDisplayText~ m_restart_hint
+        -float m_blink_timer
+        +EndSceneUI(fontPath)
+        +Show(bool win)
+        +CanRestart() bool
+        +run() override
     }
 
     class Door {
@@ -350,6 +367,7 @@ classDiagram
     UIComponent <|-- ItemNoticeUI
     UIComponent <|-- EnemyBookUI
     UIComponent <|-- BattleUI
+    UIComponent <|-- EndSceneUI
 ```
 
 ## 非繼承類別（管理器與 UI）
@@ -652,9 +670,9 @@ classDiagram
     - 按 `F` 可開啟，需擁有 `fly` 屬性。
 - **超級模式 (Super Mode)**:
     - 按 `G` 鍵切換。
-    - HP 變為 999,999，ATK/DEF 變為 999。
-    - **屬性連動**: 開啟時自動賦予 `ENEMY_BOOK` 與 `FLY` 屬性。
-    - **獎勵保留**: 若在超級模式下獲得道具，關閉後仍會保留獲得狀態。
+    - **平行屬性 (Parallel Stats)**: 開啟時進入獨立的數據桶（HP 999,999，ATK/DEF 999）。
+    - **完全隔離**: 在此模式下受傷或獲得 D (怪物手冊) / F (樓層跳躍) 僅影響超級數據，不改動正常狀態。
+    - **狀態保存**: 退出再進入會保留上一次在超級模式下的數值（如剩餘血量）。
 - **核心邏輯**：整合了邊界檢查、`RoadMap` 碰撞與 `ThingsMap` 互動。
 - **動畫驅動**：`ObjectUpdate` 負責驅動玩家的四方向行走與靜止圖切換。
 

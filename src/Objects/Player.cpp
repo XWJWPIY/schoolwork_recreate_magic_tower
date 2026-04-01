@@ -18,13 +18,13 @@ Player::Player()
   SetAttr(AppUtil::Effect::ATTACK, 10);
   SetAttr(AppUtil::Effect::DEFENSE, 10);
   SetAttr(AppUtil::Effect::AGILITY, 2);
-  SetAttr(AppUtil::Effect::EXP, 1000);
+  SetAttr(AppUtil::Effect::EXP, 0);
   SetAttr(AppUtil::Effect::LEVEL, 1);
 
   SetAttr(AppUtil::Effect::KEY_YELLOW, 1);
   SetAttr(AppUtil::Effect::KEY_BLUE, 1);
   SetAttr(AppUtil::Effect::KEY_RED, 1);
-  SetAttr(AppUtil::Effect::COIN, 1000);
+  SetAttr(AppUtil::Effect::COIN, 0);
   SetAttr(AppUtil::Effect::ENEMY_BOOK, 0);
 
   // Pre-load 4-directional animations (4 frames each)
@@ -142,12 +142,6 @@ void Player::SyncPosition(std::shared_ptr<FloorMap> roadmap) {
 }
 
 void Player::OnAttributeChanged(AppUtil::Effect type) {
-    if (m_is_super_mode && m_normal_stats.count(type)) {
-        if (type == AppUtil::Effect::ENEMY_BOOK || type == AppUtil::Effect::FLY) {
-            m_normal_stats[type] = GetAttr(type);
-        }
-    }
-
     if (type == AppUtil::Effect::HP && GetAttr(AppUtil::Effect::HP) <= 0) {
         LOG_INFO("Player has died!");
         // TODO: Trigger Game Over
@@ -177,35 +171,51 @@ void Player::SetDirection(PlayerDirection dir) {
   }
 }
 
+int Player::GetAttr(AppUtil::Effect type) const {
+    if (m_is_super_mode) {
+        auto it = m_super_attributes.find(type);
+        if (it != m_super_attributes.end()) return it->second;
+    }
+    return Actor::GetAttr(type);
+}
+
+void Player::SetAttr(AppUtil::Effect type, int value) {
+    if (m_is_super_mode) {
+        m_super_attributes[type] = value;
+        OnAttributeChanged(type);
+    } else {
+        Actor::SetAttr(type, value);
+    }
+}
+
+void Player::ApplyEffect(AppUtil::Effect type, int delta) {
+    if (m_is_super_mode) {
+        m_super_attributes[type] += delta;
+        OnAttributeChanged(type);
+    } else {
+        Actor::ApplyEffect(type, delta);
+    }
+}
+
 void Player::ToggleSuperMode() {
     m_is_super_mode = !m_is_super_mode;
 
-    if (m_is_super_mode) {
-        LOG_INFO("Super Mode: ACTIVATED");
-        // Save normal stats
-        m_normal_stats[AppUtil::Effect::HP] = GetAttr(AppUtil::Effect::HP);
-        m_normal_stats[AppUtil::Effect::ATTACK] = GetAttr(AppUtil::Effect::ATTACK);
-        m_normal_stats[AppUtil::Effect::DEFENSE] = GetAttr(AppUtil::Effect::DEFENSE);
-        m_normal_stats[AppUtil::Effect::AGILITY] = GetAttr(AppUtil::Effect::AGILITY);
-        m_normal_stats[AppUtil::Effect::ENEMY_BOOK] = GetAttr(AppUtil::Effect::ENEMY_BOOK);
-        m_normal_stats[AppUtil::Effect::FLY] = GetAttr(AppUtil::Effect::FLY);
+    if (m_is_super_mode && m_super_attributes.empty()) {
+        LOG_INFO("Super Mode: Initializing default super stats...");
+        m_super_attributes[AppUtil::Effect::HP] = 999999;
+        m_super_attributes[AppUtil::Effect::ATTACK] = 999;
+        m_super_attributes[AppUtil::Effect::DEFENSE] = 999;
+        m_super_attributes[AppUtil::Effect::AGILITY] = 50;
+        m_super_attributes[AppUtil::Effect::ENEMY_BOOK] = 1;
+        m_super_attributes[AppUtil::Effect::FLY] = 1;
 
-        // Set super stats
-        SetAttr(AppUtil::Effect::HP, 999999);
-        SetAttr(AppUtil::Effect::ATTACK, 999);
-        SetAttr(AppUtil::Effect::DEFENSE, 999);
-        SetAttr(AppUtil::Effect::AGILITY, 50);
-        SetAttr(AppUtil::Effect::ENEMY_BOOK, 1);
-        SetAttr(AppUtil::Effect::FLY, 1);
-    } else {
-        LOG_INFO("Super Mode: DEACTIVATED");
-        // Restore normal stats
-        SetAttr(AppUtil::Effect::HP, m_normal_stats[AppUtil::Effect::HP]);
-        SetAttr(AppUtil::Effect::ATTACK, m_normal_stats[AppUtil::Effect::ATTACK]);
-        SetAttr(AppUtil::Effect::DEFENSE, m_normal_stats[AppUtil::Effect::DEFENSE]);
-        SetAttr(AppUtil::Effect::AGILITY, m_normal_stats[AppUtil::Effect::AGILITY]);
-        SetAttr(AppUtil::Effect::ENEMY_BOOK, m_normal_stats[AppUtil::Effect::ENEMY_BOOK]);
-        SetAttr(AppUtil::Effect::FLY, m_normal_stats[AppUtil::Effect::FLY]);
-        m_normal_stats.clear();
+        // Copy current consumable resources to the super bucket so they are available
+        m_super_attributes[AppUtil::Effect::KEY_YELLOW] = Actor::GetAttr(AppUtil::Effect::KEY_YELLOW);
+        m_super_attributes[AppUtil::Effect::KEY_BLUE] = Actor::GetAttr(AppUtil::Effect::KEY_BLUE);
+        m_super_attributes[AppUtil::Effect::KEY_RED] = Actor::GetAttr(AppUtil::Effect::KEY_RED);
+        m_super_attributes[AppUtil::Effect::COIN] = 1000;
+        m_super_attributes[AppUtil::Effect::EXP] = 1000;
     }
+
+    LOG_INFO("Super Mode: %s", m_is_super_mode ? "ACTIVATED" : "DEACTIVATED");
 }

@@ -46,9 +46,15 @@ public:
   int m_pending_shop_id = -1;
 
   void ToggleSuperMode();
+
+  // Parallel Attribute Overrides
+  int GetAttr(AppUtil::Effect type) const override;
+  void SetAttr(AppUtil::Effect type, int value) override;
+  void ApplyEffect(AppUtil::Effect type, int delta) override;
+
 private:
   bool m_is_super_mode = false;
-  std::unordered_map<AppUtil::Effect, int> m_normal_stats;
+  std::unordered_map<AppUtil::Effect, int> m_super_attributes;
 };
 
 
