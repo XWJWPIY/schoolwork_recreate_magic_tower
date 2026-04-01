@@ -26,6 +26,7 @@ Player::Player()
   SetAttr(AppUtil::Effect::KEY_RED, 1);
   SetAttr(AppUtil::Effect::COIN, 0);
   SetAttr(AppUtil::Effect::ENEMY_BOOK, 0);
+  SetAttr(AppUtil::Effect::HIGHEST_FLOOR, 0);
 
   // Pre-load 4-directional animations (4 frames each)
   for (int i = 1; i <= 4; i++) {
@@ -172,7 +173,7 @@ void Player::SetDirection(PlayerDirection dir) {
 }
 
 int Player::GetAttr(AppUtil::Effect type) const {
-    if (m_is_super_mode) {
+    if (m_is_super_mode && type != AppUtil::Effect::HIGHEST_FLOOR) {
         auto it = m_super_attributes.find(type);
         if (it != m_super_attributes.end()) return it->second;
     }
@@ -180,7 +181,7 @@ int Player::GetAttr(AppUtil::Effect type) const {
 }
 
 void Player::SetAttr(AppUtil::Effect type, int value) {
-    if (m_is_super_mode) {
+    if (m_is_super_mode && type != AppUtil::Effect::HIGHEST_FLOOR) {
         m_super_attributes[type] = value;
         OnAttributeChanged(type);
     } else {
@@ -189,7 +190,7 @@ void Player::SetAttr(AppUtil::Effect type, int value) {
 }
 
 void Player::ApplyEffect(AppUtil::Effect type, int delta) {
-    if (m_is_super_mode) {
+    if (m_is_super_mode && type != AppUtil::Effect::HIGHEST_FLOOR) {
         m_super_attributes[type] += delta;
         OnAttributeChanged(type);
     } else {

@@ -50,6 +50,7 @@ public:
 private:
   void ValidTask();
   void InitializeGame();
+  void UpdateHighestFloor();
 
 private:
   STATE m_current_state = STATE::START;

@@ -28,7 +28,8 @@ enum class Effect {
     WEAK,
     POISON,
     FLY,
-    ENEMY_BOOK
+    ENEMY_BOOK,
+    HIGHEST_FLOOR
 };
 
 namespace Attr {
@@ -57,6 +58,7 @@ namespace Attr {
     const std::string TRANSACTIONS = "Initial_Transactions";
     const std::string DIALOG       = "Dialog";
     const std::string ENEMY_BOOK   = "enemy_book";
+    const std::string HIGHEST_FLOOR = "highest_floor";
 }
 
 class AttributeRegistry {

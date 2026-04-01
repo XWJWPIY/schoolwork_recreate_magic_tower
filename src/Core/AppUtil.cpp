@@ -53,6 +53,7 @@ void AttributeRegistry::Initialize() {
     reg("fly",            13, Effect::FLY);
     reg(Attr::ENEMY_BOOK, 14, Effect::ENEMY_BOOK);
     reg("enemy_data",     14, Effect::ENEMY_BOOK); // Alias for legacy scripts
+    reg(Attr::HIGHEST_FLOOR, 15, Effect::HIGHEST_FLOOR);
     
     // Aliases or special structural attributes
     reg(Attr::FLOOR_DELTA, 100);

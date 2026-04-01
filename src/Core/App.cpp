@@ -126,6 +126,7 @@ void App::InitializeGame() {
   m_dialogue_ui->AddToRoot(m_root);
 
   m_fly_ui = std::make_shared<FlyUI>();
+  m_fly_ui->SetPlayer(m_player);
   m_fly_ui->AddToRoot(m_root);
 
   m_notice_ui = std::make_shared<NoticeUI>();
@@ -256,6 +257,12 @@ void App::Update() {
       break;
     }
     if (Util::Input::IsKeyDown(Util::Keycode::F)) {
+      // Restriction: Floors 21-25 are disabled in normal mode
+      if (!m_player->IsSuperMode() && m_road_map->GetCurrentStory() > 20) {
+          LOG_INFO("[Toggle] Pressed F: Elevator disabled on floors 21-25 in normal mode.");
+          break;
+      }
+
       if (m_player->HasFly()) {
         m_game_state = AppUtil::GameState::FAST_ELEVATOR;
         m_fly_ui->Start(m_road_map->GetCurrentStory(), [this](int floor, int) {
@@ -390,7 +397,18 @@ void App::SetFloor(int nextStory, int x, int y) {
     LOG_INFO("App: Final Player Position: Floor {}, Grid({}, {})",
              m_road_map->GetCurrentStory(), m_player->GetGridX(),
              m_player->GetGridY());
+
+    UpdateHighestFloor();
   }
+}
+
+void App::UpdateHighestFloor() {
+    if (!m_player || !m_road_map) return;
+    int current = m_road_map->GetCurrentStory();
+    if (current > m_player->GetAttr(AppUtil::Effect::HIGHEST_FLOOR)) {
+        m_player->SetAttr(AppUtil::Effect::HIGHEST_FLOOR, current);
+        LOG_INFO("App: Highest floor updated to {}", current);
+    }
 }
 
 void App::TeleportToFloor(int targetStory, int targetStairId) {
@@ -407,6 +425,7 @@ void App::TeleportToFloor(int targetStory, int targetStairId) {
       m_player->SyncPosition(m_road_map);
     }
     LOG_INFO("Teleported to story {} at stair {}", targetStory, targetStairId);
+    UpdateHighestFloor();
   }
 }
 

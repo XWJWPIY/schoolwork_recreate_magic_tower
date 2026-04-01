@@ -131,6 +131,9 @@ classDiagram
     }
 
     class FlyUI {
+        -shared_ptr~Player~ m_player
+        -int m_current_story
+        -int m_preview_floor
         -shared_ptr~GameObject~ m_fly_bg
         -shared_ptr~NumericDisplayText~ m_floor_text
         -shared_ptr~NumericDisplayText~ m_enter_text
@@ -139,6 +142,7 @@ classDiagram
         -shared_ptr~GameObject~ m_down_arrow
         -float m_blink_timer
         +FlyUI()
+        +SetPlayer(shared_ptr~Player~)
         +Start(currentStory, callback)
         +run() override
         +IsIntercepting() bool override
@@ -400,6 +404,7 @@ classDiagram
         +SetFloor(int story, int x, int y)
         +TeleportToFloor(int targetStory, int targetStairId)
         -InitializeGame()
+        -UpdateHighestFloor()
     }
 
     class FloorMap {
@@ -668,9 +673,13 @@ classDiagram
     - 需透過劇情 CSV 腳本給予 `enemy_book` (或 `enemy_data`) 屬性解鎖。
 - **傳送器 (Fly)**:
     - 按 `F` 可開啟，需擁有 `fly` 屬性。
+    - **樓層限制**：
+      - 一般模式：可選範圍為 `0 ~ min(20, highest_floor)`，且在 21~25 樓禁止啟動電梯。
+      - 超級模式：可選範圍恆定為 `0 ~ 25`。
 - **超級模式 (Super Mode)**:
     - 按 `G` 鍵切換。
     - **平行屬性 (Parallel Stats)**: 開啟時進入獨立的數據桶（HP 999,999，ATK/DEF 999）。
+    - **全域屬性 (Global Progress)**：`highest_floor` (最高樓層紀錄) 不受平行屬性限制，會在所有模式間同步更新。
     - **完全隔離**: 在此模式下受傷或獲得 D (怪物手冊) / F (樓層跳躍) 僅影響超級數據，不改動正常狀態。
     - **狀態保存**: 退出再進入會保留上一次在超級模式下的數值（如剩餘血量）。
 - **核心邏輯**：整合了邊界檢查、`RoadMap` 碰撞與 `ThingsMap` 互動。

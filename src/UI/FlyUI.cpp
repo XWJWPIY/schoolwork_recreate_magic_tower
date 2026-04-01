@@ -1,4 +1,5 @@
 #include "UI/FlyUI.hpp"
+#include "Objects/Player.hpp"
 #include "Core/AppUtil.hpp"
 #include "Util/Input.hpp"
 #include "Util/Keycode.hpp"
@@ -60,8 +61,11 @@ void FlyUI::Start(int currentStory, TeleportCallback onTeleport) {
 void FlyUI::run() {
     if (!m_visible) return;
 
+    int highestFloor = m_player->GetAttr(AppUtil::Effect::HIGHEST_FLOOR);
+    int maxSelectable = m_player->IsSuperMode() ? 25 : std::min(20, highestFloor);
+
     if (Util::Input::IsKeyDown(Util::Keycode::UP)) {
-        if (m_preview_floor < AppUtil::TOTAL_STORY - 1) {
+        if (m_preview_floor < maxSelectable) {
             m_preview_floor++;
             SetTargetFloor(m_preview_floor);
         }
@@ -106,7 +110,10 @@ void FlyUI::SetTargetFloor(int floor) {
 }
 
 void FlyUI::UpdateArrows(int currentFloor) {
-    if (currentFloor < AppUtil::TOTAL_STORY - 1) m_up_arrow->SetDrawable(m_up_white);
+    int highestFloor = m_player->GetAttr(AppUtil::Effect::HIGHEST_FLOOR);
+    int maxSelectable = m_player->IsSuperMode() ? 25 : std::min(20, highestFloor);
+
+    if (currentFloor < maxSelectable) m_up_arrow->SetDrawable(m_up_white);
     else m_up_arrow->SetDrawable(m_up_gray);
 
     if (currentFloor > 0) m_down_arrow->SetDrawable(m_down_white);

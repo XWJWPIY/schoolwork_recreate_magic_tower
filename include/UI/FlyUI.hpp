@@ -8,6 +8,8 @@
 #include <functional>
 #include <memory>
 
+class Player;
+
 class FlyUI : public UIComponent {
 public:
     using TeleportCallback = std::function<void(int targetStory, int stairId)>;
@@ -23,6 +25,7 @@ public:
     bool IsIntercepting() const override { return IsActive(); }
 
     // Logic
+    void SetPlayer(std::shared_ptr<Player> player) { m_player = player; }
     void Start(int currentStory, TeleportCallback onTeleport);
     void SetTargetFloor(int floor);
 
@@ -30,6 +33,7 @@ private:
     void UpdateArrows(int currentFloor);
 
 private:
+    std::shared_ptr<Player> m_player;
     int m_current_story = 0;
     int m_preview_floor = 0;
     TeleportCallback m_on_teleport;
