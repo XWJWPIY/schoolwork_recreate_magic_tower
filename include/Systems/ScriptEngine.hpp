@@ -20,6 +20,7 @@ public:
         SHOP,
         NOTICE,
         SWITCH,
+        WIN,
         END
     };
 

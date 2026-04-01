@@ -61,6 +61,9 @@ void ScriptEngine::LoadScript(const std::string& name) {
                 m_steps.push_back({Speaker::SYSTEM, "", CommandType::SWITCH, row[1]});
             }
         }
+        else if (first == "win") {
+            m_steps.push_back({Speaker::SYSTEM, "", CommandType::WIN, ""});
+        }
         else {
             // Fallback for custom or old labels
             m_steps.push_back({Speaker::NPC, row.size() > 1 ? row[1] : "", CommandType::NONE, ""});

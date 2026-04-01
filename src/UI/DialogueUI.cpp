@@ -306,6 +306,11 @@ void DialogueUI::AdvanceScript() {
         m_engine.Next();
         AdvanceScript(); 
     }
+    else if (step.command == ScriptEngine::CommandType::WIN) {
+        if (m_on_win) m_on_win();
+        m_engine.Next();
+        AdvanceScript();
+    }
 }
 
 void DialogueUI::ExecuteCommand(const ScriptStep& step) {

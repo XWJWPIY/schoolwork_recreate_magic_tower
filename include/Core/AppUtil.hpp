@@ -187,7 +187,9 @@ enum class GameState {
   LOADING = 5,       // 5: Loading state
   SHOP = 6,          // 6: Shop state
   ENEMY_BOOK = 7,    // 7: Enemy book state
-  BATTLE = 8         // 8: Battle state
+  BATTLE = 8,        // 8: Battle state
+  GAME_OVER = 9,     // 9: Game Over state
+  WIN = 10           // 10: Win state
 };
 
 // Removed MapCell struct as it was just a wrapper for int id

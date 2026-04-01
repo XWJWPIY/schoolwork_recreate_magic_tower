@@ -25,6 +25,7 @@ set(SRC_FILES
     UI/FlyUI.cpp
     UI/NoticeUI.cpp
     UI/BattleUI.cpp
+    UI/EndSceneUI.cpp
     Systems/DynamicReplacementComponent.cpp
     Systems/ScriptEngine.cpp
     Systems/ShopSystem.cpp
@@ -57,6 +58,7 @@ set(INCLUDE_FILES
     UI/FlyUI.hpp
     UI/NoticeUI.hpp
     UI/BattleUI.hpp
+    UI/EndSceneUI.hpp
     Systems/DynamicReplacementComponent.hpp
     Systems/ScriptEngine.hpp
     Systems/ShopSystem.hpp

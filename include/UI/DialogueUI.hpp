@@ -55,6 +55,7 @@ public:
 
     void SetPlayer(std::shared_ptr<Player> player) { m_player = player; }
     void SetOnSwitchObject(std::function<void(std::shared_ptr<Entity>, int)> callback) { m_on_switch_object = callback; }
+    void SetOnWin(std::function<void()> callback) { m_on_win = callback; }
 
 private:
     void HandleInput();
@@ -89,6 +90,7 @@ private:
     AppUtil::ShopData m_current_shop_data;
     std::function<void(int)> m_on_selection;
     std::function<void(std::shared_ptr<Entity>, int)> m_on_switch_object;
+    std::function<void()> m_on_win;
     float m_blink_timer = 0.0f;
 };
 

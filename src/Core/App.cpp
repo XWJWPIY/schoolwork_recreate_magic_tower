@@ -145,6 +145,15 @@ void App::InitializeGame() {
   m_battle_ui = std::make_shared<BattleUI>(AppUtil::GetStaticResourcePath("Font/Cubic_11.ttf"));
   m_battle_ui->AddToRoot(m_root);
   m_ui_components.push_back(m_battle_ui);
+
+  m_end_scene_ui = std::make_shared<EndSceneUI>(AppUtil::GetStaticResourcePath("font/Cubic_11.ttf"));
+  m_end_scene_ui->AddToRoot(m_root);
+  m_ui_components.push_back(m_end_scene_ui);
+
+  m_dialogue_ui->SetOnWin([this]() {
+      m_game_state = AppUtil::GameState::WIN;
+      m_end_scene_ui->Show(true);
+  });
 }
 
 void App::Update() {
@@ -192,6 +201,12 @@ void App::Update() {
     break;
 
   case AppUtil::GameState::PLAYING:
+    if (m_player->GetAttr(AppUtil::Effect::HP) <= 0) {
+        m_game_state = AppUtil::GameState::GAME_OVER;
+        m_end_scene_ui->Show(false);
+        break;
+    }
+
     // Check if a dialogue or modal UI is intercepting the logic phase
     {
         bool isIntercepted = false;
@@ -314,6 +329,13 @@ void App::Update() {
 
   case AppUtil::GameState::BATTLE:
     break; // Handled by BattleUI::run()
+
+  case AppUtil::GameState::GAME_OVER:
+  case AppUtil::GameState::WIN:
+    if (Util::Input::IsKeyDown(Util::Keycode::SPACE) && m_end_scene_ui->CanRestart()) {
+        Restart();
+    }
+    break;
   }
 
   // 2. Render phase
@@ -333,6 +355,7 @@ void App::End() { // NOLINT
 void App::Restart() {
   LOG_INFO("Restarting game...");
   m_active_shop = nullptr;
+  m_ui_components.clear(); // Clear old UI components
   m_root = Util::Renderer();
   m_game_state = AppUtil::GameState::MAIN_MENU;
   m_item_notice_timer = 0.0f;
