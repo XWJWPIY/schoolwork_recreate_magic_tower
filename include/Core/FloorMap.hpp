@@ -29,6 +29,12 @@ public:
    */
   void LoadAllFloors(const std::string &prefix);
 
+  /**
+   * @brief Load a single CSV map as an overlay on the specified story.
+   * Non-zero IDs in the CSV will overwrite current objects.
+   */
+  void LoadOverlay(const std::string &relativePath, int story = -1);
+
   std::shared_ptr<Entity> GetObject(int x, int y, int story = -1);
   bool IsPassable(int x, int y, int story = -1);
 

@@ -65,6 +65,7 @@ std::shared_ptr<Entity> EntityFactory::CreateEnemy(int id) {
     }
     auto enemy = std::make_shared<Enemy>(id);
     enemy->SetBattleCallback(m_callbacks.startBattle);
+    enemy->SetRewardCallback(m_callbacks.loadRewardLayer);
     return enemy;
 }
 

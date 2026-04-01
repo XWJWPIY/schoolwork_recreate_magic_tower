@@ -39,5 +39,14 @@ void Enemy::OnDefeated(std::shared_ptr<Player> player) {
   } else {
     TriggerReplacement(0); // Replace with empty floor
   }
+
+  // Handle Reward Layer
+  std::string rewardMap = meta.GetString("Reward_Map");
+  if (!rewardMap.empty()) {
+      LOG_INFO("Enemy: Triggering reward map: {}", rewardMap);
+      if (m_load_reward_layer_cb) {
+          m_load_reward_layer_cb(rewardMap);
+      }
+  }
 }
 

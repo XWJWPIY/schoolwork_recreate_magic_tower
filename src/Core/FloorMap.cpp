@@ -61,6 +61,27 @@ void FloorMap::LoadAllFloors(const std::string &prefix) {
   }
 }
 
+void FloorMap::LoadOverlay(const std::string &relativePath, int story) {
+    std::string fullPath = AppUtil::GetStaticResourcePath(relativePath);
+    auto data = AppUtil::MapParser::ParseCsv(fullPath);
+    if (data.empty()) {
+        LOG_ERROR("FloorMap: Failed to load overlay from {}", fullPath);
+        return;
+    }
+
+    int targetStory = (story == -1) ? m_current_story : story;
+    LOG_INFO("FloorMap: Applying overlay from {} to story {}", relativePath, targetStory);
+
+    for (size_t y = 0; y < data.size() && y < 11; ++y) {
+        for (size_t x = 0; x < data[y].size() && x < 11; ++x) {
+            int id = data[y][x];
+            if (id != 0) {
+                UpdateObjectAt(static_cast<int>(x), static_cast<int>(y), id, targetStory);
+            }
+        }
+    }
+}
+
 void FloorMap::LoadFloorData(const std::vector<std::vector<int>> &floorData,
                              int floorLevel) {
   if (floorLevel < 0 || floorLevel >= AppUtil::TOTAL_STORY) {

@@ -18,9 +18,11 @@ public:
   void Reaction(std::shared_ptr<Player> player) override;
   void OnDefeated(std::shared_ptr<Player> player);
   void SetBattleCallback(std::function<void(std::shared_ptr<Enemy>)> cb) { m_start_battle_cb = cb; }
+  void SetRewardCallback(std::function<void(const std::string&)> cb) { m_load_reward_layer_cb = cb; }
 
 private:
   std::function<void(std::shared_ptr<Enemy>)> m_start_battle_cb;
+  std::function<void(const std::string&)> m_load_reward_layer_cb;
 };
 
 #endif // ENEMY_HPP

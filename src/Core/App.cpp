@@ -60,6 +60,11 @@ void App::InitializeGame() {
           m_game_state = AppUtil::GameState::PLAYING;
       });
   };
+  callbacks.loadRewardLayer = [this](const std::string& path) {
+      if (this->m_things_map) {
+          this->m_things_map->LoadOverlay(path);
+      }
+  };
 
   m_entity_factory = std::make_unique<EntityFactory>(callbacks);
 

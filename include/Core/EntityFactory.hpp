@@ -25,6 +25,7 @@ public:
         std::function<void(Shop&)> openShop;
         std::function<void()> closeShop;
         std::function<void(std::shared_ptr<Enemy>)> startBattle;
+        std::function<void(const std::string&)> loadRewardLayer;
     };
 
     explicit EntityFactory(const Callbacks& callbacks);
