@@ -218,5 +218,5 @@ void Player::ToggleSuperMode() {
         m_super_attributes[AppUtil::Effect::EXP] = 1000;
     }
 
-    LOG_INFO("Super Mode: %s", m_is_super_mode ? "ACTIVATED" : "DEACTIVATED");
+    LOG_INFO("Super Mode: {}", m_is_super_mode ? "ACTIVATED" : "DEACTIVATED");
 }

@@ -4,6 +4,7 @@
 #include "Util/Keycode.hpp"
 #include "Util/Time.hpp"
 #include "Util/Logger.hpp"
+#include "Systems/BattleSystem.hpp"
 #include <algorithm>
 
 namespace {
@@ -182,99 +183,34 @@ void BattleUI::run() {
     m_turn_timer += Util::Time::GetDeltaTimeMs();
     if (m_turn_timer >= TURN_SPEED_MS) {
         m_turn_timer = 0.0f;
+        LOG_INFO("DEBUG: Turning to {}", m_player_turn ? "PLAYER" : "ENEMY");
 
         if (m_player_turn) {
-            int eAGI = m_enemy->GetAttr(AppUtil::Effect::AGILITY);
-            int roll = AppUtil::GetRandomInt(0, 99);
+            auto result = BattleSystem::ProcessPlayerTurn(m_player, m_enemy);
             
-            // Check Evasion
-            if (roll < eAGI) {
-                SetAnimation(true, 0); // Evasion!
-                LOG_INFO(("Enemy Evaded! (Roll: " + std::to_string(roll) + " < AGI: " + std::to_string(eAGI) + ")").c_str());
-            } else {
-                int eDef = m_enemy->GetAttr(AppUtil::Effect::DEFENSE);
-                int pAtk = m_player->GetAttr(AppUtil::Effect::ATTACK);
-                int dmg = std::max(1, pAtk - eDef); // Damage floor 1
+            SetAnimation(true, result.totalDamage);
 
-                m_enemy->ApplyEffect(AppUtil::Effect::HP, -dmg);
-                SetAnimation(true, dmg);
-                LOG_INFO(("Hero Hits! (Roll: " + std::to_string(roll) + " >= AGI: " + std::to_string(eAGI) + ")").c_str());
-            }
-
-            if (m_enemy->GetAttr(AppUtil::Effect::HP) <= 0) {
+            if (result.isBattleEnd) {
                 RefreshStats(); // Ensure the HP: 0 is reflected in UI
                 m_state = State::REWARD;
-                auto meta = AppUtil::GlobalObjectRegistry[m_enemy->GetObjectId()];
                 m_reward_bg->SetVisible(true);
                 m_reward_text1->SetPrefix(AppUtil::GetGlobalString("battle_win", "Victory!")); 
                 m_reward_text1->UpdateDisplayText(); 
                 m_reward_text1->SetVisible(true);
-                m_reward_text2->SetPrefix(AppUtil::GetGlobalString("battle_exp", "EXP: ") + std::to_string(meta.GetInt(AppUtil::Attr::EXP)) + AppUtil::GetGlobalString("battle_coin", " Coin: ") + std::to_string(meta.GetInt(AppUtil::Attr::COIN)));
+                m_reward_text2->SetPrefix(AppUtil::GetGlobalString("battle_exp", "EXP: ") + std::to_string(result.rewardExp) + AppUtil::GetGlobalString("battle_coin", " Coin: ") + std::to_string(result.rewardCoin));
                 m_reward_text2->UpdateDisplayText(); 
                 m_reward_text2->SetVisible(true);
                 m_reward_hint->SetPrefix(AppUtil::GetGlobalString("battle_reward_hint", "-SPACE-"));
                 m_reward_hint->UpdateDisplayText();
                 m_reward_hint->SetVisible(true);
                 m_floating_text->SetVisible(false);
-                m_floating_text->SetVisible(false);
             }
         } else {
-            auto meta = AppUtil::GlobalObjectRegistry[m_enemy->GetObjectId()];
-            bool ignoreDef = meta.GetInt("Ignore_DEF") > 0;
-            int atkTime = meta.GetInt("ATK_Time", 1);
-            int pAGI = m_player->GetAttr(AppUtil::Effect::AGILITY);
+            auto result = BattleSystem::ProcessEnemyTurn(m_player, m_enemy);
             
-            std::string specialStr = meta.GetString("Special");
-            bool isKilling = meta.GetInt("Killing_ATK") > 0 || specialStr == AppUtil::GetGlobalString("battle_special_kill", "必殺攻擊");
-            bool isWeak = specialStr == AppUtil::GetGlobalString("battle_special_weak", "衰弱");
-            bool isPoison = specialStr == AppUtil::GetGlobalString("battle_special_poison", "中毒");
+            SetAnimation(false, result.totalDamage);
 
-            int pDef = m_player->GetAttr(AppUtil::Effect::DEFENSE);
-            int eAtk = m_enemy->GetAttr(AppUtil::Effect::ATTACK);
-            int eDmgBase = ignoreDef ? eAtk : (eAtk - pDef);
-            if (eDmgBase < 1) eDmgBase = 1; // Damage floor 1
-
-            int totalDmg = 0;
-            bool evading = false;
-            
-            // Multi-attack turn
-            for (int i = 0; i < atkTime; ++i) {
-                int killRoll = AppUtil::GetRandomInt(0, 99);
-                // Check Instant Kill 10%
-                if (isKilling && killRoll < 10) {
-                    totalDmg = m_player->GetAttr(AppUtil::Effect::HP);
-                    LOG_INFO(("Instant Kill! (Roll: " + std::to_string(killRoll) + " < 10)").c_str());
-                    break;
-                }
-
-                int evaRoll = AppUtil::GetRandomInt(0, 99);
-                // Check Evasion
-                if (evaRoll < pAGI) {
-                    LOG_INFO(("Player Evaded! (Hit " + std::to_string(i+1) + ", Roll: " + std::to_string(evaRoll) + " < AGI: " + std::to_string(pAGI) + ")").c_str());
-                    evading = true;
-                    continue;
-                }
-
-                totalDmg += eDmgBase;
-
-                int statusRoll = AppUtil::GetRandomInt(0, 99);
-                // Check Status 1%
-                if (isWeak && statusRoll < 1) {
-                    LOG_INFO(("Player Weakened! (Roll: " + std::to_string(statusRoll) + " < 1)").c_str());
-                }
-                if (isPoison && statusRoll < 1) {
-                    LOG_INFO(("Player Poisoned! (Roll: " + std::to_string(statusRoll) + " < 1)").c_str());
-                }
-            }
-
-            if (totalDmg > 0 || !evading) {
-                m_player->ApplyEffect(AppUtil::Effect::HP, -totalDmg);
-                SetAnimation(false, totalDmg);
-            } else {
-                SetAnimation(false, 0); // All evaded
-            }
-
-            if (m_player->GetAttr(AppUtil::Effect::HP) <= 0) {
+            if (result.isBattleEnd) {
                 SetVisible(false);
                 if (m_on_end) m_on_end(false); // Dead
                 return;

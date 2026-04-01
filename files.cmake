@@ -29,6 +29,7 @@ set(SRC_FILES
     Systems/DynamicReplacementComponent.cpp
     Systems/ScriptEngine.cpp
     Systems/ShopSystem.cpp
+    Systems/BattleSystem.cpp
 )
 
 set(INCLUDE_FILES
@@ -62,6 +63,7 @@ set(INCLUDE_FILES
     Systems/DynamicReplacementComponent.hpp
     Systems/ScriptEngine.hpp
     Systems/ShopSystem.hpp
+    Systems/BattleSystem.hpp
 )
 
 set(TEST_FILES

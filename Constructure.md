@@ -478,6 +478,12 @@ classDiagram
         +LoadForShopEntity(id, floor, transCount) ShopData
     }
 
+    class BattleSystem {
+        <<static>>
+        +ProcessPlayerTurn(player, enemy) TurnResult
+        +ProcessEnemyTurn(player, enemy) TurnResult
+    }
+
     class EntityFactory {
         -Callbacks m_callbacks
         -shared_ptr~DynamicReplacementComponent~ m_replacement_comp
@@ -574,6 +580,17 @@ classDiagram
         +GetGlobalString(key, defaultValue) string
     }
 
+    class TurnResult {
+        +bool isBattleEnd
+        +bool evading
+        +bool instantKill
+        +bool weakened
+        +bool poisoned
+        +int totalDamage
+        +int rewardExp
+        +int rewardCoin
+    }
+
     ShopOption *-- SubEffect
     ShopData *-- ShopOption
 ```
@@ -597,6 +614,8 @@ classDiagram
     App *-- ItemNoticeUI
     App *-- DialogueUI
     App *-- EnemyBookUI
+    App *-- BattleUI
+    App *-- EndSceneUI
     App *-- UIComponent : (Managed in vector)
     App *-- EntityFactory
     App ..> Shop
@@ -605,6 +624,7 @@ classDiagram
     DialogueUI ..> ShopSystem
     ShopSystem ..> ShopUI : (Data interface)
     Shop ..> ShopSystem
+    BattleUI ..> BattleSystem : (Combat logic)
 
     EntityFactory ..> Entity
     EntityFactory ..> MapBlock
