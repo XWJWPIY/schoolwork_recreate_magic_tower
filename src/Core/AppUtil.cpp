@@ -13,6 +13,7 @@ namespace AppUtil {
 // 全域物件註冊表 (Global Object Registry)
 std::unordered_map<int, ObjectMetadata> GlobalObjectRegistry;
 std::unordered_map<std::string, std::string> GlobalSettings;
+std::unordered_map<std::string, std::string> GlobalPathCache;
 
 // AttributeRegistry static members
 std::unordered_map<std::string, int> AttributeRegistry::m_nameToId;
@@ -236,6 +237,12 @@ std::string GetBaseImagePath(int id) {
 std::string GetPhaseImagePath(const std::string& basePath, int phase) {
   if (basePath.empty()) return "";
 
+  std::string cacheKey = basePath + "_" + std::to_string(phase);
+  auto it = GlobalPathCache.find(cacheKey);
+  if (it != GlobalPathCache.end()) {
+      return it->second;
+  }
+
   std::string fullBasePath = basePath + std::to_string(phase);
 
   auto fileExists = [](const std::string& p) {
@@ -247,11 +254,15 @@ std::string GetPhaseImagePath(const std::string& basePath, int phase) {
   std::vector<std::string> variations = { ".bmp", ".BMP", ".png", ".PNG" };
   for (const auto& ext : variations) {
       if (fileExists(fullBasePath + ext)) {
-          return GetStaticResourcePath(fullBasePath + ext);
+          std::string result = GetStaticResourcePath(fullBasePath + ext);
+          GlobalPathCache[cacheKey] = result;
+          return result;
       }
   }
 
-  return GetStaticResourcePath(fullBasePath + ".bmp");
+  std::string defaultResult = GetStaticResourcePath(fullBasePath + ".bmp");
+  GlobalPathCache[cacheKey] = defaultResult;
+  return defaultResult;
 }
 
 std::string GetStaticResourcePath(const std::string& relativePath) {
@@ -282,36 +293,43 @@ MapParser::ParseCsv(const std::string &filepath) {
     if (line.empty())
       continue;
 
-    // Handle carriage returns for Windows/Linux compatibility
-    if (!line.empty() && line.back() == '\r') {
+    if (line.back() == '\r') {
       line.pop_back();
     }
 
     std::vector<int> row;
-    std::stringstream ss(line);
-    std::string cellString;
+    size_t start = 0;
+    size_t end = line.find(',');
 
-    while (std::getline(ss, cellString, ',')) {
-      // Trim whitespace
-      cellString.erase(0, cellString.find_first_not_of(" \t\r\n"));
-      cellString.erase(cellString.find_last_not_of(" \t\r\n") + 1);
-
-      if (cellString.empty())
-        continue;
-
-      int id = 0;
-      try {
-        id = std::stoi(cellString);
-      } catch (const std::exception &e) {
-        LOG_WARN("MapParser encountered invalid cell data '{}' in {}: {}",
-                 cellString, filepath, e.what());
-        id = 0;
+    auto processCell = [&](std::string_view cell) {
+      size_t cell_start = cell.find_first_not_of(" \t\r\n");
+      if (cell_start != std::string_view::npos) {
+        size_t cell_end = cell.find_last_not_of(" \t\r\n");
+        std::string_view trimmed = cell.substr(cell_start, cell_end - cell_start + 1);
+        int id = 0;
+        try {
+          // Fast conversion; std::string allocation here is minimal as cell is short.
+          // In C++17 std::from_chars could be used, but std::stoi is safe and simple since we already optimized parsing.
+          id = std::stoi(std::string(trimmed));
+        } catch (...) {
+          id = 0;
+        }
+        row.push_back(id);
+      } else {
+        // empty or whitespace-only cell
       }
-      row.push_back(id);
+    };
+
+    while (end != std::string::npos) {
+      processCell(std::string_view(line.data() + start, end - start));
+      start = end + 1;
+      end = line.find(',', start);
     }
+    // last cell
+    processCell(std::string_view(line.data() + start, line.size() - start));
 
     if (!row.empty()) {
-      mapData.push_back(row);
+      mapData.push_back(std::move(row));
     }
   }
 
@@ -333,24 +351,34 @@ MapParser::ParseCsvToStrings(const std::string &filepath) {
     if (line.empty())
       continue;
 
-    if (!line.empty() && line.back() == '\r') {
+    if (line.back() == '\r') {
       line.pop_back();
     }
 
     std::vector<std::string> row;
-    std::stringstream ss(line);
-    std::string cellString;
+    size_t start = 0;
+    size_t end = line.find(',');
 
-    while (std::getline(ss, cellString, ',')) {
-      // Trim whitespace
-      cellString.erase(0, cellString.find_first_not_of(" \t\r\n"));
-      cellString.erase(cellString.find_last_not_of(" \t\r\n") + 1);
+    auto processCell = [&](std::string_view cell) {
+      size_t cell_start = cell.find_first_not_of(" \t\r\n");
+      if (cell_start != std::string_view::npos) {
+        size_t cell_end = cell.find_last_not_of(" \t\r\n");
+        row.emplace_back(cell.substr(cell_start, cell_end - cell_start + 1));
+      } else {
+        row.emplace_back("");
+      }
+    };
 
-      row.push_back(cellString);
+    while (end != std::string::npos) {
+      processCell(std::string_view(line.data() + start, end - start));
+      start = end + 1;
+      end = line.find(',', start);
     }
+    // last cell
+    processCell(std::string_view(line.data() + start, line.size() - start));
 
     if (!row.empty()) {
-      mapData.push_back(row);
+      mapData.push_back(std::move(row));
     }
   }
 
@@ -379,20 +407,30 @@ bool CSVLoader::Load(const std::string& path) {
         if (!line.empty() && (line.back() == '\r' || line.back() == '\n')) line.pop_back();
         if (!line.empty() && (line.back() == '\r' || line.back() == '\n')) line.pop_back();
 
-        std::stringstream ss(line);
-        std::string cell;
+        size_t start = 0;
+        size_t end = line.find(',');
         int colIdx = 0;
-        while (std::getline(ss, cell, ',')) {
-            cell.erase(0, cell.find_first_not_of(" \t\r\n\xEF\xBB\xBF")); // Trim BOM
-            cell.erase(cell.find_last_not_of(" \t\r\n") + 1);
-            m_headerMap[cell] = colIdx;
-            LOG_INFO("CSVLoader: Header -> '{}' at index {}", cell, colIdx);
-            
-            if (AttributeRegistry::IsAttribute(cell)) {
-                m_attributeCols.push_back(colIdx);
+
+        auto processHeader = [&](std::string_view cell) {
+            size_t cell_start = cell.find_first_not_of(" \t\r\n\xEF\xBB\xBF"); // Trim BOM
+            if (cell_start != std::string_view::npos) {
+                size_t cell_end = cell.find_last_not_of(" \t\r\n");
+                std::string headerStr{cell.substr(cell_start, cell_end - cell_start + 1)};
+                m_headerMap[headerStr] = colIdx;
+                LOG_INFO("CSVLoader: Header -> '{}' at index {}", headerStr, colIdx);
+                if (AttributeRegistry::IsAttribute(headerStr)) {
+                    m_attributeCols.push_back(colIdx);
+                }
             }
             colIdx++;
+        };
+
+        while (end != std::string::npos) {
+            processHeader(std::string_view(line.data() + start, end - start));
+            start = end + 1;
+            end = line.find(',', start);
         }
+        processHeader(std::string_view(line.data() + start, line.size() - start));
     }
 
     LOG_INFO("CSVLoader: Parsing file {} (found {} columns, {} attributes)", path, m_headerMap.size(), m_attributeCols.size());
@@ -400,14 +438,28 @@ bool CSVLoader::Load(const std::string& path) {
     while (std::getline(file, line)) {
         if (line.empty()) continue;
         if (line.back() == '\r') line.pop_back();
-        std::stringstream ss(line);
-        std::string cell;
+        
         std::vector<std::string> row;
-        while (std::getline(ss, cell, ',')) {
-            cell.erase(0, cell.find_first_not_of(" \t\r\n"));
-            cell.erase(cell.find_last_not_of(" \t\r\n") + 1);
-            row.push_back(cell);
+        size_t start = 0;
+        size_t end = line.find(',');
+
+        auto processCell = [&](std::string_view cell) {
+            size_t cell_start = cell.find_first_not_of(" \t\r\n");
+            if (cell_start != std::string_view::npos) {
+                size_t cell_end = cell.find_last_not_of(" \t\r\n");
+                row.emplace_back(cell.substr(cell_start, cell_end - cell_start + 1));
+            } else {
+                row.emplace_back("");
+            }
+        };
+
+        while (end != std::string::npos) {
+            processCell(std::string_view(line.data() + start, end - start));
+            start = end + 1;
+            end = line.find(',', start);
         }
+        processCell(std::string_view(line.data() + start, line.size() - start));
+
         if (!row.empty()) m_data.push_back(std::move(row));
     }
     LOG_INFO("CSVLoader: Total rows loaded: {}", m_data.size());

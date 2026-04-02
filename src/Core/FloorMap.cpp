@@ -7,11 +7,12 @@ FloorMap::FloorMap(ObjectFactory factory, float centerX, float centerY,
                    float scaleX, float scaleY, float zIndex,
                    const glm::vec2 &baseSize)
     : m_factory(factory), m_center_x(centerX), m_center_y(centerY),
-      m_scale_x(scaleX), m_scale_y(scaleY), m_z_index(zIndex) {
+      m_scale_x(scaleX), m_scale_y(scaleY), m_z_index(zIndex),
+      m_floor_loaded(AppUtil::TOTAL_STORY, false) {
 
   glm::vec2 currentBaseSize = baseSize;
 
-  // If baseSize was not provided (is 0,0), try to sample from factory
+  // If baseSize was not provided (is 0,0), try to sample from factory (typically ID 0)
   if (currentBaseSize.x <= 0 || currentBaseSize.y <= 0) {
     auto sample_obj = m_factory(0);
     if (sample_obj) {
@@ -19,46 +20,45 @@ FloorMap::FloorMap(ObjectFactory factory, float centerX, float centerY,
     }
   }
 
-  // Fallback if still 0
   if (currentBaseSize.x <= 0 || currentBaseSize.y <= 0) {
     currentBaseSize = {DEFAULT_SIZE, DEFAULT_SIZE};
   }
 
   m_base_size = currentBaseSize; 
 
-  float spacingX = currentBaseSize.x * scaleX;
-  float spacingY = currentBaseSize.y * scaleY;
-
+  // Initialize empty m_objects structure without instantiating any Entities yet
   for (int s = 0; s < AppUtil::TOTAL_STORY; ++s) {
-    std::vector<std::vector<std::shared_ptr<Entity>>> story_objects;
-    for (int y = 0; y < 11; ++y) {
-      std::vector<std::shared_ptr<Entity>> row;
-      for (int x = 0; x < 11; ++x) {
-        row.push_back(nullptr); // Initialize with null, will be filled by UpdateObjectAt
-      }
-      story_objects.push_back(row);
-    }
-    m_objects.push_back(story_objects);
-  }
-
-  // Populate initial layer
-  for (int s = 0; s < AppUtil::TOTAL_STORY; ++s) {
-    for (int y = 0; y < 11; ++y) {
-      for (int x = 0; x < 11; ++x) {
-        UpdateObjectAt(x, y, 0, s);
-      }
-    }
+    std::vector<std::vector<std::shared_ptr<Entity>>> story_objects(11, std::vector<std::shared_ptr<Entity>>(11, nullptr));
+    m_objects.push_back(std::move(story_objects));
   }
 }
 
 void FloorMap::LoadAllFloors(const std::string &prefix) {
-  for (int i = 0; i < AppUtil::TOTAL_STORY; ++i) {
-    std::string path = AppUtil::GetStaticResourcePath(prefix + std::to_string(i) + ".csv");
-    auto data = AppUtil::MapParser::ParseCsv(path);
-    if (!data.empty()) {
-      LoadFloorData(data, i);
+  m_path_prefix = prefix;
+  // Pre-load the current (initial) story to avoid a black screen on start
+  EnsureFloorLoaded(m_current_story);
+}
+
+void FloorMap::EnsureFloorLoaded(int story) {
+  if (story < 0 || story >= AppUtil::TOTAL_STORY || m_floor_loaded[story]) {
+    return;
+  }
+
+  LOG_INFO("FloorMap: Lazy Loading story {} from prefix {}", story, m_path_prefix);
+  std::string path = AppUtil::GetStaticResourcePath(m_path_prefix + std::to_string(story) + ".csv");
+  auto data = AppUtil::MapParser::ParseCsv(path);
+  
+  if (!data.empty()) {
+    LoadFloorData(data, story);
+  } else {
+    // If CSV is missing or empty, at least fill with road (ID 0) so we don't try again
+    for (int y = 0; y < 11; ++y) {
+      for (int x = 0; x < 11; ++x) {
+        UpdateObjectAt(x, y, 0, story);
+      }
     }
   }
+  m_floor_loaded[story] = true;
 }
 
 void FloorMap::LoadOverlay(const std::string &relativePath, int story) {
@@ -107,7 +107,9 @@ void FloorMap::LoadFloorData(const std::vector<std::vector<int>> &floorData,
 }
 
 void FloorMap::SetObject(int x, int y, int id, int story) {
-  UpdateObjectAt(x, y, id, story);
+  int targetStory = (story == -1) ? m_current_story : story;
+  EnsureFloorLoaded(targetStory);
+  UpdateObjectAt(x, y, id, targetStory);
 }
 
 void FloorMap::UpdateObjectAt(int x, int y, int id, int story) {
@@ -153,14 +155,15 @@ glm::vec2 FloorMap::GetGridAbsolutePosition(int x, int y) const {
   float absX = m_center_x + (x - 5) * spacingX;
   float absY = m_center_y + (5 - y) * spacingY;
   
-  LOG_DEBUG("FloorMap: Calc Pos({}, {}) using scale({}), center({}), base_size({}) -> ({}, {})",
-            x, y, m_scale_x, m_center_x, m_base_size.x, absX, absY);
+  // LOG_DEBUG("FloorMap: Calc Pos({}, {}) using scale({}), center({}), base_size({}) -> ({}, {})",
+  //           x, y, m_scale_x, m_center_x, m_base_size.x, absX, absY);
             
   return {absX, absY};
 }
 
 std::shared_ptr<Entity> FloorMap::GetObject(int x, int y, int story) {
   int targetStory = (story == -1) ? m_current_story : story;
+  EnsureFloorLoaded(targetStory);
   if (targetStory < 0 || targetStory >= AppUtil::TOTAL_STORY)
     return nullptr;
 
@@ -179,6 +182,8 @@ bool FloorMap::IsPassable(int x, int y, int story) {
 void FloorMap::SwitchStory(int story) {
   if (story < 0 || story >= AppUtil::TOTAL_STORY || story == m_current_story)
     return;
+
+  EnsureFloorLoaded(story);
 
   // Hide current story
   for (auto &row : m_objects[m_current_story]) {

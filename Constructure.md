@@ -408,13 +408,13 @@ classDiagram
     }
 
     class FloorMap {
-        -ObjectFactory m_factory
-        -vector~vector~vector~shared_ptr~Entity~~~~ m_objects
-        -int m_current_story
+        -std::string m_path_prefix
+        -vector~bool~ m_floor_loaded
         +FloorMap(factory, centerX, centerY, scaleX, scaleY, zIndex)
-        +LoadAllFloors(prefix)
+        +LoadAllFloors(prefix) // 現在僅初始化路徑與預載首層
+        +SwitchStory(story)   // 若目標樓層未載入則自動觸發 EnsureFloorLoaded
+        -EnsureFloorLoaded(story) 
         +LoadFloorData(floorData, story)
-        +SwitchStory(story)
         +GetObject(x, y, story) Entity
         +IsPassable(x, y, story) bool
         +SetObject(x, y, id, story)
@@ -571,9 +571,10 @@ classDiagram
 
     class AppUtilAPI {
         <<namespace>>
+        +GlobalPathCache // 全域路徑快取，避免重複磁碟 I/O
         +GetStaticResourcePath(relativePath) string
         +GetBaseImagePath(id) string
-        +GetPhaseImagePath(basePath, phase) string
+        +GetPhaseImagePath(basePath, phase) string // 優先檢查快取，否則進行實體檢查並寫入快取
         +GetFullResourcePath(id) string
         +GetIdString(id) string
         +CalculateDamage(player, enemyId) long long
@@ -738,6 +739,10 @@ classDiagram
 - 輔助 `Entity` 在執行完 `Reaction` 後（如開門、撿道具）將地圖網格上的 ID 替換為空地（ID 0）。
 
 ## 九、地圖系統 (`FloorMap`)
+- **延遲分層載入 (Lazy Loading)**：
+  - 目前採用的優化策略。啟動時僅實例化「目前樓層」的物件。
+  - 當玩家切換樓層 (`SwitchStory`) 或嘗試存取/修改其他樓層物件時，系統會自動透過 `EnsureFloorLoaded` 檢查並從 CSV 載入資料。
+  - 此舉將啟動時的實體創建數量從數千個降至約一百個，極大縮短黑屏時間。
 - **封裝管理**：統一管理 0~25 樓的 3D ID 網格，並提供 `SetObject` 與 `SwitchStory` 介面。
 
 ## 十、App (遊戲核心控制器)
@@ -788,6 +793,9 @@ classDiagram
 
 ## 十四、數據驅動層 (`AppUtil::RegistryLoader`)
 - **Registry 中心**：`GlobalObjectRegistry` 存儲從 CSV 解析的所有物件元數據與屬性，為 `Entity` 資源載入的唯一依據。
+- **路徑快取 (Path Caching)**：
+  - 為了優化資源載入效能，系統配備了 `GlobalPathCache`。
+  - 動畫幀的路徑解析在首次硬碟檢查 (Exist Check) 後會存入記憶體快取中，後續相同資源的載入動作將直接命中快取，完全消除重複的磁碟 I/O 開銷。
 
 ## 十五、交互觸發流程
 1. `Player::Move()` → 2. `RoadMap` 通行檢查 → 3. `ThingsMap` `CheckCondition()` → 4. 成功移動並觸發 `Reaction()`。

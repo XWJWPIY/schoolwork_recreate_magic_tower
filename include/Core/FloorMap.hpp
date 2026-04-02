@@ -71,6 +71,10 @@ private:
   float m_z_index = -5.0f;
 
   void UpdateObjectAt(int x, int y, int id, int story);
+  void EnsureFloorLoaded(int story);
+
+  std::string m_path_prefix;
+  std::vector<bool> m_floor_loaded;
 };
 
 #endif // FLOOR_MAP_HPP

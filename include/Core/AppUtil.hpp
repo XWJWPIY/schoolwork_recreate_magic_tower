@@ -119,6 +119,7 @@ struct ObjectMetadata {
 
 extern std::unordered_map<int, ObjectMetadata> GlobalObjectRegistry;
 extern std::unordered_map<std::string, std::string> GlobalSettings;
+extern std::unordered_map<std::string, std::string> GlobalPathCache;
 std::string GetGlobalString(const std::string& key, const std::string& defaultValue = "");
 
 // RNG Utilities
