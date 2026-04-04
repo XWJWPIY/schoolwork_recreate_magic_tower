@@ -279,6 +279,7 @@ void App::Update() {
     // ── Input: Debug Cheat Mode ─────────────────────────────────────
     if (Util::Input::IsKeyDown(Util::Keycode::G)) {
         m_player->ToggleSuperMode();
+        m_player->SyncPosition(m_road_map);
         break;
     }
 

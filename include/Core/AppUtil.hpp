@@ -61,6 +61,13 @@ namespace Attr {
     const std::string HIGHEST_FLOOR = "highest_floor";
 }
 
+namespace Skin {
+    const std::string SUPER_MODE_PATH = "bmp/Player/giraffe.png";
+    constexpr float SUPER_MODE_TARGET_PX = 48.0f;
+    constexpr float SUPER_MODE_SOURCE_PX = 144.0f;
+    constexpr float SUPER_MODE_RATIO = SUPER_MODE_TARGET_PX / SUPER_MODE_SOURCE_PX;
+}
+
 class AttributeRegistry {
 public:
     static int GetId(const std::string& name);

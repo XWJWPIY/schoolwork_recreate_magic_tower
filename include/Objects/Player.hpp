@@ -55,6 +55,7 @@ public:
 private:
   bool m_is_super_mode = false;
   std::unordered_map<AppUtil::Effect, int> m_super_attributes;
+  std::shared_ptr<Util::Image> m_giraffe_image; // Giraffe skin for Super Mode
 };
 
 

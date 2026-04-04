@@ -581,6 +581,12 @@ classDiagram
         +GetGlobalString(key, defaultValue) string
     }
 
+    class SkinConstants {
+        <<namespace>>
+        +SUPER_MODE_PATH // 外觀圖檔路徑
+        +SUPER_MODE_RATIO // 自動計算的縮放比例 (Target / Source)
+    }
+
     class TurnResult {
         +bool isBattleEnd
         +bool evading
@@ -699,6 +705,8 @@ classDiagram
       - 超級模式：可選範圍恆定為 `0 ~ 25`。
 - **超級模式 (Super Mode)**:
     - 按 `G` 鍵切換。
+    - **外觀切換 (Skin Switching)**: 開啟時玩家模型會切換為長頸鹿（由 `AppUtil::Skin` 統一管理）。
+    - **UI 同步**: 此皮膚會同步應用於 `DialogueUI` (對話頭像) 與 `BattleUI` (戰鬥頭像)，並自動根據原圖解析度進行縮放校正。
     - **平行屬性 (Parallel Stats)**: 開啟時進入獨立的數據桶（HP 999,999，ATK/DEF 999）。
     - **全域屬性 (Global Progress)**：`highest_floor` (最高樓層紀錄) 不受平行屬性限制，會在所有模式間同步更新。
     - **完全隔離**: 在此模式下受傷或獲得 D (怪物手冊) / F (樓層跳躍) 僅影響超級數據，不改動正常狀態。

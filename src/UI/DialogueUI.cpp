@@ -231,8 +231,15 @@ void DialogueUI::AdvanceScript() {
 
         if (step.speaker == ScriptEngine::Speaker::PLAYER) {
             name = AppUtil::GetGlobalString("PlayerName", "Hero");
-            iconPath = AppUtil::GetStaticResourcePath("bmp/Player/player_1.png");
+            if (m_player && m_player->IsSuperMode()) {
+                iconPath = AppUtil::GetStaticResourcePath(AppUtil::Skin::SUPER_MODE_PATH);
+                m_npc_icon->m_Transform.scale = {0.735f * AppUtil::Skin::SUPER_MODE_RATIO, 0.735f * AppUtil::Skin::SUPER_MODE_RATIO};
+            } else {
+                iconPath = AppUtil::GetStaticResourcePath("bmp/Player/player_1.png");
+                m_npc_icon->m_Transform.scale = {0.735f, 0.735f};
+            }
         } else if (m_source_entity) {
+            m_npc_icon->m_Transform.scale = {0.735f, 0.735f}; // Reset for NPCs
             auto it = AppUtil::GlobalObjectRegistry.find(m_source_entity->GetObjectId());
             if (it != AppUtil::GlobalObjectRegistry.end()) {
                 const auto& meta = it->second;

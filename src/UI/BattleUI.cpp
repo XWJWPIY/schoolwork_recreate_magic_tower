@@ -116,6 +116,14 @@ void BattleUI::Start(std::shared_ptr<Player> player, std::shared_ptr<Enemy> enem
 
     m_enemy_avatar->SetDrawable(std::make_shared<Util::Image>(AppUtil::GetFullResourcePath(meta.GetInt("Icon_ID", enemy->GetObjectId()))));
 
+    if (m_player->IsSuperMode()) {
+        m_player_avatar->SetDrawable(std::make_shared<Util::Image>(AppUtil::GetStaticResourcePath(AppUtil::Skin::SUPER_MODE_PATH)));
+        m_player_avatar->m_Transform.scale = {0.735f * AppUtil::Skin::SUPER_MODE_RATIO, 0.735f * AppUtil::Skin::SUPER_MODE_RATIO};
+    } else {
+        m_player_avatar->SetDrawable(std::make_shared<Util::Image>(AppUtil::GetStaticResourcePath("bmp/Player/player_11.bmp")));
+        m_player_avatar->m_Transform.scale = {0.735f, 0.735f};
+    }
+
     m_floating_text->SetVisible(false);
     m_reward_bg->SetVisible(false);
     m_reward_bg->SetVisible(false);

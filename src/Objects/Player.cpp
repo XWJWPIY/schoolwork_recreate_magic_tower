@@ -130,8 +130,12 @@ void Player::Reaction(std::shared_ptr<Player> player) {
 void Player::ResetStateAfterFloorChange() {
   m_direction = PlayerDirection::DOWN;
   m_is_animating = false;
-  // Use the specific transparent sprite for floor changes (usually on stairs)
-  m_Drawable = std::make_shared<Util::Image>(AppUtil::GetStaticResourcePath("bmp/Player/player_1.png"));
+  if (m_is_super_mode && m_giraffe_image) {
+    SetDrawable(m_giraffe_image);
+  } else {
+    // Use the specific transparent sprite for floor changes (usually on stairs)
+    m_Drawable = std::make_shared<Util::Image>(AppUtil::GetStaticResourcePath("bmp/Player/player_1.png"));
+  }
 }
 
 void Player::SyncPosition(std::shared_ptr<FloorMap> roadmap) {
@@ -139,7 +143,15 @@ void Player::SyncPosition(std::shared_ptr<FloorMap> roadmap) {
     return;
 
   m_Transform.translation = roadmap->GetGridAbsolutePosition(m_grid_x, m_grid_y);
-  m_Transform.scale = roadmap->GetScale();
+
+  if (m_is_super_mode) {
+    // Giraffe image is 512x512, scale it down to fit a single grid cell (~48px)
+    float gridScale = roadmap->GetScale().x;
+    float giraffeRatio = AppUtil::Skin::SUPER_MODE_RATIO;
+    m_Transform.scale = {gridScale * giraffeRatio, gridScale * giraffeRatio};
+  } else {
+    m_Transform.scale = roadmap->GetScale();
+  }
 }
 
 void Player::OnAttributeChanged(AppUtil::Effect type) {
@@ -151,6 +163,11 @@ void Player::OnAttributeChanged(AppUtil::Effect type) {
 
 
 void Player::ObjectUpdate() {
+  if (m_is_super_mode) {
+    // In super mode, giraffe is always static — no walk animation
+    m_is_animating = false;
+    return;
+  }
   if (m_is_animating) {
     auto currentAnim = m_animations[static_cast<int>(m_direction) - 1];
     if (currentAnim->GetState() == Util::Animation::State::ENDED) {
@@ -163,6 +180,10 @@ void Player::ObjectUpdate() {
 // Special wrapper to switch drawable along with direction
 void Player::SetDirection(PlayerDirection dir) {
   m_direction = dir;
+  if (m_is_super_mode) {
+    // Super mode: always show giraffe, don't change drawable for direction
+    return;
+  }
   if (m_is_animating) {
     SetDrawable(m_animations[static_cast<int>(m_direction) - 1]);
   } else {
@@ -218,5 +239,17 @@ void Player::ToggleSuperMode() {
         m_super_attributes[AppUtil::Effect::EXP] = 1000;
     }
 
-    LOG_INFO("Super Mode: {}", m_is_super_mode ? "ACTIVATED" : "DEACTIVATED");
+    // Switch skin
+    if (m_is_super_mode) {
+        if (!m_giraffe_image) {
+            m_giraffe_image = std::make_shared<Util::Image>(
+                AppUtil::GetStaticResourcePath(AppUtil::Skin::SUPER_MODE_PATH));
+        }
+        SetDrawable(m_giraffe_image);
+    } else {
+        // Restore normal player sprite
+        SetDirection(m_direction);
+    }
+
+    LOG_INFO("Super Mode: {}", m_is_super_mode ? "ACTIVATED (Giraffe)" : "DEACTIVATED (Normal)");
 }
