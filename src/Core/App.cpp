@@ -68,13 +68,8 @@ void App::InitializeGame() {
 
   m_entity_factory = std::make_unique<EntityFactory>(callbacks);
 
-  // Factory for RoadMap (creates MapBlocks)
-  FloorMap::ObjectFactory roadObjFactory = [this](int id) {
-    return m_entity_factory->CreateEntity(id);
-  };
-
-  // Factory for ThingsMap (creates specialized Entities based on ID)
-  FloorMap::ObjectFactory thingsObjFactory = [this](int id) {
+  // Unified factory for both RoadMap and ThingsMap
+  FloorMap::ObjectFactory ObjFactory = [this](int id) {
     return m_entity_factory->CreateEntity(id);
   };
 
@@ -85,7 +80,7 @@ void App::InitializeGame() {
   );
   m_entity_factory->SetReplacementComponent(replacementComp);
 
-  m_road_map = std::make_shared<FloorMap>(roadObjFactory, 141.0f, 0.0f, 0.735f,
+  m_road_map = std::make_shared<FloorMap>(ObjFactory, 141.0f, 0.0f, 0.735f,
                                          0.735f, -5.0f);
   m_road_map->SetRenderer(&m_root);
   m_road_map->LoadAllFloors("Datas/Maps/RoadMap");
@@ -93,7 +88,7 @@ void App::InitializeGame() {
   m_road_map->SetAllVisible(false);
 
   m_things_map = std::make_shared<FloorMap>(
-      thingsObjFactory, 141.0f, 0.0f, 0.735f, 0.735f, -4.0f,
+      ObjFactory, 141.0f, 0.0f, 0.735f, 0.735f, -4.0f,
       m_road_map->GetBaseSize());
   m_things_map->SetRenderer(&m_root);
   m_things_map->LoadAllFloors("Datas/Maps/ThingsMap");

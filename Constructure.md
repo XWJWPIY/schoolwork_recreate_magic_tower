@@ -825,7 +825,7 @@ classDiagram
 ## 十七、實體工廠 (`EntityFactory`)
 - **職責**：將複雜的物件創建邏輯從 `App` 中抽離，實現單一職責原則。
 - **解耦設計**：透過複數個回呼函數（Callbacks）與 `App` 系統互動，而不需直接引用 `App` 類別。
-- **統一介面**：為 `RoadMap` 與 `ThingsMap` 提供一致的物件實例化入口。
+- **統一介面**：為 `RoadMap` 與 `ThingsMap` 提供一致的物件實例化入口（在 `App` 內整合成單一 `ObjFactory` 實例）。
 
 ## 十八、全域常數與工具
 - **`TOTAL_STORY`**: 26 (0~25 樓)。
