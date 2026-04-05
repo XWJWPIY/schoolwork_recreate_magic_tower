@@ -433,6 +433,8 @@ classDiagram
         -vector~StatEntry~ m_stat_entries
         -shared_ptr~NumericDisplayText~ m_floor_text
         -shared_ptr~NumericDisplayText~ m_manual_hint_text
+        -shared_ptr~GameObject~ m_player_icon
+        -shared_ptr~NumericDisplayText~ m_status_text
         -shared_ptr~Player~ m_player
         -shared_ptr~FloorMap~ m_road_map
         -unsigned int m_default_font_size
@@ -793,7 +795,15 @@ classDiagram
   - **戰利品結算**：擊敗對手後，動態載入物品元數據進行獎勵，並提供閃爍的按鍵指示（`-SPACE-`）。
   - **失敗處理 (Defeat Delay)**：玩家死亡後進入 `DEFEAT` 狀態，畫面會停頓 1.5 秒讓玩家確認最後一擊與剩餘血量（HP:0），隨後才觸發 GameOver。
 
-## 十三、層級控制 (Z-Index 渲染順序)
+## 十三、狀態顯示與側邊欄 (StatusUI)
+- **視覺組成**：
+    - **玩家頭像**：動態偵測目前模式，於正常狀態顯示勇者頭像，開啟超級模式時切換為長頸鹿頭像。
+    - **狀態標籤**：即時顯示「正常」或「超級」狀態文字，數值由 `AppUtil::GetGlobalString` 從 `UIStrings.csv` 讀取。
+    - **遊戲數據**：包含等級、生命力、攻擊力、防禦力、敏捷度、經驗值、金幣與三色鑰匙庫存。
+    - **樓層指示**：顯示目前所在樓層（XX F）。
+- **同步機制**：每幀由 `App` 驅動 `run()` 函式，並在屬性變更或模式切換時即時反應於畫面上。
+
+## 十四、層級控制 (Z-Index 渲染順序)
 | Z-Index | 層級 | 內容 |
 |---------|------|------|
 | 90 ~ 92 | UI 頂層選單 | `FlyUI` 背景、文字、`NoticeUI` 內容、`DialogueUI` 內容 |
@@ -801,26 +811,26 @@ classDiagram
 | -3 | 主角層/狀態層 | `Player` 實例、`StatusUI` 數值 |
 | -5 | 地板層 | `RoadMap` 基礎地磚 |
 
-## 十四、數據驅動層 (`AppUtil::RegistryLoader`)
+## 十五、數據驅動層 (`AppUtil::RegistryLoader`)
 - **Registry 中心**：`GlobalObjectRegistry` 存儲從 CSV 解析的所有物件元數據與屬性，為 `Entity` 資源載入的唯一依據。
 - **路徑快取 (Path Caching)**：
   - 為了優化資源載入效能，系統配備了 `GlobalPathCache`。
   - 動畫幀的路徑解析在首次硬碟檢查 (Exist Check) 後會存入記憶體快取中，後續相同資源的載入動作將直接命中快取，完全消除重複的磁碟 I/O 開銷。
 
-## 十五、交互觸發流程
+## 十六、交互觸發流程
 1. `Player::Move()` → 2. `RoadMap` 通行檢查 → 3. `ThingsMap` `CheckCondition()` → 4. 成功移動並觸發 `Reaction()`。
 
-## 十六、實體工廠 (`EntityFactory`)
+## 十七、實體工廠 (`EntityFactory`)
 - **職責**：將複雜的物件創建邏輯從 `App` 中抽離，實現單一職責原則。
 - **解耦設計**：透過複數個回呼函數（Callbacks）與 `App` 系統互動，而不需直接引用 `App` 類別。
 - **統一介面**：為 `RoadMap` 與 `ThingsMap` 提供一致的物件實例化入口。
 
-## 十七、全域常數與工具
+## 十八、全域常數與工具
 - **`TOTAL_STORY`**: 26 (0~25 樓)。
 - **`ResourcePath`**: 統一的資源路徑解析邏輯，支持多副檔名。
 - **`RNG Utility`**: 使用 `std::mt19937` (Mersenne Twister) 搭配微秒級時間種子，提供高品質、非寫死的隨機數生成（`GetRandomInt`, `CheckProbability`）。
 
-## 十八、輸入控制與穩定化 (Input Guarding)
+## 十九、輸入控制與穩定化 (Input Guarding)
 - **集中控制**：所有的 UI 開啟/關閉偵測均由 `App::Update` 統一負責。
 - **Release Guard (放開偵測)**：在 UI 關閉後，系統會偵測該觸發按鍵是否已放開。只有在按鍵放開後，`GameState` 才會回歸 `PLAYING`，有效防止高影格率下的閃爍與重複觸發問題。
 - **影格隔離**：狀態切換發生在影格邏輯末端或使用 `break` 中斷，確保開啟與關閉動作不在同一個 `Update` 循環中發生。

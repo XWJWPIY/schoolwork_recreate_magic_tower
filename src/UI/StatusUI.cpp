@@ -51,6 +51,18 @@ StatusUI::StatusUI(const std::shared_ptr<Player>& player,
     m_manual_hint_text->SetPrefix("-Press (L)-");
     m_manual_hint_text->SetShowNumber(false);
     m_manual_hint_text->UpdateDisplayText();
+
+    // Player Icon & Status text
+    m_player_icon = std::make_shared<Util::GameObject>();
+    m_player_icon->SetDrawable(std::make_shared<Util::Image>(AppUtil::GetStaticResourcePath("bmp/Player/player_1.png")));
+    m_player_icon->m_Transform.translation = {-420.0f, 265.0f};
+    m_player_icon->m_Transform.scale = {0.735f, 0.735f};
+    m_player_icon->SetZIndex(-3.0f);
+
+    m_status_text = MakeText(-300.0f, 250.0f, white, 24);
+    m_status_text->SetShowNumber(false);
+    m_status_text->SetPrefix(AppUtil::GetGlobalString("status_normal", "Normal"));
+    m_status_text->UpdateDisplayText();
 }
 
 std::shared_ptr<NumericDisplayText> StatusUI::MakeText(float x, float y, const Util::Color& color, unsigned int size) {
@@ -77,6 +89,18 @@ void StatusUI::Update(const std::shared_ptr<Player>& player, int floorNum) {
             entry.text->SetNumber(player->GetAttr(entry.effect));
             entry.text->UpdateDisplayText();
         }
+
+        // Update status and icon based on mode
+        if (player->IsSuperMode()) {
+            m_status_text->SetPrefix(AppUtil::GetGlobalString("status_super", "Super"));
+            m_player_icon->SetDrawable(std::make_shared<Util::Image>(AppUtil::GetStaticResourcePath(AppUtil::Skin::SUPER_MODE_PATH)));
+            m_player_icon->m_Transform.scale = {0.735f* AppUtil::Skin::SUPER_MODE_RATIO, 0.735f * AppUtil::Skin::SUPER_MODE_RATIO};
+        } else {
+            m_status_text->SetPrefix(AppUtil::GetGlobalString("status_normal", "Normal"));
+            m_player_icon->SetDrawable(std::make_shared<Util::Image>(AppUtil::GetStaticResourcePath("bmp/Player/player_1.png")));
+            m_player_icon->m_Transform.scale = {0.735f, 0.735f};
+        }
+        m_status_text->UpdateDisplayText();
     }
 
     m_floor_text->SetNumber(floorNum);
@@ -90,6 +114,8 @@ void StatusUI::SetVisible(bool visible) {
     }
     m_floor_text->SetVisible(visible);
     m_manual_hint_text->SetVisible(visible);
+    m_player_icon->SetVisible(visible);
+    m_status_text->SetVisible(visible);
 }
 
 void StatusUI::AddToRoot(Util::Renderer& root) {
@@ -98,4 +124,6 @@ void StatusUI::AddToRoot(Util::Renderer& root) {
     }
     root.AddChild(m_floor_text);
     root.AddChild(m_manual_hint_text);
+    root.AddChild(m_player_icon);
+    root.AddChild(m_status_text);
 }

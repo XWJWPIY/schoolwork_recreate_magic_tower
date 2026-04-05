@@ -39,6 +39,10 @@ private:
     std::shared_ptr<NumericDisplayText> m_floor_text;
     std::shared_ptr<NumericDisplayText> m_manual_hint_text;
     
+    // Status and Avatar
+    std::shared_ptr<Util::GameObject> m_player_icon;
+    std::shared_ptr<NumericDisplayText> m_status_text;
+    
     unsigned int m_default_font_size;
 
     std::shared_ptr<Player> m_player;
