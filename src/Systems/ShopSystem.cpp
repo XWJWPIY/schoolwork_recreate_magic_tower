@@ -21,6 +21,7 @@ AppUtil::ShopData ShopSystem::LoadForShopEntity(int shopId, int floor, int trans
     data.title = meta.GetString(AppUtil::Attr::TITLE, "Store Explorer");
     data.icon_path = meta.GetString(AppUtil::Attr::ICON);
     data.transaction_count = transCount;
+    data.max_transactions = meta.GetInt("max_transactions", -1);
 
     std::string name = std::to_string(floor) + "_" + meta.name + "_option";
     data.options = ParseShopOptions(GetOptionPath(name));

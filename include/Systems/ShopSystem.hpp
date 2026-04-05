@@ -16,6 +16,7 @@ namespace AppUtil {
         std::string icon_path;
         std::vector<std::string> prompts;
         int transaction_count;
+        int max_transactions = -1; // -1 means unlimited
         std::vector<ShopOption> options;
         std::string special_price_str;
     };

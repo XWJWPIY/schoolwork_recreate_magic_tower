@@ -775,11 +775,13 @@ classDiagram
 - **職責**：接管對話腳本執行與狀態切換。現在使用單一 `run()` 介面。
 - **腳本擴充**：
   - 支援 `switch_to` / `switch_to_fight` 指令。
+  - **單次/限量成交限制**：`ScriptEngine` 支援解析 `shop,N` 指令參數，將 `max_transactions` 同步至商店系統，並由 `Registry` 追蹤個別 NPC 購買次數。當次數達標後，商店將自動關閉，並確保重新對話時不會再觸發選單。
   - **解耦設計**：透過 `SetOnSwitchObject` 回調函數與 `App` 通訊，實現原地更換地圖物件（如 NPC 變身怪物）而不會產生循環依賴。
 
-### 12.2 `ShopUI`
+### 12.2 `ShopUI` 與實體商店
 - **繼承**：`UIComponent`。
 - **職責**：專精於商店選項渲染與交互選擇。
+- **交易上限控制**：實體商店 (`Shop` 物件) 與 `ShopData` 支援由 Metadata (CSV) 中讀取 `max_transactions` 欄位，同樣會在達標時拒絕開啟並自動關閉 UI。
 
 ### 12.3 `EnemyBookUI` (詳見第七節)
 - **職責**：數據驅動的怪物圖鑑，提供戰鬥預覽與屬性查詢。

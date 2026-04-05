@@ -25,6 +25,11 @@ void Shop::Open(std::shared_ptr<Player> player, const ShopUIAdapter& adapter, in
             LOG_INFO("Shop::Open: shop {} title=None, skipping UI.", m_object_id);
             return;
         }
+        int max_transactions = it->second.GetInt("max_transactions", -1);
+        if (max_transactions != -1 && m_transaction_count >= max_transactions) {
+            LOG_INFO("Shop::Open: shop {} reached max transactions.", m_object_id);
+            return; // Skip opening if limit reached
+        }
     }
 
     BuildShopData(floor);
@@ -46,8 +51,12 @@ void Shop::Open(std::shared_ptr<Player> player, const ShopUIAdapter& adapter, in
             if (registry_it != AppUtil::GlobalObjectRegistry.end()) {
                 registry_it->second.attributes[AppUtil::AttributeRegistry::GetId(AppUtil::Attr::TRANSACTIONS)] = std::to_string(m_transaction_count);
             }
-            BuildShopData(floor);
-            m_adapter.refreshShop(m_session_data);
+            if (m_session_data.max_transactions != -1 && m_transaction_count >= m_session_data.max_transactions) {
+                Close();
+            } else {
+                BuildShopData(floor);
+                m_adapter.refreshShop(m_session_data);
+            }
         }
     };
 
