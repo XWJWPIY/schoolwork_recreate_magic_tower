@@ -65,6 +65,8 @@ private:
     void SetUIState(bool dialogueVisible);
     void ApplyDialogueLayout();
     void ApplyShopLayout();
+    int GetTransactionCount() const;
+    int IncrementTransactionCount();
 
 private:
     Mode m_mode = Mode::INACTIVE;

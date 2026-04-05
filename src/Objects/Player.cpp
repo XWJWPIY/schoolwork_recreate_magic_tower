@@ -232,6 +232,7 @@ void Player::ToggleSuperMode() {
         m_super_attributes[AppUtil::Effect::FLY] = 1;
 
         // Copy current consumable resources to the super bucket so they are available
+        m_super_attributes[AppUtil::Effect::LEVEL] = Actor::GetAttr(AppUtil::Effect::LEVEL);
         m_super_attributes[AppUtil::Effect::KEY_YELLOW] = Actor::GetAttr(AppUtil::Effect::KEY_YELLOW);
         m_super_attributes[AppUtil::Effect::KEY_BLUE] = Actor::GetAttr(AppUtil::Effect::KEY_BLUE);
         m_super_attributes[AppUtil::Effect::KEY_RED] = Actor::GetAttr(AppUtil::Effect::KEY_RED);

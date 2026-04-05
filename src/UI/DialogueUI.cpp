@@ -361,20 +361,14 @@ void DialogueUI::ExecuteCommand(const ScriptStep& step) {
                 catch (...) { LOG_ERROR("DialogueUI: Invalid max_transactions '{}'", step.extra); }
             }
 
-            int transCount = 0;
-            if (m_source_entity) {
-                auto it = AppUtil::GlobalObjectRegistry.find(m_source_entity->GetObjectId());
-                if (it != AppUtil::GlobalObjectRegistry.end()) {
-                    transCount = it->second.GetInt(AppUtil::Attr::TRANSACTIONS);
-                }
-            }
+            int transCount = GetTransactionCount();
 
             if (m_current_shop_data.max_transactions != -1 && transCount >= m_current_shop_data.max_transactions) {
                 m_engine.Next();
                 return; // Skip opening the shop since limit reached
             }
 
-            m_on_selection = [this, transCount](int selection) mutable {
+            m_on_selection = [this](int selection) {
                 if (selection < 0 || selection >= static_cast<int>(m_current_shop_data.options.size())) return;
                 const auto& opt = m_current_shop_data.options[selection];
                 
@@ -408,15 +402,9 @@ void DialogueUI::ExecuteCommand(const ScriptStep& step) {
                     for (const auto& eff : opt.effects) {
                         m_player->ApplyEffect(AppUtil::AttributeRegistry::ToEffect(eff.type_id), eff.value);
                     }
-                    transCount++;
-                    if (m_source_entity) {
-                        auto it = AppUtil::GlobalObjectRegistry.find(m_source_entity->GetObjectId());
-                        if (it != AppUtil::GlobalObjectRegistry.end()) {
-                            it->second.attributes[AppUtil::AttributeRegistry::GetId(AppUtil::Attr::TRANSACTIONS)] = std::to_string(transCount);
-                        }
-                    }
+                    int newCount = IncrementTransactionCount();
 
-                    if (m_current_shop_data.max_transactions != -1 && transCount >= m_current_shop_data.max_transactions) {
+                    if (m_current_shop_data.max_transactions != -1 && newCount >= m_current_shop_data.max_transactions) {
                         m_on_selection = nullptr;
                         m_current_shop_data.options.clear();
                         EndShopSelection();
@@ -474,4 +462,21 @@ void DialogueUI::ApplyShopLayout() {
         m_content_text->m_Transform.translation = {205.0f, 130.0f};
         m_content_text->SetVisible(true);
     }
+}
+
+int DialogueUI::GetTransactionCount() const {
+    if (!m_source_entity) return 0;
+    auto it = AppUtil::GlobalObjectRegistry.find(m_source_entity->GetObjectId());
+    if (it == AppUtil::GlobalObjectRegistry.end()) return 0;
+    return it->second.GetInt(AppUtil::Attr::TRANSACTIONS);
+}
+
+int DialogueUI::IncrementTransactionCount() {
+    if (!m_source_entity) return 0;
+    auto it = AppUtil::GlobalObjectRegistry.find(m_source_entity->GetObjectId());
+    if (it == AppUtil::GlobalObjectRegistry.end()) return 0;
+    int count = it->second.GetInt(AppUtil::Attr::TRANSACTIONS) + 1;
+    it->second.attributes[AppUtil::AttributeRegistry::GetId(AppUtil::Attr::TRANSACTIONS)]
+        = std::to_string(count);
+    return count;
 }
