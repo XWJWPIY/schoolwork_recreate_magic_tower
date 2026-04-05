@@ -385,14 +385,9 @@ void DialogueUI::ExecuteCommand(const ScriptStep& step) {
                         if (eff.value < 0) {
                             int cost = -eff.value;
                             AppUtil::Effect type = AppUtil::AttributeRegistry::ToEffect(eff.type_id);
-                            switch (type) {
-                                case AppUtil::Effect::COIN: if (m_player->GetAttr(AppUtil::Effect::COIN) < cost) canAfford = false; break;
-                                case AppUtil::Effect::EXP: if (m_player->GetAttr(AppUtil::Effect::EXP) < cost) canAfford = false; break;
-                                case AppUtil::Effect::HP: if (m_player->GetAttr(AppUtil::Effect::HP) <= cost) canAfford = false; break;
-                                case AppUtil::Effect::KEY_YELLOW: if (m_player->GetAttr(AppUtil::Effect::KEY_YELLOW) < cost) canAfford = false; break;
-                                case AppUtil::Effect::KEY_BLUE: if (m_player->GetAttr(AppUtil::Effect::KEY_BLUE) < cost) canAfford = false; break;
-                                case AppUtil::Effect::KEY_RED: if (m_player->GetAttr(AppUtil::Effect::KEY_RED) < cost) canAfford = false; break;
-                                default: break;
+                            if (!m_player->MeetsRequirement(type, cost)) {
+                                canAfford = false;
+                                break;
                             }
                         }
                     }
