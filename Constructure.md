@@ -112,6 +112,7 @@ classDiagram
         +IsActive() bool override
         +SetVisible(bool) override
         +AddToRoot(Renderer) override
+        -HandleNPCShopSelection(int)
     }
 
     class ShopUI {
@@ -772,10 +773,10 @@ classDiagram
 ## 十二、對話與商店系統 (UI 遷移)
 ### 12.1 `DialogueUI`
 - **繼承**：`UIComponent`。
-- **職責**：接管對話腳本執行與狀態切換。現在使用單一 `run()` 介面。
-- **腳本擴充**：
-  - 支援 `switch_to` / `switch_to_fight` 指令。
-  - **單次/限量成交限制**：`ScriptEngine` 支援解析 `shop,N` 指令參數，將 `max_transactions` 同步至商店系統，並由 `Registry` 追蹤個別 NPC 購買次數。當次數達標後，商店將自動關閉，並確保重新對話時不會再觸發選單。
+- **職責**：接管對話腳本執行與狀態切換。
+- **架構優化**：
+  - **模組化回調**：將複雜的商店交易邏輯抽離至獨立成員函數 `HandleNPCShopSelection`，減少 Lambda 膨脹與自殺行為。
+  - **腳本擴充**：支援 `switch_to` / `switch_to_fight` 與 `shop,N` (限次交易) 指令。
   - **解耦設計**：透過 `SetOnSwitchObject` 回調函數與 `App` 通訊，實現原地更換地圖物件（如 NPC 變身怪物）而不會產生循環依賴。
 
 ### 12.2 `ShopUI` 與實體商店
@@ -799,7 +800,8 @@ classDiagram
 
 ### 12.5 統一交易邏輯
 - **核心驗證**：不論是實體商店或劇情對話觸發的商店，皆統一調用 `Actor::MeetsRequirement` 進行資源判斷。
-- **行為一致性**：確保所有資源（金幣、經驗值、生命值、鑰匙）在各類商店場景下的扣除邏輯完全同步，並共享同一個生命值安全保護機制。
+- **行為一致性**：確保所有資源（金幣、經驗值、生命值、鑰匙）在各類商店下的交易邏輯完全同步。
+- **安全保護**：自動處理 HP 購買的「溢出保護」，防止玩家購買道具後血量歸零導致異常死亡。
 
 ## 十三、狀態顯示與側邊欄 (StatusUI)
 - **視覺組成**：

@@ -369,44 +369,7 @@ void DialogueUI::ExecuteCommand(const ScriptStep& step) {
             }
 
             m_on_selection = [this](int selection) {
-                if (selection < 0 || selection >= static_cast<int>(m_current_shop_data.options.size())) return;
-                const auto& opt = m_current_shop_data.options[selection];
-                
-                if (opt.text == "Exit") {
-                    m_on_selection = nullptr;
-                    m_current_shop_data.options.clear();
-                    EndShopSelection();
-                    return;
-                }
-                
-                bool canAfford = true;
-                if (m_player) {
-                    for (const auto& eff : opt.effects) {
-                        if (eff.value < 0) {
-                            int cost = -eff.value;
-                            AppUtil::Effect type = AppUtil::AttributeRegistry::ToEffect(eff.type_id);
-                            if (!m_player->MeetsRequirement(type, cost)) {
-                                canAfford = false;
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                if (canAfford && m_player) {
-                    for (const auto& eff : opt.effects) {
-                        m_player->ApplyEffect(AppUtil::AttributeRegistry::ToEffect(eff.type_id), eff.value);
-                    }
-                    int newCount = IncrementTransactionCount();
-
-                    if (m_current_shop_data.max_transactions != -1 && newCount >= m_current_shop_data.max_transactions) {
-                        m_on_selection = nullptr;
-                        m_current_shop_data.options.clear();
-                        EndShopSelection();
-                    } else {
-                        RefreshShopOptions(m_current_shop_data);
-                    }
-                }
+                this->HandleNPCShopSelection(selection);
             };
         }
 
@@ -474,4 +437,45 @@ int DialogueUI::IncrementTransactionCount() {
     it->second.attributes[AppUtil::AttributeRegistry::GetId(AppUtil::Attr::TRANSACTIONS)]
         = std::to_string(count);
     return count;
+}
+
+void DialogueUI::HandleNPCShopSelection(int selection) {
+    if (selection < 0 || selection >= static_cast<int>(m_current_shop_data.options.size())) return;
+    const auto& opt = m_current_shop_data.options[selection];
+    
+    if (opt.text == "Exit") {
+        m_on_selection = nullptr;
+        m_current_shop_data.options.clear();
+        EndShopSelection();
+        return;
+    }
+    
+    bool canAfford = true;
+    if (m_player) {
+        for (const auto& eff : opt.effects) {
+            if (eff.value < 0) {
+                int cost = -eff.value;
+                AppUtil::Effect type = AppUtil::AttributeRegistry::ToEffect(eff.type_id);
+                if (!m_player->MeetsRequirement(type, cost)) {
+                    canAfford = false;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (canAfford && m_player) {
+        for (const auto& eff : opt.effects) {
+            m_player->ApplyEffect(AppUtil::AttributeRegistry::ToEffect(eff.type_id), eff.value);
+        }
+        int newCount = IncrementTransactionCount();
+
+        if (m_current_shop_data.max_transactions != -1 && newCount >= m_current_shop_data.max_transactions) {
+            m_on_selection = nullptr;
+            m_current_shop_data.options.clear();
+            EndShopSelection();
+        } else {
+            RefreshShopOptions(m_current_shop_data);
+        }
+    }
 }

@@ -62,6 +62,7 @@ private:
     void AdvanceScript();
     void ParseScript(const std::string& name) { m_engine.LoadScript(name); }
     void ExecuteCommand(const ScriptStep& step);
+    void HandleNPCShopSelection(int selection);
     void SetUIState(bool dialogueVisible);
     void ApplyDialogueLayout();
     void ApplyShopLayout();
