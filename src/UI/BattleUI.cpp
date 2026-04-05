@@ -108,6 +108,7 @@ void BattleUI::Start(std::shared_ptr<Player> player, std::shared_ptr<Enemy> enem
     m_on_end = onEnd;
     m_player_turn = true;
     m_turn_timer = 0.0f;
+    m_defeat_timer = 0.0f;
     m_state = State::FIGHTING;
 
     auto meta = AppUtil::GlobalObjectRegistry[enemy->GetObjectId()];
@@ -172,6 +173,15 @@ void BattleUI::run() {
 
     if (m_is_frozen) return;
 
+    if (m_state == State::DEFEAT) {
+        m_defeat_timer += Util::Time::GetDeltaTimeMs();
+        if (m_defeat_timer >= 1500.0f) {
+            SetVisible(false);
+            if (m_on_end) m_on_end(false); // Dead
+        }
+        return;
+    }
+
     if (m_state == State::REWARD) {
         m_reward_hint->SetVisible(((static_cast<int>(Util::Time::GetElapsedTimeMs()) / 500) % 2) == 0);
         if (Util::Input::IsKeyDown(Util::Keycode::SPACE)) {
@@ -219,8 +229,11 @@ void BattleUI::run() {
             SetAnimation(false, result.totalDamage);
 
             if (result.isBattleEnd) {
-                SetVisible(false);
-                if (m_on_end) m_on_end(false); // Dead
+                RefreshStats(); // Show HP: 0 before transitioning
+                m_floating_text->SetVisible(false);
+                m_state = State::DEFEAT;
+                m_defeat_timer = 0.0f;
+                LOG_INFO("Battle: Player defeated, entering delay...");
                 return;
             }
         }

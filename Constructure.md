@@ -197,6 +197,7 @@ classDiagram
         -shared_ptr~Enemy~ m_enemy
         -State m_state
         -bool m_is_frozen
+        -float m_defeat_timer
         +BattleUI(player, fontPath)
         +Start(player, enemy, onEnd)
         +run() override
@@ -790,6 +791,7 @@ classDiagram
   - **保底傷害**：確保每次命中至少造成 1 點傷害。
   - **特殊能力**：支援「無視防禦」、「必殺攻擊 (10%)」與「狀態攻擊 (1%)」判定。
   - **戰利品結算**：擊敗對手後，動態載入物品元數據進行獎勵，並提供閃爍的按鍵指示（`-SPACE-`）。
+  - **失敗處理 (Defeat Delay)**：玩家死亡後進入 `DEFEAT` 狀態，畫面會停頓 1.5 秒讓玩家確認最後一擊與剩餘血量（HP:0），隨後才觸發 GameOver。
 
 ## 十三、層級控制 (Z-Index 渲染順序)
 | Z-Index | 層級 | 內容 |

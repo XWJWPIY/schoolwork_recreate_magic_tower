@@ -35,9 +35,11 @@ private:
 
     enum class State {
         FIGHTING,
-        REWARD
+        REWARD,
+        DEFEAT
     };
     State m_state = State::FIGHTING;
+    float m_defeat_timer = 0.0f;
 
     std::shared_ptr<Util::GameObject> m_background;
 
