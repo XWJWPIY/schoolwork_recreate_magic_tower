@@ -38,3 +38,6 @@ battle_hero_hits,勇者攻擊！
 battle_reward_hint,- SPACE -
 status_normal,正常
 status_super,超級
+status_main_tower,主塔
+status_magic_tower,魔塔
+status_lobby,大廳

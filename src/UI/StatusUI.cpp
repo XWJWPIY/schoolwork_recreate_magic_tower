@@ -43,8 +43,13 @@ StatusUI::StatusUI(const std::shared_ptr<Player>& player,
     }
 
     // Floor display
-    m_floor_text = MakeText(150.0f, 335.0f, white, 32);
-    m_floor_text->SetSuffix(" F");
+    m_tower_text = MakeText(95.0f, 335.0f, white, 22);
+    m_tower_text->SetShowNumber(false);
+    
+    m_floor_num_text = MakeText(160.0f, 335.0f, white, 32);
+    
+    m_floor_suffix = MakeText(200.0f, 335.0f, white, 32);
+    m_floor_suffix->SetShowNumber(false);
 
     // Manual hint
     m_manual_hint_text = MakeText(390.0f, -335.0f, Util::Color::FromRGB(0, 0, 0), 24);
@@ -103,8 +108,27 @@ void StatusUI::Update(const std::shared_ptr<Player>& player, int floorNum) {
         m_status_text->UpdateDisplayText();
     }
 
-    m_floor_text->SetNumber(floorNum);
-    m_floor_text->UpdateDisplayText();
+    if (floorNum == 0) {
+        m_tower_text->SetPrefix(AppUtil::GetGlobalString("status_main_tower", "Main Tower"));
+        m_floor_num_text->SetShowNumber(false);
+        m_floor_num_text->SetPrefix(AppUtil::GetGlobalString("status_lobby", "Lobby"));
+        m_floor_suffix->SetPrefix("");
+    } else if (floorNum <= 20) {
+        m_tower_text->SetPrefix(AppUtil::GetGlobalString("status_main_tower", "Main Tower"));
+        m_floor_num_text->SetShowNumber(true);
+        m_floor_num_text->SetPrefix("");
+        m_floor_num_text->SetNumber(floorNum);
+        m_floor_suffix->SetPrefix(" F");
+    } else {
+        m_tower_text->SetPrefix(AppUtil::GetGlobalString("status_magic_tower", "Magic Tower"));
+        m_floor_num_text->SetShowNumber(true);
+        m_floor_num_text->SetPrefix("");
+        m_floor_num_text->SetNumber(floorNum - 20);
+        m_floor_suffix->SetPrefix(" F");
+    }
+    m_tower_text->UpdateDisplayText();
+    m_floor_num_text->UpdateDisplayText();
+    m_floor_suffix->UpdateDisplayText();
 }
 
 void StatusUI::SetVisible(bool visible) {
@@ -112,7 +136,9 @@ void StatusUI::SetVisible(bool visible) {
     for (auto& entry : m_stat_entries) {
         entry.text->SetVisible(visible);
     }
-    m_floor_text->SetVisible(visible);
+    m_tower_text->SetVisible(visible);
+    m_floor_num_text->SetVisible(visible);
+    m_floor_suffix->SetVisible(visible);
     m_manual_hint_text->SetVisible(visible);
     m_player_icon->SetVisible(visible);
     m_status_text->SetVisible(visible);
@@ -122,7 +148,9 @@ void StatusUI::AddToRoot(Util::Renderer& root) {
     for (auto& entry : m_stat_entries) {
         root.AddChild(entry.text);
     }
-    root.AddChild(m_floor_text);
+    root.AddChild(m_tower_text);
+    root.AddChild(m_floor_num_text);
+    root.AddChild(m_floor_suffix);
     root.AddChild(m_manual_hint_text);
     root.AddChild(m_player_icon);
     root.AddChild(m_status_text);

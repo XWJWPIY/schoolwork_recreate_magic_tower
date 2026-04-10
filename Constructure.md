@@ -432,7 +432,9 @@ classDiagram
 
     class StatusUI {
         -vector~StatEntry~ m_stat_entries
-        -shared_ptr~NumericDisplayText~ m_floor_text
+        -shared_ptr~NumericDisplayText~ m_tower_text
+        -shared_ptr~NumericDisplayText~ m_floor_num_text
+        -shared_ptr~NumericDisplayText~ m_floor_suffix
         -shared_ptr~NumericDisplayText~ m_manual_hint_text
         -shared_ptr~GameObject~ m_player_icon
         -shared_ptr~NumericDisplayText~ m_status_text
@@ -808,7 +810,7 @@ classDiagram
     - **玩家頭像**：動態偵測目前模式，於正常狀態顯示勇者頭像，開啟超級模式時切換為長頸鹿頭像。
     - **狀態標籤**：即時顯示「正常」或「超級」狀態文字，數值由 `AppUtil::GetGlobalString` 從 `UIStrings.csv` 讀取。
     - **遊戲數據**：包含等級、生命力、攻擊力、防禦力、敏捷度、經驗值、金幣與三色鑰匙庫存。
-    - **樓層指示**：顯示目前所在樓層（XX F）。
+    - **樓層指示**：依據樓層區間動態將顯示區塊拆分為三欄（左：主塔/魔塔、中：樓層數或大廳、右：F），例如「主塔 大廳」或「魔塔 1 F」。
 - **同步機制**：每幀由 `App` 驅動 `run()` 函式，並在屬性變更或模式切換時即時反應於畫面上。
 
 ## 十四、層級控制 (Z-Index 渲染順序)

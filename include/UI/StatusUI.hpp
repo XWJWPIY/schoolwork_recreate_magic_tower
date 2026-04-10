@@ -36,7 +36,9 @@ private:
     std::vector<StatEntry> m_stat_entries;
 
     // Special fields (non-player-attribute)
-    std::shared_ptr<NumericDisplayText> m_floor_text;
+    std::shared_ptr<NumericDisplayText> m_tower_text;
+    std::shared_ptr<NumericDisplayText> m_floor_num_text;
+    std::shared_ptr<NumericDisplayText> m_floor_suffix;
     std::shared_ptr<NumericDisplayText> m_manual_hint_text;
     
     // Status and Avatar
