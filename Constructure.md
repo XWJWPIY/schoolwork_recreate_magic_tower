@@ -12,7 +12,6 @@ classDiagram
     class UIComponent
 
     GameObject <|-- Entity
-    GameObject <|-- Background
     GameObject <|-- NumericDisplayText
     
     Entity <|-- MapBlock
@@ -36,6 +35,7 @@ classDiagram
     UIComponent <|-- BattleUI
     UIComponent <|-- EndSceneUI
     UIComponent <|-- StatusUI
+    UIComponent <|-- BackgroundUI
 ```
 
 ## 完整類別圖（繼承、屬性、方法）
@@ -357,10 +357,14 @@ classDiagram
         -MakeText(x, y, color, size)
     }
 
-    class Background {
-        +Background()
+    class BackgroundUI {
+        +BackgroundUI()
         +NextPhase(int phase)
         +SetLoadingFrame(int frame)
+        +StartLoading()
+        +run() override
+        +SetVisible(bool) override
+        +AddToRoot(Renderer) override
         -ImagePath(int) string
     }
 
@@ -389,7 +393,6 @@ classDiagram
 
     %% ── 繼承關係 ──
     GameObject <|-- Entity
-    GameObject <|-- Background
     GameObject <|-- NumericDisplayText
     Entity <|-- MapBlock
     Entity <|-- Door
@@ -411,6 +414,7 @@ classDiagram
     UIComponent <|-- BattleUI
     UIComponent <|-- EndSceneUI
     UIComponent <|-- StatusUI
+    UIComponent <|-- BackgroundUI
 ```
 
 ## 非繼承類別（管理器與 UI 整合中心）
@@ -423,7 +427,7 @@ classDiagram
         -STATE m_current_state
         -GameState m_game_state
         -Renderer m_root
-        -shared_ptr~Background~ m_background
+        -shared_ptr~BackgroundUI~ m_background
         -shared_ptr~FloorMap~ m_road_map
         -shared_ptr~FloorMap~ m_things_map
         -shared_ptr~Player~ m_player
@@ -590,7 +594,7 @@ classDiagram
     class ObjectMetadata["AppUtil::ObjectMetadata"]
 
     App ..> RegistryLoader : LoadAllData
-    App *-- Background
+    App *-- BackgroundUI
     App *-- FloorMap
     App *-- Player
     App *-- UIComponent : (Managed in vector)
@@ -656,8 +660,8 @@ classDiagram
   - `CheckCondition`：判斷啟動該門所需的屬性（自動從 CSV 解析所需顏色與把手種類）。
   - `Reaction`：調用 Animator 與 DynamicReplacement 銷毀自身並變回空地。
 
-## 五、背景 (`Background`) 與 文字顯示 (`NumericDisplayText`)
-- **Background** (`NextPhase`, `SetLoadingFrame`)：保留了 Z-Index 支援，並提供背景階段式動畫切換。
+## 五、背景 (`BackgroundUI`) 與 文字顯示 (`NumericDisplayText`)
+- **BackgroundUI** (`NextPhase`, `StartLoading`, `run`)：繼承自 UIComponent，負責背景底圖的渲染並處理 Loading 載入動畫。
 - **NumericDisplayText** (`SetPrefix`, `SetSuffix`, `SetAlignment`)：封裝繁雜的字串拼接與對齊，可以直接修改數字與前後輟，並對齊。
 
 ## 六、怪物手冊 (`EnemyBookUI`)

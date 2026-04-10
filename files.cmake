@@ -15,7 +15,7 @@ set(SRC_FILES
     Objects/ActorPart.cpp
     Objects/NPC.cpp
 
-    UI/Background.cpp
+    UI/BackgroundUI.cpp
     UI/NumericDisplayText.cpp
     UI/StatusUI.cpp
     UI/ItemNoticeUI.cpp
@@ -49,7 +49,7 @@ set(INCLUDE_FILES
     Objects/ActorPart.hpp
     Objects/NPC.hpp
 
-    UI/Background.hpp
+    UI/BackgroundUI.hpp
     UI/NumericDisplayText.hpp
     UI/StatusUI.hpp
     UI/ItemNoticeUI.hpp

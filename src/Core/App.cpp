@@ -6,6 +6,7 @@
 #include "Util/Keycode.hpp"
 #include "Util/Logger.hpp"
 
+#include "UI/BackgroundUI.hpp"
 #include "UI/DialogueUI.hpp"
 #include "UI/FlyUI.hpp"
 #include "UI/NoticeUI.hpp"
@@ -25,8 +26,10 @@
 void App::Start() {
   m_current_state = STATE::UPDATE;
 
-  m_background = std::make_shared<Background>();
-  m_root.AddChild(m_background);
+  m_background = std::make_shared<BackgroundUI>();
+  m_background->AddToRoot(m_root);
+  m_ui_components.push_back(m_background);
+  
   m_game_state = AppUtil::GameState::MAIN_MENU;
 }
 
@@ -154,11 +157,8 @@ void App::InitializeGame() {
 
 void App::Update() {
   // 0. Unified UI update: run all active UI components
-  if (m_game_state != AppUtil::GameState::MAIN_MENU && 
-      m_game_state != AppUtil::GameState::LOADING) {
-    for (auto& ui : m_ui_components) {
-      if (ui->IsActive()) ui->run();
-    }
+  for (auto& ui : m_ui_components) {
+    if (ui->IsActive()) ui->run();
   }
 
   // 1. Main State Machine (Mode-First)
@@ -166,22 +166,12 @@ void App::Update() {
   case AppUtil::GameState::MAIN_MENU:
     if (Util::Input::IsKeyDown(Util::Keycode::SPACE)) {
       m_game_state = AppUtil::GameState::LOADING;
-      m_loading_timer = 0.0f;
-      m_loading_frame = 1;
-      m_background->SetLoadingFrame(m_loading_frame);
+      m_background->StartLoading();
     }
     break;
 
   case AppUtil::GameState::LOADING:
-    m_loading_timer += Util::Time::GetDeltaTimeMs();
-    {
-      int current_frame = static_cast<int>(m_loading_timer / 150.0f) + 1;
-      if (current_frame <= 4) {
-        if (current_frame != m_loading_frame) {
-          m_loading_frame = current_frame;
-          m_background->SetLoadingFrame(m_loading_frame);
-        }
-      } else {
+    if (m_background->GetLoadingFrame() > 4) {
         AppUtil::RegistryLoader::LoadAllData();
         InitializeGame();
         m_game_state = AppUtil::GameState::PLAYING;
@@ -190,9 +180,6 @@ void App::Update() {
         m_things_map->SetAllVisible(true);
         m_status_ui->SetVisible(true);
         m_player->SetVisible(true);
-        m_loading_timer = 0.0f;
-        m_loading_frame = 0;
-      }
     }
     break;
 
@@ -363,10 +350,9 @@ void App::Restart() {
   m_game_state = AppUtil::GameState::MAIN_MENU;
   m_item_notice_timer = 0.0f;
 
-  m_background = std::make_shared<Background>();
-  m_root.AddChild(m_background);
-  m_loading_timer = 0.0f;
-  m_loading_frame = 0;
+  m_background = std::make_shared<BackgroundUI>();
+  m_background->AddToRoot(m_root);
+  m_ui_components.push_back(m_background);
 }
 
 void App::ChangeFloor(int delta) {

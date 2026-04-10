@@ -2,7 +2,7 @@
 #define APP_HPP
 
 #include "Core/AppUtil.hpp"
-#include "UI/Background.hpp"
+#include "UI/BackgroundUI.hpp"
 #include "Core/FloorMap.hpp"
 #include "UI/NumericDisplayText.hpp"
 #include "UI/ItemNoticeUI.hpp"
@@ -56,7 +56,7 @@ private:
   AppUtil::GameState m_game_state = AppUtil::GameState::MAIN_MENU;
 
   Util::Renderer m_root;
-  std::shared_ptr<Background>  m_background;
+  std::shared_ptr<BackgroundUI>  m_background;
   std::shared_ptr<FloorMap>    m_road_map;
   std::shared_ptr<FloorMap>    m_things_map;
   std::shared_ptr<StatusUI>    m_status_ui;
@@ -70,8 +70,6 @@ private:
   std::shared_ptr<EndSceneUI> m_end_scene_ui;
 
   float m_item_notice_timer = 0.0f;
-  float m_loading_timer  = 0.0f;
-  int   m_loading_frame  = 0;
 
   // UI Components list for unified management
   std::vector<std::shared_ptr<UIComponent>> m_ui_components;
