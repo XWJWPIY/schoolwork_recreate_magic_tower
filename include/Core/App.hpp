@@ -21,7 +21,6 @@
 #include <memory>
 #include <vector>
 
-class DialogueUI;
 
 class App {
 

@@ -5,7 +5,6 @@
 #include <unordered_map>
 #include "Core/AppUtil.hpp"
 
-class Player;
 
 class Actor : public Entity {
 public:
