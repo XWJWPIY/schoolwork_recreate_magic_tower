@@ -11,7 +11,7 @@
 
 class NPC : public Entity {
 public:
-  typedef std::function<void(std::shared_ptr<NPC>, const std::string&)> TalkCallback;
+  using TalkCallback = std::function<void(std::shared_ptr<NPC>, const std::string&)>;
 
   NPC(int id, TalkCallback callback);
   ~NPC() override = default;
