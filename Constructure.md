@@ -321,7 +321,6 @@ classDiagram
     }
 
     class EndSceneUI {
-        -bool m_visible
         -bool m_is_win
         -shared_ptr~GameObject~ m_background
         -shared_ptr~NumericDisplayText~ m_status_text

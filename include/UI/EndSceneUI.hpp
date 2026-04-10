@@ -24,7 +24,6 @@ public:
     bool IsIntercepting() const override { return m_visible; }
 
 private:
-    bool m_visible = false;
     bool m_is_win = false;
 
 

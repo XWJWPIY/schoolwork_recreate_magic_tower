@@ -15,3 +15,22 @@ bool Actor::MeetsRequirement(AppUtil::Effect type, int amount) const {
     if (type == AppUtil::Effect::HP) return current > amount;
     return current >= amount;
 }
+
+int Actor::GetAttr(AppUtil::Effect type) const {
+    auto it = m_attributes.find(type);
+    return (it != m_attributes.end()) ? it->second : 0;
+}
+
+void Actor::SetAttr(AppUtil::Effect type, int value) {
+    m_attributes[type] = value;
+    OnAttributeChanged(type);
+}
+
+void Actor::ApplyEffect(AppUtil::Effect type, int delta) {
+    m_attributes[type] += delta;
+    OnAttributeChanged(type);
+}
+
+void Actor::OnAttributeChanged(AppUtil::Effect type) {
+    // Base implementation does nothing
+}

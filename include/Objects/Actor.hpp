@@ -12,24 +12,13 @@ public:
   ~Actor() override = default;
 
   // Unified Attribute Accessors
-  virtual int GetAttr(AppUtil::Effect type) const {
-    auto it = m_attributes.find(type);
-    return (it != m_attributes.end()) ? it->second : 0;
-  }
-
-  virtual void SetAttr(AppUtil::Effect type, int value) {
-    m_attributes[type] = value;
-    OnAttributeChanged(type);
-  }
-
-  virtual void ApplyEffect(AppUtil::Effect type, int delta) {
-    m_attributes[type] += delta;
-    OnAttributeChanged(type);
-  }
+  virtual int GetAttr(AppUtil::Effect type) const;
+  virtual void SetAttr(AppUtil::Effect type, int value);
+  virtual void ApplyEffect(AppUtil::Effect type, int delta);
 
   bool MeetsRequirement(AppUtil::Effect type, int amount) const;
 
-  virtual void OnAttributeChanged(AppUtil::Effect type) {}
+  virtual void OnAttributeChanged(AppUtil::Effect type);
 
 protected:
   std::unordered_map<AppUtil::Effect, int> m_attributes;
