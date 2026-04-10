@@ -194,9 +194,8 @@ void DialogueUI::run() {
     if (!IsActive()) return;
 
     if (m_space_prompt && m_mode != Mode::NOTICE && m_mode != Mode::SELECTION) {
-        m_blink_timer += Util::Time::GetDeltaTimeMs();
-        if (m_blink_timer > 1000.0f) m_blink_timer -= 1000.0f;
-        m_space_prompt->SetVisible(m_blink_timer < 500.0f);
+        UpdateBlinkTimer();
+        m_space_prompt->SetVisible(IsBlinkVisible());
     } else if (m_space_prompt && (m_mode == Mode::SELECTION || m_mode == Mode::NOTICE)) {
         m_space_prompt->SetVisible(false);
     }

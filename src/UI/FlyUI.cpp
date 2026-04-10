@@ -84,9 +84,8 @@ void FlyUI::run() {
     if (!m_visible) return;
 
     // Blinking Hint Logic
-    m_blink_timer += Util::Time::GetDeltaTimeMs();
-    if (m_blink_timer > 1000.0f) m_blink_timer -= 1000.0f;
-    if (m_enter_text) m_enter_text->SetVisible(m_blink_timer < 500.0f);
+    UpdateBlinkTimer();
+    if (m_enter_text) m_enter_text->SetVisible(IsBlinkVisible());
 }
 
 void FlyUI::SetVisible(bool visible) {
@@ -99,7 +98,7 @@ void FlyUI::SetVisible(bool visible) {
     if (m_down_arrow) m_down_arrow->SetVisible(visible);
 
     if (visible) {
-        m_blink_timer = 0.0f;
+        ResetBlinkTimer();
     }
 }
 

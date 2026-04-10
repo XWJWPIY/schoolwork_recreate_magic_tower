@@ -25,9 +25,8 @@ void NoticeUI::run() {
     if (!m_visible) return;
 
     // Blinking Hint Logic
-    m_blink_timer += Util::Time::GetDeltaTimeMs();
-    if (m_blink_timer > 1000.0f) m_blink_timer -= 1000.0f;
-    if (m_close_hint) m_close_hint->SetVisible(m_blink_timer < 500.0f);
+    UpdateBlinkTimer();
+    if (m_close_hint) m_close_hint->SetVisible(IsBlinkVisible());
 }
 
 void NoticeUI::SetVisible(bool visible) {
@@ -36,7 +35,7 @@ void NoticeUI::SetVisible(bool visible) {
     if (m_close_hint) m_close_hint->SetVisible(visible);
 
     if (visible) {
-        m_blink_timer = 0.0f;
+        ResetBlinkTimer();
     }
 }
 

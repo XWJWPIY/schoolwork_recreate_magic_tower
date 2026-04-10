@@ -94,7 +94,7 @@ private:
     std::function<void(int)> m_on_selection;
     std::function<void(std::shared_ptr<Entity>, int)> m_on_switch_object;
     std::function<void()> m_on_win;
-    float m_blink_timer = 0.0f;
+
 };
 
 #endif // DIALOGUE_UI_HPP

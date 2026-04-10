@@ -23,7 +23,7 @@ private:
 
     std::shared_ptr<Util::GameObject> m_notice_bg;
     std::shared_ptr<NumericDisplayText> m_close_hint;
-    float m_blink_timer = 0.0f;
+
 };
 
 #endif // NOTICE_UI_HPP

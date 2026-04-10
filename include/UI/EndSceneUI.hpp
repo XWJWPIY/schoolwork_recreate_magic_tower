@@ -26,7 +26,7 @@ public:
 private:
     bool m_visible = false;
     bool m_is_win = false;
-    float m_blink_timer = 0.0f;
+
 
     std::shared_ptr<Util::GameObject> m_background;
     std::shared_ptr<NumericDisplayText> m_status_text;

@@ -55,11 +55,15 @@ classDiagram
     class UIComponent {
         <<interface>>
         #bool m_visible
+        #float m_blink_timer
         +virtual run()*
         +virtual IsIntercepting()* bool
         +virtual IsActive()* bool
         +virtual SetVisible(bool)*
         +virtual AddToRoot(Renderer)*
+        #UpdateBlinkTimer()
+        #IsBlinkVisible() bool
+        #ResetBlinkTimer()
     }
 
     class Entity {
@@ -101,7 +105,6 @@ classDiagram
         -ScriptEngine m_engine
         -unique_ptr~ShopUI~ m_shop_ui
         -shared_ptr~Player~ m_player
-        -float m_blink_timer
         +DialogueUI(ItemNoticeUI)
         +SetPlayer(shared_ptr~Player~)
         +StartScript(name, source, isShop)
@@ -121,7 +124,6 @@ classDiagram
         -shared_ptr~NumericDisplayText~ m_price_display
         -AppUtil::ShopData m_data
         -int m_selection
-        -float m_blink_timer
         +ShopUI(fontPath)
         +Start(ShopData, onSelect)
         +run() override
@@ -141,7 +143,6 @@ classDiagram
         -shared_ptr~NumericDisplayText~ m_quit_text
         -shared_ptr~GameObject~ m_up_arrow
         -shared_ptr~GameObject~ m_down_arrow
-        -float m_blink_timer
         +FlyUI()
         +SetPlayer(shared_ptr~Player~)
         +Start(currentStory, callback)
@@ -155,7 +156,6 @@ classDiagram
     class NoticeUI {
         -shared_ptr~GameObject~ m_notice_bg
         -shared_ptr~NumericDisplayText~ m_close_hint
-        -float m_blink_timer
         +NoticeUI()
         +run() override
         +IsIntercepting() bool override
@@ -168,7 +168,6 @@ classDiagram
         -shared_ptr~GameObject~ m_item_notice_bg
         -shared_ptr~NumericDisplayText~ m_item_notice_text
         -shared_ptr~NumericDisplayText~ m_item_confirm_text
-        -float m_blink_timer
         +ItemNoticeUI()
         +Show(text)
         +run() override
@@ -265,7 +264,6 @@ classDiagram
         -shared_ptr~GameObject~ m_end_bg
         -shared_ptr~NumericDisplayText~ m_status_text
         -shared_ptr~NumericDisplayText~ m_restart_hint
-        -float m_blink_timer
         +EndSceneUI(fontPath)
         +Show(bool win)
         +CanRestart() bool
@@ -770,6 +768,7 @@ classDiagram
   - `run()`：執行 UI 的每幀邏輯（由 `App::Update()` 在 switch 之前統一調用）。
   - `IsIntercepting()`：判定是否攔截後續的邏輯解析（如停止地圖物件更新）。
   - `m_visible`：由基底 `UIComponent` 統一管理的可見狀態，所有子類共用，不再各自宣告。
+  - `m_blink_timer` 與保護方法（如 `UpdateBlinkTimer()` 等）：由基底統一管理 UI 閃爍狀態，消除各子元件內部重複的計時宣告與實作。
 - **集中管理**：`App` 維持 `m_ui_components` 列表進行統一更新。
 
 ## 十二、對話與商店系統 (UI 遷移)

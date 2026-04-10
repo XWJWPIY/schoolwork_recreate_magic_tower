@@ -2,6 +2,7 @@
 #define UI_COMPONENT_HPP
 
 #include "Util/Renderer.hpp"
+#include "Util/Time.hpp"
 
 /**
  * @brief 所有 UI 元件的抽象基底類別
@@ -37,6 +38,20 @@ public:
 
 protected:
     bool m_visible = false;
+    float m_blink_timer = 0.0f;
+
+    void UpdateBlinkTimer(float cycleMs = 1000.0f) {
+        m_blink_timer += Util::Time::GetDeltaTimeMs();
+        if (m_blink_timer > cycleMs) m_blink_timer -= cycleMs;
+    }
+    
+    bool IsBlinkVisible(float thresholdMs = 500.0f) const {
+        return m_blink_timer < thresholdMs;
+    }
+    
+    void ResetBlinkTimer() {
+        m_blink_timer = 0.0f;
+    }
 };
 
 #endif // UI_COMPONENT_HPP

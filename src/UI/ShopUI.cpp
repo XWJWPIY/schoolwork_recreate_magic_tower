@@ -82,14 +82,13 @@ void ShopUI::run() {
 
     if (changed) {
         UpdateSelectionVisuals();
-        m_blink_timer = 0.0f;
+        ResetBlinkTimer();
         if (m_selector) m_selector->SetVisible(true);
     }
 
     // Blinking Selector Logic
-    m_blink_timer += Util::Time::GetDeltaTimeMs();
-    if (m_blink_timer > 1000.0f) m_blink_timer -= 1000.0f;
-    if (m_selector) m_selector->SetVisible(m_blink_timer < 500.0f);
+    UpdateBlinkTimer();
+    if (m_selector) m_selector->SetVisible(IsBlinkVisible());
 }
 
 void ShopUI::Refresh(const AppUtil::ShopData& data) {
@@ -132,7 +131,7 @@ void ShopUI::UpdateSelectionVisuals() {
 
 void ShopUI::SetVisible(bool visible) {
     m_visible = visible;
-    if (visible) m_blink_timer = 0.0f;
+    if (visible) ResetBlinkTimer();
     
     // Delegate visiblity update to Refresh logic for consistency
     Refresh(m_data);

@@ -39,12 +39,6 @@ public:
 
   void ObjectUpdate() override;
 
-  PlayerDirection m_direction = PlayerDirection::DOWN;
-  bool m_is_animating = false;
-  std::shared_ptr<Util::Animation> m_animations[4]; // 0:Down, 1:Up, 2:Left, 3:Right
-
-  int m_pending_shop_id = -1;
-
   void ToggleSuperMode();
 
   // Parallel Attribute Overrides
@@ -53,6 +47,11 @@ public:
   void ApplyEffect(AppUtil::Effect type, int delta) override;
 
 private:
+  PlayerDirection m_direction = PlayerDirection::DOWN;
+  bool m_is_animating = false;
+  std::shared_ptr<Util::Animation> m_animations[4]; // 0:Down, 1:Up, 2:Left, 3:Right
+  int m_pending_shop_id = -1;
+
   bool m_is_super_mode = false;
   std::unordered_map<AppUtil::Effect, int> m_super_attributes;
   std::shared_ptr<Util::Image> m_giraffe_image; // Giraffe skin for Super Mode

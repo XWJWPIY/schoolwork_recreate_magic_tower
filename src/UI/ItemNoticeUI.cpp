@@ -39,9 +39,8 @@ void ItemNoticeUI::run() {
     }
 
     // Blinking Prompt Logic
-    m_blink_timer += Util::Time::GetDeltaTimeMs();
-    if (m_blink_timer > 1000.0f) m_blink_timer -= 1000.0f;
-    m_item_confirm_text->SetVisible(m_blink_timer < 500.0f);
+    UpdateBlinkTimer();
+    m_item_confirm_text->SetVisible(IsBlinkVisible());
 }
 
 void ItemNoticeUI::Show(const std::string& text) {
@@ -57,7 +56,7 @@ void ItemNoticeUI::SetVisible(bool visible) {
     if (m_item_confirm_text) m_item_confirm_text->SetVisible(visible);
     
     if (visible) {
-        m_blink_timer = 0.0f;
+        ResetBlinkTimer();
     }
 }
 
