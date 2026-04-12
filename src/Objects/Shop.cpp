@@ -6,14 +6,16 @@
 #include "Util/Keycode.hpp"
 #include "Util/Logger.hpp"
 
-Shop::Shop(int id, OpenCallback onOpen, CloseCallback onClose)
+Shop::Shop(int id, TriggerCallback onTrigger, CloseCallback onClose)
     : Entity(id, true),
-      m_on_open(std::move(onOpen)),
+      m_on_trigger(std::move(onTrigger)),
       m_on_close(std::move(onClose)) {}
 
 void Shop::Reaction(std::shared_ptr<Player> player) {
     LOG_INFO("Shop::Reaction id={} ({})", m_object_id, AppUtil::GetIdString(m_object_id));
-    player->SetPendingShop(m_object_id);
+    if (m_on_trigger) {
+        m_on_trigger(std::dynamic_pointer_cast<Shop>(shared_from_this()), player);
+    }
 }
 
 void Shop::Open(std::shared_ptr<Player> player, const ShopUIAdapter& adapter, int floor) {
@@ -64,7 +66,6 @@ void Shop::Open(std::shared_ptr<Player> player, const ShopUIAdapter& adapter, in
     m_adapter.startShop(name, m_session_data, onSelect, nullptr);
 
     LOG_INFO("Shop::Open id={}", m_object_id);
-    if (m_on_open) m_on_open(*this);
 }
 
 void Shop::Close() {

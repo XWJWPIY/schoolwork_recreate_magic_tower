@@ -82,7 +82,7 @@ std::shared_ptr<Entity> EntityFactory::CreateNPC(int id) {
 std::shared_ptr<Entity> EntityFactory::CreateShop(int id) {
     return std::make_shared<Shop>(
         id,
-        [this](Shop& s) { if (m_callbacks.openShop) m_callbacks.openShop(s); },
+        [this](std::shared_ptr<Shop> s, std::shared_ptr<Player> p) { if (m_callbacks.triggerShop) m_callbacks.triggerShop(s, p); },
         [this]() { if (m_callbacks.closeShop) m_callbacks.closeShop(); });
 }
 

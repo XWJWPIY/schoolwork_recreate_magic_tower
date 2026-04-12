@@ -22,7 +22,7 @@ public:
         std::function<int()> getCurrentStory;
         std::function<void(int)> changeFloor;
         std::function<void(int, int, int)> setFloor;
-        std::function<void(Shop&)> openShop;
+        std::function<void(std::shared_ptr<Shop>, std::shared_ptr<Player>)> triggerShop;
         std::function<void()> closeShop;
         std::function<void(std::shared_ptr<Enemy>)> startBattle;
         std::function<void(const std::string&)> loadRewardLayer;

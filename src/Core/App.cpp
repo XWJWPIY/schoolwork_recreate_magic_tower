@@ -45,9 +45,21 @@ void App::InitializeGame() {
   callbacks.getCurrentStory = [this]() { return this->m_road_map->GetCurrentStory(); };
   callbacks.changeFloor = [this](int val) { this->ChangeFloor(val); };
   callbacks.setFloor = [this](int story, int x, int y) { this->SetFloor(story, x, y); };
-  callbacks.openShop = [this](Shop& s) {
-    m_active_shop = &s;
+  callbacks.triggerShop = [this](std::shared_ptr<Shop> shop, std::shared_ptr<Player> player) {
+    ShopUIAdapter adapter{
+      [this](const std::string& name, const AppUtil::ShopData& data, std::function<void(int)> onSelect, std::shared_ptr<Entity> src) {
+        m_dialogue_ui->StartShop(name, data, onSelect, src);
+      },
+      [this](const AppUtil::ShopData& data) {
+        m_dialogue_ui->RefreshShopOptions(data);
+      },
+      [this]() {
+        m_dialogue_ui->EndShopSelection();
+      }
+    };
+    m_active_shop = shop.get();
     m_game_state = AppUtil::GameState::SHOP;
+    shop->Open(player, adapter, m_road_map->GetCurrentStory());
   };
   callbacks.closeShop = [this]() {
     m_active_shop = nullptr;
@@ -199,27 +211,7 @@ void App::Update() {
         if (isIntercepted) break; // Skip map parsing if dialogue is busy
     }
 
-    // ── Input: Shop Check ───────────────────────────────────────────
-    if (m_player->GetPendingShop() != -1) {
-      int id = m_player->GetPendingShop();
-      m_player->SetPendingShop(-1);
-      auto obj = m_things_map->FindFirstObjectOfId(id);
-      if (auto shop = std::dynamic_pointer_cast<Shop>(obj)) {
-        ShopUIAdapter adapter{
-          [this](const std::string& name, const AppUtil::ShopData& data, std::function<void(int)> onSelect, std::shared_ptr<Entity> src) {
-            m_dialogue_ui->StartShop(name, data, onSelect, src);
-          },
-          [this](const AppUtil::ShopData& data) {
-            m_dialogue_ui->RefreshShopOptions(data);
-          },
-          [this]() {
-            m_dialogue_ui->EndShopSelection();
-          }
-        };
-        shop->Open(m_player, adapter, m_road_map->GetCurrentStory());
-        break; 
-      }
-    }
+
 
     // ── Input: Toggle Overlays ──────────────────────────────────────
     if (Util::Input::IsKeyDown(Util::Keycode::D)) {

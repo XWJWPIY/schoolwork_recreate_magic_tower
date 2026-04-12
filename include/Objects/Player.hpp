@@ -26,10 +26,7 @@ public:
 
   void Reaction(std::shared_ptr<Player> player) override;
 
-  void SetPendingShop(int id) { m_pending_shop_id = id; }
-  int GetPendingShop() const { return m_pending_shop_id; }
-  
-  void ResetStateAfterFloorChange();
+    void ResetStateAfterFloorChange();
   void SetDirection(PlayerDirection dir);
   void SetIsAnimating(bool animate) { m_is_animating = animate; }
   bool HasFly() const { return GetAttr(AppUtil::Effect::FLY) > 0; }
@@ -50,8 +47,6 @@ private:
   PlayerDirection m_direction = PlayerDirection::DOWN;
   bool m_is_animating = false;
   std::shared_ptr<Util::Animation> m_animations[4]; // 0:Down, 1:Up, 2:Left, 3:Right
-  int m_pending_shop_id = -1;
-
   bool m_is_super_mode = false;
   std::unordered_map<AppUtil::Effect, int> m_super_attributes;
   std::shared_ptr<Util::Image> m_giraffe_image; // Giraffe skin for Super Mode

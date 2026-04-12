@@ -116,7 +116,6 @@ classDiagram
         -PlayerDirection m_direction
         -bool m_is_animating
         -shared_ptr~Animation~ m_animations[4]
-        -int m_pending_shop_id
         -bool m_is_super_mode
         -unordered_map~Effect, int~ m_super_attributes
         -shared_ptr~Image~ m_giraffe_image
@@ -124,8 +123,6 @@ classDiagram
         +Move(dx, dy, roadmap, thingsmap)
         +SyncPosition(roadmap)
         +Reaction(player) override
-        +SetPendingShop(id)
-        +GetPendingShop() int
         +ResetStateAfterFloorChange()
         +SetDirection(PlayerDirection)
         +SetIsAnimating(bool)
@@ -183,10 +180,10 @@ classDiagram
         -int m_transaction_count
         -bool m_is_open
         -int m_selection
-        -OpenCallback m_on_open
+        -TriggerCallback m_on_trigger
         -CloseCallback m_on_close
         -ShopUIAdapter m_adapter
-        +Shop(id, onOpen, onClose)
+        +Shop(id, onTrigger, onClose)
         +Reaction(player) override
         +Open(player, ShopUIAdapter, floor)
         +Close()

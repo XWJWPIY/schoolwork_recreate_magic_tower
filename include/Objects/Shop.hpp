@@ -28,10 +28,10 @@ struct ShopUIAdapter {
  */
 class Shop : public Entity {
 public:
-    using OpenCallback  = std::function<void(Shop&)>;
+    using TriggerCallback = std::function<void(std::shared_ptr<Shop>, std::shared_ptr<Player>)>;
     using CloseCallback = std::function<void()>;
 
-    Shop(int id, OpenCallback onOpen, CloseCallback onClose);
+    Shop(int id, TriggerCallback onTrigger, CloseCallback onClose);
     ~Shop() override = default;
 
     // ── Interaction ────────────────────────────────────────────────────────
@@ -55,7 +55,7 @@ private:
     bool m_is_open = false;
     int  m_selection = 0;
 
-    OpenCallback  m_on_open;
+    TriggerCallback m_on_trigger;
     CloseCallback m_on_close;
     ShopUIAdapter m_adapter; // Stored for session lifetime
 };
