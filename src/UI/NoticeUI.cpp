@@ -14,7 +14,7 @@ NoticeUI::NoticeUI() {
     m_close_hint = std::make_shared<NumericDisplayText>(fontPath, 20);
     m_close_hint->SetPrefix("- Press L to Close -");
     m_close_hint->SetShowNumber(false);
-    m_close_hint->m_Transform.translation = {141.0f, -250.0f};
+    m_close_hint->m_Transform.translation = {141.0f, -275.0f};
     m_close_hint->UpdateDisplayText();
     m_close_hint->SetZIndex(91.0f);
 
