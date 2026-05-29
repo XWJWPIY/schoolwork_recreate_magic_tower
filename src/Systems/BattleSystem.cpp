@@ -38,77 +38,98 @@ BattleSystem::TurnResult BattleSystem::ProcessPlayerTurn(std::shared_ptr<Player>
     return result;
 }
 
-BattleSystem::TurnResult BattleSystem::ProcessEnemyTurn(std::shared_ptr<Player> player, std::shared_ptr<Enemy> enemy) {
+BattleSystem::TurnResult BattleSystem::ProcessSingleEnemyHit(
+    std::shared_ptr<Player> player, std::shared_ptr<Enemy> enemy) {
+
     TurnResult result;
     if (!player || !enemy) return result;
 
-    auto meta = AppUtil::GlobalObjectRegistry[enemy->GetObjectId()];
+    auto meta      = AppUtil::GlobalObjectRegistry[enemy->GetObjectId()];
     bool ignoreDef = meta.GetInt("Ignore_DEF") > 0;
-    int atkTime = meta.GetInt("ATK_Time", 1);
-    int pAGI = player->GetAttr(AppUtil::Effect::AGILITY);
+    int  pAGI      = player->GetAttr(AppUtil::Effect::AGILITY);
 
     std::string specialStr = meta.GetString("Special");
-    bool isKilling = meta.GetInt("Killing_ATK") > 0 || specialStr == AppUtil::GetGlobalString("battle_special_kill", "Critical");
-    bool isWeak = specialStr == AppUtil::GetGlobalString("battle_special_weak", "Weak");
-    bool isPoison = specialStr == AppUtil::GetGlobalString("battle_special_poison", "Poison");
+    bool isKilling = meta.GetInt("Killing_ATK") > 0
+                  || specialStr == AppUtil::GetGlobalString("battle_special_kill", "Critical");
+    bool isWeak    = specialStr == AppUtil::GetGlobalString("battle_special_weak",   "Weak");
+    bool isPoison  = specialStr == AppUtil::GetGlobalString("battle_special_poison", "Poison");
 
-    int pDef = player->GetAttr(AppUtil::Effect::DEFENSE);
-    int eAtk = enemy->GetAttr(AppUtil::Effect::ATTACK);
+    int pDef     = player->GetAttr(AppUtil::Effect::DEFENSE);
+    int eAtk     = enemy->GetAttr(AppUtil::Effect::ATTACK);
     int eDmgBase = ignoreDef ? eAtk : (eAtk - pDef);
-    if (eDmgBase < 1) eDmgBase = 1; // Damage floor 1
+    if (eDmgBase < 1) eDmgBase = 1;
 
-    LOG_INFO("Enemy (ID: {}) Turn Start", enemy->GetObjectId());
-    LOG_INFO("Enemy Stats: ATK_Time={}, IgnoreDef={}", atkTime, (ignoreDef ? 1 : 0));
-
-    for (int i = 0; i < atkTime; ++i) {
-        int killRoll = AppUtil::GetRandomInt(0, 99);
-        if (isKilling && killRoll < 10) {
-            result.totalDamage = player->GetAttr(AppUtil::Effect::HP);
-            result.instantKill = true;
-            LOG_INFO("Instant Kill! (Roll: {} < 10)", killRoll);
-            break;
-        }
-
-        int evaRoll = AppUtil::GetRandomInt(0, 99);
-        if (evaRoll < pAGI) {
-            LOG_INFO("Player Evaded! (Hit {}, Roll: {} < AGI: {})", i + 1, evaRoll, pAGI);
-            result.evading = true; // At least one strike evaded
-            continue;
-        }
-
-        result.totalDamage += eDmgBase;
-
-        int statusRoll = AppUtil::GetRandomInt(0, 99);
-        if (isWeak && statusRoll < 1) {
-            LOG_INFO("Player Weakened! (Roll: {} < 1)", statusRoll);
-            result.weakened = true;
-        }
-        if (isPoison && statusRoll < 1) {
-            LOG_INFO("Player Poisoned! (Roll: {} < 1)", statusRoll);
-            result.poisoned = true;
-        }
-    }
-
-    if (result.totalDamage > 0 || !result.evading) {
+    // ── 1. InstantKill 判定 ──────────────────────────────────────────
+    int killRoll = AppUtil::GetRandomInt(0, 99);
+    if (isKilling && killRoll < 10) {
+        result.totalDamage = player->GetAttr(AppUtil::Effect::HP);
+        result.instantKill = true;
+        result.isBattleEnd = true;
         player->ApplyEffect(AppUtil::Effect::HP, -result.totalDamage);
+        LOG_INFO("Instant Kill! (Roll: {} < 10)", killRoll);
+        return result;
     }
-    
+
+    // ── 2. 玩家閃避判定（AGI 值 = 閃避機率 %）──────────────────────
+    int evaRoll = AppUtil::GetRandomInt(0, 99);
+    if (evaRoll < pAGI) {
+        result.evading     = true;
+        result.totalDamage = 0;
+        LOG_INFO("Player Evaded! (Roll: {} < AGI: {})", evaRoll, pAGI);
+        return result; // 閃避成功：不扣血、不觸發狀態異常
+    }
+
+    // ── 3. 命中：計算傷害並立即扣血 ─────────────────────────────────
+    result.totalDamage = eDmgBase;
+    player->ApplyEffect(AppUtil::Effect::HP, -result.totalDamage);
+    LOG_INFO("Enemy Hit! Damage={} (ignoreDef={})", result.totalDamage, ignoreDef ? 1 : 0);
+
+    // ── 4. 狀態異常判定（各 1% 機率）────────────────────────────────
+    int statusRoll = AppUtil::GetRandomInt(0, 99);
+    if (isWeak && statusRoll < 1) {
+        result.weakened = true;
+        LOG_INFO("Player Weakened! (Roll: {} < 1)", statusRoll);
+        player->SetAttr(AppUtil::Effect::ATTACK,
+            static_cast<int>(player->GetAttr(AppUtil::Effect::ATTACK) * 0.8));
+        player->SetAttr(AppUtil::Effect::DEFENSE,
+            static_cast<int>(player->GetAttr(AppUtil::Effect::DEFENSE) * 0.8));
+    }
+    if (isPoison && statusRoll < 1) {
+        result.poisoned = true;
+        LOG_INFO("Player Poisoned! (Roll: {} < 1)", statusRoll);
+        player->SetAttr(AppUtil::Effect::POISON,
+            player->GetAttr(AppUtil::Effect::POISON) + 1);
+    }
+
+    // ── 5. 死亡判定 ──────────────────────────────────────────────────
     if (player->GetAttr(AppUtil::Effect::HP) <= 0) {
         result.isBattleEnd = true;
     }
 
-    // Apply status debuffs dynamically if hit
-    if (!result.evading || result.totalDamage > 0) {
-        if (result.weakened) {
-            int currentAtk = player->GetAttr(AppUtil::Effect::ATTACK);
-            int currentDef = player->GetAttr(AppUtil::Effect::DEFENSE);
-            player->SetAttr(AppUtil::Effect::ATTACK, static_cast<int>(currentAtk * 0.8));
-            player->SetAttr(AppUtil::Effect::DEFENSE, static_cast<int>(currentDef * 0.8));
-        }
-        if (result.poisoned) {
-            player->SetAttr(AppUtil::Effect::POISON, player->GetAttr(AppUtil::Effect::POISON) + 1);
-        }
-    }
-
     return result;
 }
+
+BattleSystem::TurnResult BattleSystem::ProcessEnemyTurn(
+    std::shared_ptr<Player> player, std::shared_ptr<Enemy> enemy) {
+
+    TurnResult combined;
+    if (!player || !enemy) return combined;
+
+    auto meta    = AppUtil::GlobalObjectRegistry[enemy->GetObjectId()];
+    int  atkTime = meta.GetInt("ATK_Time", 1);
+    LOG_INFO("Enemy (ID: {}) Turn Start (atkTime={})", enemy->GetObjectId(), atkTime);
+
+    for (int i = 0; i < atkTime; ++i) {
+        auto r = ProcessSingleEnemyHit(player, enemy);
+        combined.totalDamage += r.totalDamage;
+        combined.evading     |= r.evading;
+        combined.isBattleEnd |= r.isBattleEnd;
+        combined.instantKill |= r.instantKill;
+        combined.weakened    |= r.weakened;
+        combined.poisoned    |= r.poisoned;
+        if (r.isBattleEnd) break;
+    }
+
+    return combined;
+}
+

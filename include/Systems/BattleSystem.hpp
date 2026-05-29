@@ -28,8 +28,15 @@ public:
     static TurnResult ProcessPlayerTurn(std::shared_ptr<Player> player, std::shared_ptr<Enemy> enemy);
 
     /**
-     * @brief Execute one combat turn from the Enemy against the Player.
-     * @return TurnResult containing multi-hit damage and status effect procs.
+     * @brief Execute exactly ONE hit from the Enemy against the Player.
+     *        Resolves InstantKill, dodge (pAGI%), damage, and status effects independently.
+     *        HP is applied immediately inside this call.
+     */
+    static TurnResult ProcessSingleEnemyHit(std::shared_ptr<Player> player, std::shared_ptr<Enemy> enemy);
+
+    /**
+     * @brief (Wrapper) Calls ProcessSingleEnemyHit ATK_Time times and aggregates results.
+     *        Kept for backward compatibility. BattleUI uses ProcessSingleEnemyHit directly.
      */
     static TurnResult ProcessEnemyTurn(std::shared_ptr<Player> player, std::shared_ptr<Enemy> enemy);
 };

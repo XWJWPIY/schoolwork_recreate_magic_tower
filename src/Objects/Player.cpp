@@ -225,8 +225,8 @@ void Player::ToggleSuperMode() {
     if (m_is_super_mode && m_super_attributes.empty()) {
         LOG_INFO("Super Mode: Initializing default super stats...");
         m_super_attributes[AppUtil::Effect::HP] = 999999;
-        m_super_attributes[AppUtil::Effect::ATTACK] = 999;
-        m_super_attributes[AppUtil::Effect::DEFENSE] = 999;
+        m_super_attributes[AppUtil::Effect::ATTACK] = 700;
+        m_super_attributes[AppUtil::Effect::DEFENSE] = 100;
         m_super_attributes[AppUtil::Effect::AGILITY] = 50;
         m_super_attributes[AppUtil::Effect::ENEMY_BOOK] = 1;
         m_super_attributes[AppUtil::Effect::FLY] = 1;

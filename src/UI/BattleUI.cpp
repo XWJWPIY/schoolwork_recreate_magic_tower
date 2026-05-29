@@ -109,6 +109,7 @@ void BattleUI::Start(std::shared_ptr<Player> player, std::shared_ptr<Enemy> enem
     m_player_turn = true;
     m_turn_timer = 0.0f;
     m_defeat_timer = 0.0f;
+    m_enemy_hits_remaining = 0;
     m_state = State::FIGHTING;
 
     auto meta = AppUtil::GlobalObjectRegistry[enemy->GetObjectId()];
@@ -222,11 +223,19 @@ void BattleUI::run() {
                 m_reward_hint->UpdateDisplayText();
                 m_reward_hint->SetVisible(true);
                 m_floating_text->SetVisible(false);
+            } else {
+                // 玩家攻擊結束，初始化敵人本輪的多段計數器
+                auto meta = AppUtil::GlobalObjectRegistry[m_enemy->GetObjectId()];
+                m_enemy_hits_remaining = meta.GetInt("ATK_Time", 1);
+                m_player_turn = false;
             }
         } else {
-            auto result = BattleSystem::ProcessEnemyTurn(m_player, m_enemy);
-            
-            SetAnimation(false, result.totalDamage);
+            // 敵人多段攻擊：每次 timer 只處理一擊
+            auto result = BattleSystem::ProcessSingleEnemyHit(m_player, m_enemy);
+
+            // 閃避 → damage=0 → 顯示 "-0"；命中 → 顯示實際傷害
+            SetAnimation(false, result.evading ? 0 : result.totalDamage);
+            m_enemy_hits_remaining--;
 
             if (result.isBattleEnd) {
                 RefreshStats(); // Show HP: 0 before transitioning
@@ -236,11 +245,13 @@ void BattleUI::run() {
                 LOG_INFO("Battle: Player defeated, entering delay...");
                 return;
             }
-        }
 
-        if (m_state != State::REWARD) {
-            m_player_turn = !m_player_turn;
-            RefreshStats();
+            if (m_state != State::REWARD) {
+                if (m_enemy_hits_remaining <= 0) {
+                    m_player_turn = true; // 所有擊次打完，換回玩家
+                }
+                RefreshStats();
+            }
         }
     }
 }

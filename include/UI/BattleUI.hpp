@@ -29,9 +29,10 @@ private:
     std::shared_ptr<Enemy> m_enemy;
     std::function<void(bool)> m_on_end;
 
-    float m_turn_timer = 0.0f;
-    bool m_player_turn = true;
-    bool m_is_frozen = false;
+    float m_turn_timer  = 0.0f;
+    bool  m_player_turn = true;
+    bool  m_is_frozen   = false;
+    int   m_enemy_hits_remaining = 0; // 敵人本輪多段攻擊剩餘擊次
 
     enum class State {
         FIGHTING,

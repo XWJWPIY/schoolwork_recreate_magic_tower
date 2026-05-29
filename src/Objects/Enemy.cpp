@@ -27,17 +27,20 @@ void Enemy::OnDefeated(std::shared_ptr<Player> player) {
 
   int w = meta.GetInt("Boss_Width", 1);
   int h = meta.GetInt("Boss_Height", 1);
+  int nextEnemyId = meta.GetInt("Next_Enemy", 0);
   
   if (w > 1 || h > 1) {
     if (m_replacement_comp) {
       for (int dy = 0; dy < h; ++dy) {
         for (int dx = 0; dx < w; ++dx) {
-          m_replacement_comp->ReplaceWith(m_grid_x + dx, m_grid_y + dy, 0);
+          // If there is a next enemy, only spawn it at the origin (top-left) of the boss
+          int replacement = (dx == 0 && dy == 0) ? nextEnemyId : 0;
+          m_replacement_comp->ReplaceWith(m_grid_x + dx, m_grid_y + dy, replacement);
         }
       }
     }
   } else {
-    TriggerReplacement(0); // Replace with empty floor
+    TriggerReplacement(nextEnemyId); // Replace with nextEnemyId (default 0)
   }
 
   // Handle Reward Layer
