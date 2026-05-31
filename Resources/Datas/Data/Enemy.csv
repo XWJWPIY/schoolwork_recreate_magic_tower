@@ -8,14 +8,14 @@ ID,Path,Folder,Passable,Animation,Title,HP,ATK,DEF,AGI,EXP,Coin,Weak,Poison,ATK_
 407,red_bat,Enemy,false,2,紅蝙蝠,210,185,70,4,3,24,false,false,3,0,0,0,三段攻擊
 408,priest_c,Enemy,false,2,魔法師,65,10,5,0,1,4,false,false,1,1,0,0,無視防禦攻擊
 409,priest_b,Enemy,false,2,中級魔法師,190,20,20,0,1,8,false,false,1,1,0,0,無視防禦攻擊
-410,priest_a,Enemy,false,2,高級魔法師,290,40,90,0,3,27,false,false,1,1,0,0,無視防禦攻擊
+410,priest_a,Enemy,false,2,高級魔法師,290,40,90,0,3,27,false,false,1,1,0,0,無視防禦攻擊；
 411,magic_sergeant_d,Enemy,false,2,魔法師首領,330,70,150,5,5,43,false,false,1,1,0,0,無視防禦攻擊
 412,magic_sergeant_c,Enemy,false,2,魔法師元帥,380,90,280,5,6,59,false,false,1,1,0,0,無視防禦攻擊
 413,magacian_b,Enemy,false,2,大法師,450,100,302,1,8,77,false,false,1,1,0,0,無視防禦攻擊
 414,skeleton_c,Enemy,false,2,骷髏,95,70,0,3,1,5,false,false,1,0,0,0,沒有
 415,skeleton_b,Enemy,false,2,骷髏兵,190,100,5,3,2,13,false,false,1,0,0,0,沒有
 416,skeleton_a,Enemy,false,2,中級骷髏兵,290,170,23,3,3,21,false,false,1,0,0,0,沒有
-417,zombie,Enemy,false,2,喪屍,190,90,33,2,2,15,false,false,1,0,0,0,沒有
+417,zombie,Enemy,false,2,喪屍,190,90,33,2,2,15,false,true,1,0,0,0,中毒
 418,gate_keeper_c,Enemy,false,2,初級守衛,85,40,55,3,1,6,false,false,1,0,0,0,沒有
 419,gate_keeper_b,Enemy,false,2,中級守衛,775,220,310,3,7,63,false,false,1,0,0,0,沒有
 420,slime_men,Enemy,false,2,史萊姆人,90,79,24,30,2,10,false,false,1,0,0,0,高迴避

@@ -104,8 +104,7 @@ BattleSystem::TurnResult BattleSystem::ProcessSingleEnemyHit(
     if (isPoison && statusRoll < 9) {
         result.poisoned = true;
         LOG_INFO("Player Poisoned! (Roll: {} < 9)", statusRoll);
-        player->SetAttr(AppUtil::Effect::POISON,
-            player->GetAttr(AppUtil::Effect::POISON) + 1);
+        player->SetIsPoison(true);
     }
 
     // ── 5. 死亡判定 ──────────────────────────────────────────────────

@@ -3,6 +3,7 @@
 #include "Core/FloorMap.hpp"
 #include "UI/NumericDisplayText.hpp"
 #include "Core/AppUtil.hpp"
+#include "Util/Logger.hpp"
 
 // Config table: { Effect, x, y, fontSize }
 struct StatConfig {
@@ -86,6 +87,21 @@ void StatusUI::run() {
     if (!m_visible) return;
     int floor = (m_road_map ? m_road_map->GetCurrentStory() : 0);
     Update(m_player, floor);
+
+    // ── 中毒扣血：每 1000ms 扣 1 滴，最低 1 滴不死 ─────────────────
+    if (m_player && m_player->GetIsPoison()) {
+        m_poison_timer += Util::Time::GetDeltaTimeMs();
+        if (m_poison_timer >= 1000.0f) {
+            m_poison_timer -= 1000.0f;
+            int currentHP = m_player->GetAttr(AppUtil::Effect::HP);
+            if (currentHP > 1) {
+                m_player->ApplyEffect(AppUtil::Effect::HP, -1);
+                LOG_INFO("[Poison] HP reduced by 1. Current HP: {}", currentHP - 1);
+            }
+        }
+    } else {
+        m_poison_timer = 0.0f; // 沒中毒時重置計時器
+    }
 }
 
 void StatusUI::Update(const std::shared_ptr<Player>& player, int floorNum) {
@@ -103,14 +119,15 @@ void StatusUI::Update(const std::shared_ptr<Player>& player, int floorNum) {
             m_player_icon->SetDrawable(std::make_shared<Util::Image>(AppUtil::GetStaticResourcePath("bmp/Player/player_1.png")));
             m_player_icon->m_Transform.scale = {0.735f, 0.735f};
         }
-        // 衰弱狀態優先覆蓋文字（圖示維持原模式）
-        if (player->GetIsWeak()) {
-            m_status_text->SetPrefix(AppUtil::GetGlobalString("status_weak", "Weak"));
-        } else if (player->IsSuperMode()) {
-            m_status_text->SetPrefix(AppUtil::GetGlobalString("status_super", "Super"));
-        } else {
-            m_status_text->SetPrefix(AppUtil::GetGlobalString("status_normal", "Normal"));
+        // 狀態文字：動態拼接（可同時顯示多種狀態）
+        std::string statusStr = "";
+        if (player->GetIsWeak())   statusStr += AppUtil::GetGlobalString("status_weak",   "衰弱");
+        if (player->GetIsPoison()) statusStr += AppUtil::GetGlobalString("status_poison",  "中毒");
+        if (statusStr.empty()) {
+            if (player->IsSuperMode()) statusStr = AppUtil::GetGlobalString("status_super",  "超級");
+            else                       statusStr = AppUtil::GetGlobalString("status_normal", "正常");
         }
+        m_status_text->SetPrefix(statusStr);
         m_status_text->UpdateDisplayText();
     }
 

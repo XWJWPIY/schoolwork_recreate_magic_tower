@@ -25,11 +25,13 @@ void Shop::Open(std::shared_ptr<Player> player, const ShopUIAdapter& adapter, in
         m_transaction_count = it->second.GetInt(AppUtil::Attr::TRANSACTIONS);
         if (it->second.GetString(AppUtil::Attr::TITLE) == "None") {
             LOG_INFO("Shop::Open: shop {} title=None, skipping UI.", m_object_id);
+            if (m_on_close) m_on_close(); // 恢復 game_state
             return;
         }
         int max_transactions = it->second.GetInt("max_transactions", -1);
         if (max_transactions != -1 && m_transaction_count >= max_transactions) {
             LOG_INFO("Shop::Open: shop {} reached max transactions.", m_object_id);
+            if (m_on_close) m_on_close(); // 恢復 game_state
             return; // Skip opening if limit reached
         }
     }

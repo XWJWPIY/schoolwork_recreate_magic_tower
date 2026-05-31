@@ -52,6 +52,8 @@ private:
 
     // Helper to initialize text objects
     std::shared_ptr<NumericDisplayText> MakeText(float x, float y, const Util::Color& color, unsigned int size);
+
+    float m_poison_timer = 0.0f; // 中毒計時器（ms）
 };
 
 #endif // STATUS_UI_HPP
