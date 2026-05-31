@@ -211,6 +211,12 @@ void Player::SetAttr(AppUtil::Effect type, int value) {
 }
 
 void Player::ApplyEffect(AppUtil::Effect type, int delta) {
+    // Intercept WEAK: any item applying WEAK attribute (e.g. 火酒) cures the status
+    if (type == AppUtil::Effect::WEAK) {
+        SetIsWeak(false);
+        LOG_INFO("Player: Weak status cured.");
+        return; // Do not modify numeric WEAK counter
+    }
     if (m_is_super_mode && type != AppUtil::Effect::HIGHEST_FLOOR) {
         m_super_attributes[type] += delta;
         OnAttributeChanged(type);

@@ -2,7 +2,7 @@ ID,Path,Folder,Passable,Animation,Title,HP,ATK,DEF,AGI,EXP,Coin,Weak,Poison,ATK_
 401,green_slime,Enemy,false,2,綠色史萊姆,40,18,1,0,1,1,0,0,1,0,0,0,沒有
 402,red_slime,Enemy,false,2,紅色史萊姆,50,20,4,0,1,2,0,0,1,0,0,0,沒有
 403,big_slime,Enemy,false,2,黑色史萊姆,80,37,9,0,1,5,0,0,1,0,0,0,沒有
-404,slime_lord,Enemy,false,2,史萊姆王,172,130,60,2,2,19,0,0,1,0,0,0,沒有
+404,slime_lord,Enemy,false,2,史萊姆王,172,130,60,2,2,19,0,0,1,0,0,0,衰弱
 405,bat,Enemy,false,2,蝙蝠,55,32,2,4,1,3,0,0,1,0,0,0,沒有
 406,big_bat,Enemy,false,2,大蝙蝠,65,55,12,4,1,6,0,0,2,0,0,0,二段攻擊
 407,red_bat,Enemy,false,2,紅蝙蝠,210,185,70,4,3,24,0,0,3,0,0,0,三段攻擊

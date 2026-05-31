@@ -21,6 +21,8 @@ BattleSystem::TurnResult BattleSystem::ProcessPlayerTurn(std::shared_ptr<Player>
         // Player hits
         int eDef = enemy->GetAttr(AppUtil::Effect::DEFENSE);
         int pAtk = player->GetAttr(AppUtil::Effect::ATTACK);
+        // 衰弱狀態：攻擊力臨時乘以 0.8，不改儲存值
+        if (player->GetIsWeak()) pAtk = static_cast<int>(pAtk * 0.8);
         int dmg = std::max(1, pAtk - eDef); // Damage floor 1
 
         enemy->ApplyEffect(AppUtil::Effect::HP, -dmg);
@@ -55,6 +57,8 @@ BattleSystem::TurnResult BattleSystem::ProcessSingleEnemyHit(
     bool isPoison  = specialStr == AppUtil::GetGlobalString("battle_special_poison", "Poison");
 
     int pDef     = player->GetAttr(AppUtil::Effect::DEFENSE);
+    // 衰弱狀態：防禦力臨時乘以 0.8，不改儲存值
+    if (player->GetIsWeak()) pDef = static_cast<int>(pDef * 0.8);
     int eAtk     = enemy->GetAttr(AppUtil::Effect::ATTACK);
     int eDmgBase = ignoreDef ? eAtk : (eAtk - pDef);
     if (eDmgBase < 1) eDmgBase = 1;
@@ -84,19 +88,22 @@ BattleSystem::TurnResult BattleSystem::ProcessSingleEnemyHit(
     player->ApplyEffect(AppUtil::Effect::HP, -result.totalDamage);
     LOG_INFO("Enemy Hit! Damage={} (ignoreDef={})", result.totalDamage, ignoreDef ? 1 : 0);
 
-    // ── 4. 狀態異常判定（各 1% 機率）────────────────────────────────
+    // ── 4. 狀態異常判定（各 9% 機率）────────────────────────────────
     int statusRoll = AppUtil::GetRandomInt(0, 99);
-    if (isWeak && statusRoll < 1) {
-        result.weakened = true;
-        LOG_INFO("Player Weakened! (Roll: {} < 1)", statusRoll);
-        player->SetAttr(AppUtil::Effect::ATTACK,
-            static_cast<int>(player->GetAttr(AppUtil::Effect::ATTACK) * 0.8));
-        player->SetAttr(AppUtil::Effect::DEFENSE,
-            static_cast<int>(player->GetAttr(AppUtil::Effect::DEFENSE) * 0.8));
+    if (isWeak) {
+        if (statusRoll < 9) {
+            result.weakened = true;
+            player->SetIsWeak(true);
+            LOG_INFO("Weak Roll: {} / threshold: 9 -> WEAKENED", statusRoll);
+        } else {
+            LOG_INFO("Weak Roll: {} / threshold: 9 -> miss", statusRoll);
+        }
     }
-    if (isPoison && statusRoll < 1) {
+
+    statusRoll = AppUtil::GetRandomInt(0, 99);
+    if (isPoison && statusRoll < 9) {
         result.poisoned = true;
-        LOG_INFO("Player Poisoned! (Roll: {} < 1)", statusRoll);
+        LOG_INFO("Player Poisoned! (Roll: {} < 9)", statusRoll);
         player->SetAttr(AppUtil::Effect::POISON,
             player->GetAttr(AppUtil::Effect::POISON) + 1);
     }

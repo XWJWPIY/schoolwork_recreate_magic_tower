@@ -539,6 +539,12 @@ long long CalculateDamage(::Player* player, int enemyId) {
     int pATK = player->GetAttr(Effect::ATTACK);
     int pDEF = player->GetAttr(Effect::DEFENSE);
 
+    // 衰弱狀態：預估時同步套用 0.8 倍，與 BattleSystem 一致
+    if (player->GetIsWeak()) {
+        pATK = static_cast<int>(pATK * 0.8);
+        pDEF = static_cast<int>(pDEF * 0.8);
+    }
+
     // Special Abilities
     bool ignoreDef = meta.GetInt("Ignore_DEF") > 0;
     int atkTime = meta.GetInt("ATK_Time", 1);

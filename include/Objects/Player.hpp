@@ -31,6 +31,8 @@ public:
   void SetIsAnimating(bool animate) { m_is_animating = animate; }
   bool HasFly() const { return GetAttr(AppUtil::Effect::FLY) > 0; }
   bool IsSuperMode() const { return m_is_super_mode; }
+  bool GetIsWeak() const { return m_is_weak; }
+  void SetIsWeak(bool weak) { m_is_weak = weak; }
 
   void OnAttributeChanged(AppUtil::Effect type) override;
 
@@ -48,6 +50,7 @@ private:
   bool m_is_animating = false;
   std::shared_ptr<Util::Animation> m_animations[4]; // 0:Down, 1:Up, 2:Left, 3:Right
   bool m_is_super_mode = false;
+  bool m_is_weak = false;
   std::unordered_map<AppUtil::Effect, int> m_super_attributes;
   std::shared_ptr<Util::Image> m_giraffe_image; // Giraffe skin for Super Mode
 };

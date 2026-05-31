@@ -97,13 +97,19 @@ void StatusUI::Update(const std::shared_ptr<Player>& player, int floorNum) {
 
         // Update status and icon based on mode
         if (player->IsSuperMode()) {
-            m_status_text->SetPrefix(AppUtil::GetGlobalString("status_super", "Super"));
             m_player_icon->SetDrawable(std::make_shared<Util::Image>(AppUtil::GetStaticResourcePath(AppUtil::Skin::SUPER_MODE_PATH)));
             m_player_icon->m_Transform.scale = {0.735f* AppUtil::Skin::SUPER_MODE_RATIO, 0.735f * AppUtil::Skin::SUPER_MODE_RATIO};
         } else {
-            m_status_text->SetPrefix(AppUtil::GetGlobalString("status_normal", "Normal"));
             m_player_icon->SetDrawable(std::make_shared<Util::Image>(AppUtil::GetStaticResourcePath("bmp/Player/player_1.png")));
             m_player_icon->m_Transform.scale = {0.735f, 0.735f};
+        }
+        // 衰弱狀態優先覆蓋文字（圖示維持原模式）
+        if (player->GetIsWeak()) {
+            m_status_text->SetPrefix(AppUtil::GetGlobalString("status_weak", "Weak"));
+        } else if (player->IsSuperMode()) {
+            m_status_text->SetPrefix(AppUtil::GetGlobalString("status_super", "Super"));
+        } else {
+            m_status_text->SetPrefix(AppUtil::GetGlobalString("status_normal", "Normal"));
         }
         m_status_text->UpdateDisplayText();
     }
