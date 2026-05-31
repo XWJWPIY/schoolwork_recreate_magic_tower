@@ -53,8 +53,8 @@ BattleSystem::TurnResult BattleSystem::ProcessSingleEnemyHit(
     std::string specialStr = meta.GetString("Special");
     bool isKilling = meta.GetInt("Killing_ATK") > 0
                   || specialStr == AppUtil::GetGlobalString("battle_special_kill", "Critical");
-    bool isWeak    = specialStr == AppUtil::GetGlobalString("battle_special_weak",   "Weak");
-    bool isPoison  = specialStr == AppUtil::GetGlobalString("battle_special_poison", "Poison");
+    bool isWeak    = meta.GetBool("Weak");
+    bool isPoison  = meta.GetBool("Poison");
 
     int pDef     = player->GetAttr(AppUtil::Effect::DEFENSE);
     // 衰弱狀態：防禦力臨時乘以 0.8，不改儲存值
