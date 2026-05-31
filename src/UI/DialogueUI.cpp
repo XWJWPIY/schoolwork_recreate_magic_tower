@@ -422,19 +422,19 @@ void DialogueUI::ApplyShopLayout() {
 }
 
 int DialogueUI::GetTransactionCount() const {
-    if (!m_source_entity) return 0;
-    auto it = AppUtil::GlobalObjectRegistry.find(m_source_entity->GetObjectId());
-    if (it == AppUtil::GlobalObjectRegistry.end()) return 0;
-    return it->second.GetInt(AppUtil::Attr::TRANSACTIONS);
+    if (m_script_name.empty()) return 0;
+    std::string key = m_script_name + "_transactions";
+    auto it = AppUtil::GlobalSettings.find(key);
+    if (it != AppUtil::GlobalSettings.end()) {
+        try { return std::stoi(it->second); } catch (...) {}
+    }
+    return 0;
 }
 
 int DialogueUI::IncrementTransactionCount() {
-    if (!m_source_entity) return 0;
-    auto it = AppUtil::GlobalObjectRegistry.find(m_source_entity->GetObjectId());
-    if (it == AppUtil::GlobalObjectRegistry.end()) return 0;
-    int count = it->second.GetInt(AppUtil::Attr::TRANSACTIONS) + 1;
-    it->second.attributes[AppUtil::AttributeRegistry::GetId(AppUtil::Attr::TRANSACTIONS)]
-        = std::to_string(count);
+    if (m_script_name.empty()) return 0;
+    int count = GetTransactionCount() + 1;
+    AppUtil::GlobalSettings[m_script_name + "_transactions"] = std::to_string(count);
     return count;
 }
 
