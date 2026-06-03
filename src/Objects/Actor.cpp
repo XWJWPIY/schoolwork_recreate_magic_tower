@@ -23,11 +23,17 @@ int Actor::GetAttr(AppUtil::Effect type) const {
 
 void Actor::SetAttr(AppUtil::Effect type, int value) {
     m_attributes[type] = value;
+    if (type == AppUtil::Effect::HP && m_attributes[type] < 0) {
+        m_attributes[type] = 0;
+    }
     OnAttributeChanged(type);
 }
 
 void Actor::ApplyEffect(AppUtil::Effect type, int delta) {
     m_attributes[type] += delta;
+    if (type == AppUtil::Effect::HP && m_attributes[type] < 0) {
+        m_attributes[type] = 0;
+    }
     OnAttributeChanged(type);
 }
 

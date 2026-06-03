@@ -204,6 +204,9 @@ int Player::GetAttr(AppUtil::Effect type) const {
 void Player::SetAttr(AppUtil::Effect type, int value) {
     if (m_is_super_mode && type != AppUtil::Effect::HIGHEST_FLOOR) {
         m_super_attributes[type] = value;
+        if (type == AppUtil::Effect::HP && m_super_attributes[type] < 0) {
+            m_super_attributes[type] = 0;
+        }
         OnAttributeChanged(type);
     } else {
         Actor::SetAttr(type, value);
@@ -225,6 +228,9 @@ void Player::ApplyEffect(AppUtil::Effect type, int delta) {
     }
     if (m_is_super_mode && type != AppUtil::Effect::HIGHEST_FLOOR) {
         m_super_attributes[type] += delta;
+        if (type == AppUtil::Effect::HP && m_super_attributes[type] < 0) {
+            m_super_attributes[type] = 0;
+        }
         OnAttributeChanged(type);
     } else {
         Actor::ApplyEffect(type, delta);
