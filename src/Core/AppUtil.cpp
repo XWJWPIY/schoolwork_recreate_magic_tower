@@ -126,6 +126,7 @@ void RegistryLoader::LoadAllData() {
     GlobalObjectRegistry.emplace(0, ObjectMetadata("road", "Road", true));
 
     GlobalSettings.clear();
+    GlobalPathCache.clear();
     LoadSettings(GetStaticResourcePath("Datas/Data/Settings.csv"));
     LoadSettings(GetStaticResourcePath("Datas/Data/UIStrings.csv"));
     

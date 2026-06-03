@@ -18,7 +18,9 @@ void Enemy::Reaction(std::shared_ptr<Player> player) {
 }
 
 void Enemy::OnDefeated(std::shared_ptr<Player> player) {
-  auto meta = AppUtil::GlobalObjectRegistry[m_object_id];
+  auto it = AppUtil::GlobalObjectRegistry.find(m_object_id);
+  if (it == AppUtil::GlobalObjectRegistry.end()) return;
+  const auto& meta = it->second;
   
   if (player) {
       player->ApplyEffect(AppUtil::Effect::EXP, meta.GetInt(AppUtil::Attr::EXP));

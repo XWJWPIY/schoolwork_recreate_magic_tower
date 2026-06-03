@@ -226,8 +226,10 @@ void EnemyBookUI::UpdatePage(int pageIdx) {
 
         if (inRange) {
             int id = m_unique_enemy_ids[idx];
-            auto const& meta = AppUtil::GlobalObjectRegistry[id];
-            m_entries[i].Update(meta, m_player.get());
+            auto it = AppUtil::GlobalObjectRegistry.find(id);
+            if (it != AppUtil::GlobalObjectRegistry.end()) {
+                m_entries[i].Update(it->second, m_player.get());
+            }
         }
     }
 

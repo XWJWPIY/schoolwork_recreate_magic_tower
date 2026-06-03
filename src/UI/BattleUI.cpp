@@ -112,11 +112,13 @@ void BattleUI::Start(std::shared_ptr<Player> player, std::shared_ptr<Enemy> enem
     m_enemy_hits_remaining = 0;
     m_state = State::FIGHTING;
 
-    auto meta = AppUtil::GlobalObjectRegistry[enemy->GetObjectId()];
-    m_enemy_name->SetPrefix(meta.GetString(AppUtil::Attr::TITLE));
-    m_enemy_name->UpdateDisplayText();
-
-    m_enemy_avatar->SetDrawable(std::make_shared<Util::Image>(AppUtil::GetFullResourcePath(meta.GetInt("Icon_ID", enemy->GetObjectId()))));
+    auto metaIt = AppUtil::GlobalObjectRegistry.find(enemy->GetObjectId());
+    if (metaIt != AppUtil::GlobalObjectRegistry.end()) {
+        const auto& meta = metaIt->second;
+        m_enemy_name->SetPrefix(meta.GetString(AppUtil::Attr::TITLE));
+        m_enemy_name->UpdateDisplayText();
+        m_enemy_avatar->SetDrawable(std::make_shared<Util::Image>(AppUtil::GetFullResourcePath(meta.GetInt("Icon_ID", enemy->GetObjectId()))));
+    }
 
     if (m_player->IsSuperMode()) {
         m_player_avatar->SetDrawable(std::make_shared<Util::Image>(AppUtil::GetStaticResourcePath(AppUtil::Skin::SUPER_MODE_PATH)));
@@ -225,8 +227,9 @@ void BattleUI::run() {
                 m_floating_text->SetVisible(false);
             } else {
                 // 玩家攻擊結束，初始化敵人本輪的多段計數器
-                auto meta = AppUtil::GlobalObjectRegistry[m_enemy->GetObjectId()];
-                m_enemy_hits_remaining = meta.GetInt("ATK_Time", 1);
+                auto atkIt = AppUtil::GlobalObjectRegistry.find(m_enemy->GetObjectId());
+                m_enemy_hits_remaining = (atkIt != AppUtil::GlobalObjectRegistry.end())
+                                         ? atkIt->second.GetInt("ATK_Time", 1) : 1;
                 m_player_turn = false;
             }
         } else {

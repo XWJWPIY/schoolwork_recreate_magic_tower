@@ -4,6 +4,12 @@ project(magic_tower)
 
 set(CMAKE_CXX_STANDARD 17)
 
+# Workaround for MSVC 14.40 (VS 17.10) removing stdext::checked_array_iterator
+# This macro disables its usage inside PTSD's bundled spdlog/fmt library.
+if(MSVC)
+    add_compile_definitions(_SECURE_SCL=0)
+endif()
+
 cmake_policy(SET CMP0135 NEW)
 
 include(FetchContent)

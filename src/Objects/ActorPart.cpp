@@ -6,8 +6,9 @@
 ActorPart::ActorPart(int id) : Entity(id, true) {}
 
 bool ActorPart::CheckCondition(std::shared_ptr<Player> player) const {
-  auto meta = AppUtil::GlobalObjectRegistry[m_object_id];
-  int core_id = meta.GetInt("Core_ID", 0);
+  auto it = AppUtil::GlobalObjectRegistry.find(m_object_id);
+  if (it == AppUtil::GlobalObjectRegistry.end()) return false;
+  int core_id = it->second.GetInt("Core_ID", 0);
   if (m_replacement_comp && core_id > 0) {
     auto core = m_replacement_comp->FindEntityById(core_id);
     if (core) {
@@ -18,8 +19,9 @@ bool ActorPart::CheckCondition(std::shared_ptr<Player> player) const {
 }
 
 void ActorPart::Reaction(std::shared_ptr<Player> player) {
-  auto meta = AppUtil::GlobalObjectRegistry[m_object_id];
-  int core_id = meta.GetInt("Core_ID", 0);
+  auto it = AppUtil::GlobalObjectRegistry.find(m_object_id);
+  if (it == AppUtil::GlobalObjectRegistry.end()) return;
+  int core_id = it->second.GetInt("Core_ID", 0);
   if (m_replacement_comp && core_id > 0) {
     auto core = m_replacement_comp->FindEntityById(core_id);
     if (core) {

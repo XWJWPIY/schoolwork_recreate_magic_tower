@@ -32,9 +32,11 @@ BattleSystem::TurnResult BattleSystem::ProcessPlayerTurn(std::shared_ptr<Player>
 
     if (enemy->GetAttr(AppUtil::Effect::HP) <= 0) {
         result.isBattleEnd = true;
-        auto meta = AppUtil::GlobalObjectRegistry[enemy->GetObjectId()];
-        result.rewardExp = meta.GetInt(AppUtil::Attr::EXP);
-        result.rewardCoin = meta.GetInt(AppUtil::Attr::COIN);
+        auto it = AppUtil::GlobalObjectRegistry.find(enemy->GetObjectId());
+        if (it != AppUtil::GlobalObjectRegistry.end()) {
+            result.rewardExp  = it->second.GetInt(AppUtil::Attr::EXP);
+            result.rewardCoin = it->second.GetInt(AppUtil::Attr::COIN);
+        }
     }
 
     return result;
@@ -46,7 +48,9 @@ BattleSystem::TurnResult BattleSystem::ProcessSingleEnemyHit(
     TurnResult result;
     if (!player || !enemy) return result;
 
-    auto meta      = AppUtil::GlobalObjectRegistry[enemy->GetObjectId()];
+    auto it = AppUtil::GlobalObjectRegistry.find(enemy->GetObjectId());
+    if (it == AppUtil::GlobalObjectRegistry.end()) return result;
+    const auto& meta = it->second;
     bool ignoreDef = meta.GetInt("Ignore_DEF") > 0;
     int  pAGI      = player->GetAttr(AppUtil::Effect::AGILITY);
 
@@ -121,8 +125,8 @@ BattleSystem::TurnResult BattleSystem::ProcessEnemyTurn(
     TurnResult combined;
     if (!player || !enemy) return combined;
 
-    auto meta    = AppUtil::GlobalObjectRegistry[enemy->GetObjectId()];
-    int  atkTime = meta.GetInt("ATK_Time", 1);
+    auto it = AppUtil::GlobalObjectRegistry.find(enemy->GetObjectId());
+    int atkTime = (it != AppUtil::GlobalObjectRegistry.end()) ? it->second.GetInt("ATK_Time", 1) : 1;
     LOG_INFO("Enemy (ID: {}) Turn Start (atkTime={})", enemy->GetObjectId(), atkTime);
 
     for (int i = 0; i < atkTime; ++i) {

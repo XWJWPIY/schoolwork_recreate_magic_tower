@@ -36,6 +36,10 @@ classDiagram
     UIComponent <|-- EndSceneUI
     UIComponent <|-- StatusUI
     UIComponent <|-- BackgroundUI
+
+    %% 元件（非繼承）
+    Entity o-- DynamicReplacementComponent
+    Shop ..> ShopUIAdapter
 ```
 
 ## 完整類別圖（繼承、屬性、方法）
@@ -117,6 +121,8 @@ classDiagram
         -bool m_is_animating
         -shared_ptr~Animation~ m_animations[4]
         -bool m_is_super_mode
+        -bool m_is_weak
+        -bool m_is_poisoned
         -unordered_map~Effect, int~ m_super_attributes
         -shared_ptr~Image~ m_giraffe_image
         +Player()
@@ -128,6 +134,10 @@ classDiagram
         +SetIsAnimating(bool)
         +HasFly() const bool
         +IsSuperMode() const bool
+        +GetIsWeak() const bool
+        +SetIsWeak(bool)
+        +GetIsPoison() const bool
+        +SetIsPoison(bool)
         +ToggleSuperMode()
         +ObjectUpdate() override
         +GetAttr(Effect) int override
@@ -305,8 +315,9 @@ classDiagram
         -shared_ptr~Enemy~ m_enemy
         -State m_state
         -bool m_is_frozen
+        -int m_enemy_hits_remaining
         -float m_defeat_timer
-        +BattleUI(player, fontPath)
+        +BattleUI(fontPath)
         +Start(player, enemy, onEnd)
         +run() override
         +IsIntercepting() const override
@@ -343,6 +354,7 @@ classDiagram
         -unsigned int m_default_font_size
         -shared_ptr~Player~ m_player
         -shared_ptr~FloorMap~ m_road_map
+        -float m_poison_timer
         +StatusUI(player, floorMap, fontSize)
         +run() override
         +IsIntercepting() const override
@@ -426,52 +438,86 @@ classDiagram
         -shared_ptr~BackgroundUI~ m_background
         -shared_ptr~FloorMap~ m_road_map
         -shared_ptr~FloorMap~ m_things_map
+        -shared_ptr~StatusUI~ m_status_ui
         -shared_ptr~Player~ m_player
+        -shared_ptr~FlyUI~ m_fly_ui
+        -shared_ptr~NoticeUI~ m_notice_ui
+        -shared_ptr~ItemNoticeUI~ m_item_notice_ui
+        -shared_ptr~DialogueUI~ m_dialogue_ui
+        -shared_ptr~EnemyBookUI~ m_enemy_book_ui
+        -shared_ptr~BattleUI~ m_battle_ui
+        -shared_ptr~EndSceneUI~ m_end_scene_ui
+        -float m_item_notice_timer
+        -Shop* m_active_shop
         -vector~shared_ptr~UIComponent~~ m_ui_components
         -unique_ptr~EntityFactory~ m_entity_factory
         +Start()
-        +Update() // 模式優先狀態機
+        +Update()
         +End()
         +Restart()
         +ChangeFloor(int delta)
         +SetFloor(int story, int x, int y)
         +TeleportToFloor(int targetStory, int targetStairId)
+        +ShowItemNotice(text)
+        +HideItemNotice()
         -InitializeGame()
+        -ValidTask()
+        -UpdateHighestFloor()
     }
 
     class FloorMap {
-        -std::string m_path_prefix
+        -string m_path_prefix
         -vector~bool~ m_floor_loaded
         +FloorMap(factory, centerX, centerY, scaleX, scaleY, zIndex)
-        +LoadAllFloors(prefix) 
-        +SwitchStory(story)
-        -EnsureFloorLoaded(story) 
+        +LoadAllFloors(prefix)
         +LoadFloorData(floorData, story)
+        +LoadOverlay(relativePath, story)
+        +SwitchStory(story)
         +GetObject(x, y, story) Entity
         +IsPassable(x, y, story) bool
         +SetObject(x, y, id, story)
         +SetAllVisible(visible)
+        +FindFirstObjectPosition(id, story) ivec2
+        +FindFirstObjectOfId(id, story) shared_ptr~Entity~
+        +SetRenderer(Renderer*)
+        +AddToRenderer()
+        +GetGridAbsolutePosition(x, y) vec2
+        +Update()
+        -EnsureFloorLoaded(story)
+        -UpdateObjectAt(x, y, id, story)
     }
 
     class ScriptEngine {
         -vector~ScriptStep~ m_steps
-        -size_t m_current_step
+        -size_t m_currentIndex
         +LoadScript(name)
-        +Advance() ScriptStep
-        +Peek() ScriptStep
-        +Next()
-        +IsEnd() bool
+        +ReplaceText(target, replacement)
+        +HasNext() bool
+        +Next() ScriptStep
+        +Peek() const ScriptStep
+        +Reset()
+        +Clear()
+        +InjectStep(step)
+        +GetSteps() vector~ScriptStep~
+        +GetCurrentIndex() size_t
+        +SetCurrentIndex(index)
+        +GetSize() size_t
     }
 
     class ShopSystem {
         <<static>>
         +LoadFromStaticFile(name) ShopData
         +LoadForShopEntity(id, floor, transCount) ShopData
+        -ApplyDynamicPricing(shopId, transCount, data)
+        -ParseShopOptions(filepath) vector~ShopOption~
+        -GetOptionPath(name) string
+        -AddDefaultOptions(data)
     }
 
     class BattleSystem {
         <<static>>
         +ProcessPlayerTurn(player, enemy) TurnResult
+        +ProcessSingleEnemyHit(player, enemy) TurnResult
         +ProcessEnemyTurn(player, enemy) TurnResult
     }
 
@@ -479,8 +525,22 @@ classDiagram
         -Callbacks m_callbacks
         -shared_ptr~DynamicReplacementComponent~ m_replacement_comp
         +CreateEntity(id) shared_ptr~Entity~
-        +CreateRoadBlock(id) shared_ptr~Entity~
-        +CreateItem(id) shared_ptr~Entity~
+        +SetReplacementComponent(comp)
+        -CreateRoadBlock(id) shared_ptr~Entity~
+        -CreateItem(id) shared_ptr~Entity~
+        -CreateDoor(id) shared_ptr~Entity~
+        -CreateEnemy(id) shared_ptr~Entity~
+        -CreateNPC(id) shared_ptr~Entity~
+        -CreateShop(id) shared_ptr~Entity~
+        -CreateStair(id) shared_ptr~Entity~
+    }
+
+    class DynamicReplacementComponent {
+        +DynamicReplacementComponent(callback, find_callback)
+        +ReplaceWith(x, y, id)
+        +FindEntityById(id) shared_ptr~Entity~
+        -ReplacementCallback m_callback
+        -FindEntityCallback m_find_callback
     }
 
     class RegistryLoader {
@@ -508,10 +568,13 @@ classDiagram
     }
 
     class AttributeRegistry {
+        <<static>>
         +GetId(name) int
         +GetName(id) string
         +ToEffect(id) Effect
         +FromEffect(Effect) int
+        +Initialize()
+        +IsAttribute(name) bool
     }
 
     class SubEffect {
@@ -529,6 +592,7 @@ classDiagram
         +string icon_path
         +vector~string~ prompts
         +int transaction_count
+        +int max_transactions
         +vector~ShopOption~ options
         +string special_price_str
     }
@@ -542,39 +606,76 @@ classDiagram
 
     class CSVLoader {
         -vector~vector~string~~ m_data
+        -unordered_map~string, int~ m_headerMap
+        -vector~int~ m_attributeCols
         +Load(path) bool
         +GetRowCount() size_t
         +GetString(rowIndex, colName, def) string
         +GetInt(rowIndex, colName, def) int
+        +GetBool(rowIndex, colName, def) bool
         +GetRowEffects(rowIndex) vector~SubEffect~
+        +GetHeaderMap() unordered_map~string,int~
+    }
+
+    class TurnResult["BattleSystem::TurnResult"] {
+        +bool evading
+        +bool instantKill
+        +bool weakened
+        +bool poisoned
+        +int totalDamage
+        +bool isBattleEnd
+        +int rewardExp
+        +int rewardCoin
     }
 
     class AppUtilAPI {
         <<namespace>>
-        +GlobalPathCache 
+        +GlobalObjectRegistry
+        +GlobalSettings
+        +GlobalPathCache
         +GetStaticResourcePath(relativePath) string
         +GetBaseImagePath(id) string
-        +GetPhaseImagePath(basePath, phase) string 
+        +GetPhaseImagePath(basePath, phase) string
+        +GetFullResourcePath(id) string
         +GetIdString(id) string
         +CalculateDamage(player, enemyId) long long
         +GetGlobalString(key, defaultValue) string
+        +GetRandomInt(min, max) int
+        +CheckProbability(percentage) bool
+        +ResetGameVariables()
+        +GetMaxGlobalFrame() int
+    }
+
+    class TileAnimationManager {
+        <<static>>
+        +GetGlobalFrame2(intervalMs) int
+    }
+
+    class MapParser {
+        <<static>>
+        +ParseCsv(filepath) vector~vector~int~~
+        +ParseCsvToStrings(filepath) vector~vector~string~~
+    }
+
+    class GameState {
+        <<enum>>
+        MAIN_MENU
+        PLAYING
+        INSTRUCTIONS
+        FAST_ELEVATOR
+        ITEM_DIALOG
+        LOADING
+        SHOP
+        ENEMY_BOOK
+        BATTLE
+        GAME_OVER
+        WIN
     }
 
     class SkinConstants {
         <<namespace>>
         +SUPER_MODE_PATH
         +SUPER_MODE_RATIO
-    }
-
-    class TurnResult {
-        +bool isBattleEnd
-        +bool evading
-        +bool instantKill
-        +bool weakened
-        +bool poisoned
-        +int totalDamage
-        +int rewardExp
-        +int rewardCoin
     }
 
     ShopOption *-- SubEffect
@@ -595,18 +696,20 @@ classDiagram
     App *-- Player
     App *-- UIComponent : (Managed in vector)
     App *-- EntityFactory
-    App ..> Shop
+    App ..> Shop : (m_active_shop)
 
     DialogueUI *-- ScriptEngine
     DialogueUI *-- ShopUI
     DialogueUI ..> ShopSystem
-    ShopSystem ..> ShopUI
     Shop ..> ShopSystem
+    Shop ..> ShopUIAdapter : (injected by App)
     BattleUI ..> BattleSystem : (Combat logic)
 
     EntityFactory ..> Entity
+    EntityFactory *-- DynamicReplacementComponent
     FloorMap o-- Entity
     Entity o-- Animation
+    Entity o-- DynamicReplacementComponent
     Entity ..> ObjectMetadata
 
     Player ..> FloorMap
@@ -649,21 +752,27 @@ classDiagram
   - `Move`：處理網格碰撞與多型實體的 `CheckCondition` 檢查。
   - `SyncPosition`：根據當下網格座標，向地圖請求並同步目前實際畫面像素座標。
   - `ToggleSuperMode`：切換超級模式，於內部獨立維護一份 `m_super_attributes` 字典。
+  - `GetIsWeak` / `SetIsWeak`：操作**表層處理的弱化狀態** (`m_is_weak`)，不永久修改基礎屬性，供 `BattleSystem` 在戰鬥中檢查計算。
+  - `GetIsPoison` / `SetIsPoison`：操作**中毒狀態** (`m_is_poisoned`)，由 `StatusUI` 的 `m_poison_timer` 定時扣除 HP。
 - `Stair`: 資料驅動式樓梯與傳送。
   - `Reaction`：驅動換層或座標變更。
   - `IsRelative`：判斷該實體為相對樓梯 (+1/-1 樓) 或絕對座標傳送門。
-- `Door`: 
+- `Door`:
   - `CheckCondition`：判斷啟動該門所需的屬性（自動從 CSV 解析所需顏色與把手種類）。
   - `Reaction`：調用 Animator 與 DynamicReplacement 銷毀自身並變回空地。
+- `Shop`：商店實體類別，自行管理實體層商店相互作用。
+  - `Open`：透過注入的 `ShopUIAdapter`（包裝函式）啟動 `DialogueUI` 的商店模式，實現實體與 UI 層徹底解耦。
+  - `BuildShopData`：根據 `m_transaction_count` 動態組建 `ShopData` 並委實 `ShopSystem` 處理定價。
 
 ## 五、背景 (`BackgroundUI`) 與 文字顯示 (`NumericDisplayText`)
 - **BackgroundUI** (`NextPhase`, `StartLoading`, `run`)：繼承自 UIComponent，負責背景底圖的渲染並處理 Loading 載入動畫。
 - **NumericDisplayText** (`SetPrefix`, `SetSuffix`, `SetAlignment`)：封裝繁雜的字串拼接與對齊，可以直接修改數字與前後輟，並對齊。
 
 ## 六、怪物手冊 (`EnemyBookUI`)
-- 改為繼承 `UIComponent`。封裝了針對 `EnemyEntry` 元件的多重處理。
+- 繼承 `UIComponent`。封裝了針對 `EnemyEntry` 元件的多重處理。
 - `Refresh`：即時掃描資料夾構建模版，呼叫全局計算器帶入當前玩家狀態計算預估傷害並重繪清單。
-- `Unlock`：提供 `App` 解密解鎖手冊權限的進入點。
+- `UpdatePage`：管理分頁顯示，每頁呈現最多 3 筆敵人資訊（`ENTRIES_PER_PAGE=3`、`STAT_COUNT=8` 均為靜態常數）。
+- `EnemyEntry` (inner struct)：每格條目含圖示、名稱、特殊技能文字、及 8 項數值文字，統一由 `Update(meta, player)` 重繪。
 
 ## 七、UI 模組化介面 (`UIComponent`)
 - 作為核心 UI 抽象層，徹底消滅了每個 UI 各自維護 `m_visible` 的龐大冗餘。
@@ -675,23 +784,40 @@ classDiagram
 ## 八、業務隔離與系統架構 (System Layer)
 作為專案架構演進的重要里程碑，我們將核心演算邏輯徹底從 UI 繪製層中剝離，落實 View - Logic 拆離：
 - **BattleSystem**: 處理回合制戰鬥演算的純邏輯模組。
-  - `ProcessPlayerTurn` / `ProcessEnemyTurn`：負責執行傷害計算、命中閃避率、及狀態運算，並最終回傳 `TurnResult` 給 `BattleUI` 進行動畫演繹與結算。
+  - `ProcessPlayerTurn`：玩家攻擊回合，計算傷害並判斷敵人是否死亡，回傳獎勵。
+  - `ProcessSingleEnemyHit`：敵人包含多段攻擊機制。此方法將單撇打擊獨立處理，包括獨立閃避判定 (AGI%)、傷害計算、狀態觸發（中毒/弱化），並直接對玩家准印 HP，供 `BattleUI` 定時器每撇調用。
+  - `ProcessEnemyTurn`：包裝器，內部多次呼叫 `ProcessSingleEnemyHit`，保留相容。
+  - **`TurnResult` (inner struct)**：記錄單回合所有結果（閃避、秒殺、弱化、中毒、傷害值、獎勵等）。
 - **ShopSystem**: 集中接管商店與交易資料。
   - `LoadFromStaticFile` / `LoadForShopEntity`：依據交易對象與發生之樓層，動態生成並回傳型別安全的 `ShopData` 結構給 `ShopUI` 刷新介面。
+  - `ApplyDynamicPricing`：針對特定商店（如貪神）處理按交易次數遞增的動態定價機制。
+- **DynamicReplacementComponent**: 誑身實體層的地圖替換元件。
+  - `ReplaceWith(x, y, id)`：透過註冊的回呼函式對 `FloorMap` 發起替換指令。
+  - `FindEntityById(id)`：查找特定 ID 的實體共享指標，供多段實體 (`ActorPart`) 連結核心實體使用。
+- **ShopUIAdapter**: 標準的函式採集條。暴露給 `Shop` 物件，使其不需 include 任何 UI header 即可啟動 / 刷新 / 關閉商店展示。
 
 ## 九、數據驅動層 (Data-Driven Layer)
 本專案已完全剔除 Hardcode 的判斷式，改以 CSV 表單作為唯一 Truth Source 進行實體生成。
-- **RegistryLoader**: 
+- **RegistryLoader**:
   - `LoadAllData`：於啟動階段載入所有的地形、怪物、道具表，實例化出 `GlobalObjectRegistry` 全局定義檔。
-- **CSVLoader**: 
-  - `GetRowEffects` / `GetString`：封裝字串解析，將純文字的配置無縫轉換為系統辨識的 Enum `AppUtil::Effect`。
-- **AppUtilAPI**: 
+- **CSVLoader**:
+  - `GetRowEffects` / `GetString` / `GetBool`：封裝字串解析，將純文字的配置無縫轉換為系統辨識的 Enum `AppUtil::Effect`。
+  - `GetHeaderMap`：回傳標頭索引映射，供進階欄位篩選使用。
+- **AppUtilAPI**:
   - `CalculateDamage`：提供全域的預測傷害函數，供 `EnemyBookUI` 即時且無副作用地估算戰局。
   - `GetPhaseImagePath`：實作了 **全域路徑快取 (GlobalPathCache)**，將讀取過的實體檔案路徑暫存於記憶體，大幅消弭了切換樓層時的硬碟 I/O 負載。
+  - `ResetGameVariables`：遊戲重新開始時，統一重置所有全域狀態（含 `GlobalSettings`、`GlobalPathCache`）。
+  - `GetRandomInt` / `CheckProbability`：集中管理的 RNG 工具函式，供戰鬥閃避、狀態觸發等機率計算呼叫。
+- **TileAnimationManager**:
+  - `GetGlobalFrame2`：以全域毫秒時鐘計算 2 格動畫的當前 Frame，驅動地圖磚的統一動畫節奏。
+- **MapParser**:
+  - `ParseCsv` / `ParseCsvToStrings`：將地圖 CSV 解析為 `vector<vector<int>>` 或字串二維陣列供 `FloorMap` 使用。
 
 ## 十、專案總結 - 穩定化機制與未來展望 (Conclusion & Stability)
 經歷了深度的架構清洗，《魔塔》專案在效能、擴展性及使用者體驗上已達到極佳的狀態：
 - **集中化 UI 介面 (`UIComponent::run`)**：以單一陣列由 `App` 派發更新，根除了過往四處散落的計時器與閃爍異常。
 - **輸入保護 (Release Guard)**：在 `App` 狀態機切換時嚴格執行「放開偵測」，確保 `Space` 或快捷鍵 (如 `F`, `G`) 在完全釋放前不會導致模組被連續重覆呼叫，徹底消滅了 Frame Bounce 問題。
+- **分段攻擊架構 (`ProcessSingleEnemyHit`)**：將敵人多段攻擊的每一撇獨立排程至 `BattleUI` 定時器內處理，使閃避、傷害顯示、死亡判定均能逐撇獨立呈現，大幅提升戰鬥視覺回饋的精確度。
+- **狀態效果二元化 (`m_is_weak` / `m_is_poisoned`)**：弱化與中毒狀態以獨立布林值儲存在 `Player`，前者影響戰鬥計算、後者由 `StatusUI` 定時扣 HP，兩者均不永久修改屬性表，確保狀態解除後能完整恢復。
 
-總結而言，目前的架構靈活結合了 Entity-Component 的設計概念與 Data-Driven 的延遲載入機制。這份高度解耦、統一化介面的核心系統，為未來擴充任何新樓層、新怪物技能或全新型態的機制機制，打下了最穩健的基礎。
+總結而言，目前的架構靈活結合了 Entity-Component 的設計概念與 Data-Driven 的延遲載入機制。這份高度解耦、統一化介面的核心系統，為未來擴充任何新樓層、新怪物技能或全新型態的機制，打下了最穩健的基礎。
