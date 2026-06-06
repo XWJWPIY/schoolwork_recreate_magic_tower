@@ -52,6 +52,8 @@ namespace Attr {
     const std::string COIN         = "Coin";
     const std::string WEAK         = "Weak";
     const std::string POISON       = "Poison";
+    const std::string FLY          = "fly";
+    const std::string ENEMY_DATA   = "enemy_data";
     const std::string IS_PASSIVE   = "is_passive";
     const std::string FLOOR_DELTA  = "floor_delta";
     const std::string RELATION     = "relation";
