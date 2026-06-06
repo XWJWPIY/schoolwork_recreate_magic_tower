@@ -256,7 +256,7 @@ graph TD
 | `ShouldSkipWalkAnimation()` | 是否跳過玩家的走路動畫 | `Stair` |
 
 ###### 設計分層
-- **Entity (基底)**：提供格位座標、可通行性、動畫基礎設施、`Reaction` 虛函式介面。所有地圖物件의 共同語言。
+- **Entity (基底)**：提供格位座標、可通行性、動畫基礎設施、`Reaction` 虛函式介面。所有地圖物件的共同語言。
 - **Actor (中間層)**：為「擁有數值屬性」的角色（玩家、怪物）新增 `m_attributes` 字典與 `GetAttr/SetAttr/ApplyEffect` 統一存取介面。
 - **具象類別**：各自覆寫 `Reaction` 等虛函式，實現專屬行為（NPC 觸發對話、Door 扣鑰匙播動畫、Enemy 發起戰鬥）。
 
@@ -357,7 +357,7 @@ graph TD
 
 ##### 4. 動態地圖變更：物件原地取代 (In-place Object Replacement)
 遊戲進行中會發生大量的地圖變動（如消耗鑰匙開門、拾取血瓶、擊殺怪物），本系統並非採用粗暴的「隱藏 (Hide)」或「重載地圖」，而是實作了精準的指標替換機制：
-- **指標覆寫 (Pointer Overwrite)**：當物件生命週期結束時（例如 `Door` 的開門動畫播完），會呼叫 `TriggerReplacement(0)`（0 代表空地磚 `Road`）。系統會直接在 3D 矩陣中定位該物件的座標 `[story][y][x]`，並將該位置 the `shared_ptr<Entity>` **重新指向 (Reassign)** 一個全新的 `Road` 實體。
+- **指標覆寫 (Pointer Overwrite)**：當物件生命週期結束時（例如 `Door` 的開門動畫播完），會呼叫 `TriggerReplacement(0)`（0 代表空地磚 `Road`）。系統會直接在 3D 矩陣中定位該物件的座標 `[story][y][x]`，並將該位置的 `shared_ptr<Entity>` **重新指向** 一個全新的 `Road` 實體。
 - **無縫記憶體回收**：得益於 `shared_ptr` 的特性，當原本的怪物或門被新的空地磚覆寫後，其參考計數 (Reference Count) 會歸零並自動觸發解構子 (Destructor) 釋放記憶體。這確保了地圖矩陣永遠保持最輕量、最乾淨的狀態，不會殘留任何「幽靈物件」。
 
 #### 三、動畫同步與獨立運作技術 (Animation System)
@@ -389,7 +389,7 @@ graph TD
 ##### 1. 記憶體管理與安全性 (Memory Management)
 專案全面棄用傳統的 `new`/`delete`，改以 RAII (Resource Acquisition Is Initialization) 慣例為基礎的智慧指標系統：
 - **資源生命週期管理**：`App` 透過 `std::vector<std::shared_ptr<UIComponent>>` 統一管理 UI；`FloorMap` 透過三維陣列統一管理 `std::shared_ptr<Entity>`。當樓層切換或 UI 關閉時，不需手動釋放資源，有效杜絕 Memory Leak (記憶體洩漏)。
-- **安全的自我參照**：核心基底 `Entity` 繼承了 `std::enable_shared_from_this<Entity>`。這保證了在互動回呼中（例如 NPC 將自身傳遞給對話系統），不會產生雙重釋放 (Double Free) 或懸空指標。
+- **安全的自我參照**：核心基底 `Entity` 繼承了 `std::enable_shared_from_this<Entity>`。這保證了在互動回呼中（例如 NPC 將自身傳遞給對話系統），不會產生雙重釋放或懸空指標。
 - **防禦性程式設計 (Defensive Programming)**：在屬性修改的底層統一管線 (`Actor::ApplyEffect`) 中實作了邊界檢查 (Clamp 防呆)，確保生命值 (HP) 等關鍵屬性在扣除時絕不會低於零，避免數值溢位或遊戲邏輯崩潰。
 
 ##### 2. 高度資料驅動 (Data-Driven Design)
