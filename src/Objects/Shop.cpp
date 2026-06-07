@@ -50,7 +50,7 @@ void Shop::Open(std::shared_ptr<Player> player, const ShopUIAdapter& adapter, in
         }
         
         if (CanAfford(opt, *player)) {
-            ExecutePurchase(opt, player);
+            ExecutePurchase(opt, *player);
             auto registry_it = AppUtil::GlobalObjectRegistry.find(m_object_id);
             if (registry_it != AppUtil::GlobalObjectRegistry.end()) {
                 registry_it->second.attributes[AppUtil::AttributeRegistry::GetId(AppUtil::Attr::TRANSACTIONS)] = std::to_string(m_transaction_count);
@@ -89,9 +89,9 @@ bool Shop::CanAfford(const AppUtil::ShopOption& opt, const Player& player) const
     return true;
 }
 
-void Shop::ExecutePurchase(const AppUtil::ShopOption& opt, std::shared_ptr<Player> player) {
+void Shop::ExecutePurchase(const AppUtil::ShopOption& opt, Player& player) {
     for (const auto& eff : opt.effects) {
-        player->ApplyEffect(AppUtil::AttributeRegistry::ToEffect(eff.type_id), eff.value);
+        player.ApplyEffect(AppUtil::AttributeRegistry::ToEffect(eff.type_id), eff.value);
     }
     m_transaction_count++;
     LOG_INFO("Shop purchase id={} trans={}", m_object_id, m_transaction_count);

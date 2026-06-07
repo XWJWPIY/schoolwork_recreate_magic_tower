@@ -47,7 +47,7 @@ public:
 protected:
     void BuildShopData(int floor);
     bool CanAfford(const AppUtil::ShopOption& opt, const Player& player) const;
-    void ExecutePurchase(const AppUtil::ShopOption& opt, std::shared_ptr<Player> player);
+    void ExecutePurchase(const AppUtil::ShopOption& opt, Player& player);
 
 private:
     AppUtil::ShopData m_session_data;
