@@ -99,6 +99,17 @@ BattleUI::BattleUI(const std::string& fontPath) {
     m_reward_hint = makeText(BG_POS.x + 280.0f, BG_POS.y - 140.0f, CLR_WHITE, NumericDisplayText::Align::CENTER);
     m_reward_hint->SetShowNumber(false); m_reward_hint->SetZIndex(Z_BG + 6.0f);
 
+    // Collect all widgets that are only visible during the FIGHTING state.
+    // New fighting-phase widgets should be added here.
+    m_fighting_widgets = {
+        m_background,
+        m_player_avatar, m_player_name,
+        m_player_hp, m_player_atk, m_player_def, m_player_agi,
+        m_enemy_avatar, m_enemy_name,
+        m_enemy_hp, m_enemy_atk, m_enemy_def, m_enemy_agi,
+        m_vs_text, m_hint_text
+    };
+
     SetVisible(false);
 }
 
@@ -261,30 +272,16 @@ void BattleUI::run() {
 
 void BattleUI::SetVisible(bool visible) {
     m_visible = visible;
-    if (m_background) m_background->SetVisible(visible && m_state == State::FIGHTING);
-    if (m_player_avatar) m_player_avatar->SetVisible(visible && m_state == State::FIGHTING);
-    if (m_player_hp) m_player_hp->SetVisible(visible && m_state == State::FIGHTING);
-    if (m_player_atk) m_player_atk->SetVisible(visible && m_state == State::FIGHTING);
-    if (m_player_def) m_player_def->SetVisible(visible && m_state == State::FIGHTING);
-    if (m_player_agi) m_player_agi->SetVisible(visible && m_state == State::FIGHTING);
-    if (m_player_name) m_player_name->SetVisible(visible && m_state == State::FIGHTING);
-    
-    if (m_enemy_avatar) m_enemy_avatar->SetVisible(visible && m_state == State::FIGHTING);
-    if (m_enemy_name) m_enemy_name->SetVisible(visible && m_state == State::FIGHTING);
-    if (m_enemy_hp) m_enemy_hp->SetVisible(visible && m_state == State::FIGHTING);
-    if (m_enemy_atk) m_enemy_atk->SetVisible(visible && m_state == State::FIGHTING);
-    if (m_enemy_def) m_enemy_def->SetVisible(visible && m_state == State::FIGHTING);
-    if (m_enemy_agi) m_enemy_agi->SetVisible(visible && m_state == State::FIGHTING);
-
-    if (m_vs_text) m_vs_text->SetVisible(visible && m_state == State::FIGHTING);
-    if (m_hint_text) m_hint_text->SetVisible(visible && m_state == State::FIGHTING);
-    
+    bool showFighting = visible && (m_state == State::FIGHTING);
+    for (auto& w : m_fighting_widgets) {
+        if (w) w->SetVisible(showFighting);
+    }
     if (!visible) {
         if (m_floating_text) m_floating_text->SetVisible(false);
-        if (m_reward_bg) m_reward_bg->SetVisible(false);
-        if (m_reward_text1) m_reward_text1->SetVisible(false);
-        if (m_reward_text2) m_reward_text2->SetVisible(false);
-        if (m_reward_hint) m_reward_hint->SetVisible(false);
+        if (m_reward_bg)     m_reward_bg->SetVisible(false);
+        if (m_reward_text1)  m_reward_text1->SetVisible(false);
+        if (m_reward_text2)  m_reward_text2->SetVisible(false);
+        if (m_reward_hint)   m_reward_hint->SetVisible(false);
     }
 }
 

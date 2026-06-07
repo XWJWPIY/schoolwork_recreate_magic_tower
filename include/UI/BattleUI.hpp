@@ -71,6 +71,10 @@ private:
     std::shared_ptr<NumericDisplayText> m_reward_text1;
     std::shared_ptr<NumericDisplayText> m_reward_text2;
     std::shared_ptr<NumericDisplayText> m_reward_hint;
+
+    // Fighting-phase widgets — shown only when state == FIGHTING.
+    // Add new fighting widgets here; SetVisible() will handle them automatically.
+    std::vector<std::shared_ptr<Util::GameObject>> m_fighting_widgets;
 };
 
 #endif // BATTLE_UI_HPP
