@@ -315,13 +315,26 @@ graph TD
 物件被觸發時，**立刻**向黑盒子發起請求。例如：**樓梯**會立刻請求 App 切換樓層；**商店**會立刻請求 App 準備商品資料並開啟 UI。
 ```mermaid
 sequenceDiagram
-    participant A as App (中央邏輯)
-    participant N as NPC/Shop/Enemy (地圖物件)
-    Note over N: 玩家碰撞發起【請求】
+    autonumber
+    participant App as App (中央控制室)
+    participant Factory as EntityFactory (兵工廠)
+    participant Obj as NPC/Shop/Enemy (地圖物件)
+    participant Player as Player (玩家)
+    participant UI as 對應 UI 介面
+
+    Note over App, Factory: 【準備階段】遊戲初始化
+    App->>Factory: 將跨系統邏輯封裝成 Lambda (黑盒子)<br/>傳遞給工廠備用
+    Factory-->>Obj: 實例化地圖物件時，<br/>將 Lambda 注入物件內部保管
+
+    Note over Obj, Player: 【遊玩階段】地圖探索
+    Player->>Obj: 玩家移動並產生碰撞，觸發 Reaction()
+    
     rect rgb(0, 150, 255, 0.1)
-        N-->>A: 黑盒子【執行】內容邏輯
+        Obj->>App: 盲目呼叫手中的 Lambda<br/>(物件不需知道黑盒子裡裝什麼)
     end
-    A->>A: 彈出對話 / 開啟商店 / 進入戰鬥
+    
+    App->>App: 切換 GameState 狀態<br/>(如 PLAYING -> SHOP)
+    App->>UI: 喚醒對應的 UI 元件接管畫面
 ```
 
 ###### 直接回調機制的優勢 (Advantages of Direct Callback)
@@ -332,7 +345,7 @@ sequenceDiagram
 > 如果有互動物件本體及玩家以外的「第三者」需要介入（例如需要開啟 UI 介面、切換場景），就會在中央管理器 `App` 設置一條線（Callback）接收請求去調用該第三者；如果不需要的話（例如 **門 Door**），透過 `Reaction` 裡接收到玩家本身的數據直接修改就好。這種「需要什麼權限，才給什麼按鈕」的設計，確保了不需要聯外溝通的輕量級實體能保持絕對單純。
 
 ###### 職責分離圖解：集中化請求與隨插即用
-為了由淺入深地說明，下文分別以 **「怪物戰鬥觸發」**與 **「商店交易流程」**兩個具體實例，展示這套系統如何讓多個層級透過「黑盒子」協同運作，而不需要互相 `#include` 參考代碼：
+為了由淺入深地說明，下文分別以「**怪物戰鬥觸發**」與「**商店交易流程**」兩個具體實例，展示這套系統如何讓多個層級透過「黑盒子」協同運作，而不需要互相 `#include` 參考代碼：
 
 ##### 1. 入門示例：怪物戰鬥觸發（單一 UI 互動與狀態切換）
 這是最直觀的互動流程。當玩家撞到怪物時，不需經過任何複雜的子選單委派，直接由 `App` 控制中心切換遊戲狀態並啟動 `BattleUI`：
