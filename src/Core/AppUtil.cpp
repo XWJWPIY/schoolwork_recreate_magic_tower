@@ -561,15 +561,11 @@ long long CalculateDamage(::Player* player, int enemyId) {
     int eDamageBase = ignoreDef ? eATK : (eATK - pDEF);
     if (eDamageBase < 0) eDamageBase = 0;
     
-    // TODO: 多段攻擊重構（等 BattleSystem 重構後同步修正）
-    // 目前公式直接以 eDamageBase * atkTime * (rounds - 1) 計算預估傷害，
-    // 未考慮玩家閃避（pAGI）對每一擊的減傷效果。
-    // 修正方向：以 eDamageBase * atkTime * (1 - pAGI/100) * (rounds - 1) 估算期望傷害，
-    // 或在顯示時加上「不含閃避」的備註提示玩家。
+    // 預覽公式只計算確定性的攻防互動(deterministic)：
+    // 傷害 = (敵人攻擊 - 玩家防禦) × 攻擊段數 × (擊殺所需回合數 - 1)
+    // 機率性效果(AGI 閃避、必殺攻擊、衰弱/中毒觸發)刻意排除在外，
+    // 由玩家自行評估風險，不做期望值估算。
     long long totalDamage = (long long)eDamageBase * atkTime * (rounds - 1);
-
-    // Additional special logic (e.g. poisoning, critical strikes) can be added here
-    // For now, matching the standard formula
     
     return totalDamage;
 }
