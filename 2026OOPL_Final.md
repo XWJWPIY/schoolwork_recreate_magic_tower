@@ -203,18 +203,18 @@ classDiagram
     * `Stair` - 地圖上的樓梯 (負責樓層切換)
     * `Shop` - 地圖上的商店
     * `ActorPart` - 巨型敵人的身體部位
-  * `NumericDisplayText` - 顯示數字的文字元件 (StatusUI 的子元件)
+  * `NumericDisplayText` - 顯示數字與文字的元件 (StatusUI 的子元件)
 * `UIComponent` - 所有使用者介面的通用基底，管理渲染與生命週期
   * `DialogueUI` - 負責對話文本與選項渲染
   * `ShopUI` - 商店的商品選單
-  * `FlyUI` - 樓層跳躍介面 (隨意門)
-  * `NoticeUI` - 中央提示訊息框
+  * `FlyUI` - 樓層跳躍介面
+  * `NoticeUI` - 遊戲輔助提示說明
   * `ItemNoticeUI` - 獲得道具時的提示框
   * `EnemyBookUI` - 怪物圖鑑 (計算攻防傷害與預估耗血)
   * `BattleUI` - 戰鬥畫面
   * `EndSceneUI` - 遊戲結局畫面
   * `StatusUI` - 側邊狀態欄 (顯示血量、鑰匙、攻防)
-  * `BackgroundUI` - 遊戲背景層 (取代原本的靜態背景圖片)
+  * `BackgroundUI` - 遊戲背景層
 
 ### 程式技術
 
@@ -274,7 +274,7 @@ graph TD
     UI --> EndSceneUI
     UI --> StatusUI
     UI --> BackgroundUI
-    DialogueUI -- "unique_ptr 獨佔" --> ShopUI
+    UI --> ShopUI
 ```
 
 ###### 統一的生命週期介面
@@ -283,8 +283,24 @@ graph TD
 - **閃爍與可見度管理**: 內建了統一的閃爍計時器 `UpdateBlinkTimer()` 與可見度旗標 `m_visible`，消除各 UI 中重複的計時變數。
 
 ###### UI 元件的組合與委派 (Composite & Delegation)
-在 UI 層級，我們也實現了職責分離：
-- **組合模式 (Composite)**：`DialogueUI` 以 `std::unique_ptr` 獨佔持有 `ShopUI`。`ShopUI` 並不在 `App` 的頂層 UI 管理向量中，而是作為 `DialogueUI` 的**私有內部零件**存在。`DialogueUI` 像是一個外殼（Facade），負責統一對外的介面。
+在執行期（Runtime）的架構中，UI 元件的持有關係與繼承關係不同，我們藉由組合模式達成了更精準的職責隔離：
+
+```mermaid
+graph TD
+    App["App 控制中心"] -->|vector 統一管理 shared_ptr| DialogueUI
+    App -->|vector 統一管理 shared_ptr| FlyUI
+    App -->|vector 統一管理 shared_ptr| NoticeUI
+    App -->|vector 統一管理 shared_ptr| ItemNoticeUI
+    App -->|vector 統一管理 shared_ptr| EnemyBookUI
+    App -->|vector 統一管理 shared_ptr| BattleUI
+    App -->|vector 統一管理 shared_ptr| EndSceneUI
+    App -->|vector 統一管理 shared_ptr| StatusUI
+    App -->|vector 統一管理 shared_ptr| BackgroundUI
+
+    DialogueUI -->|unique_ptr 獨佔持有| ShopUI
+```
+
+- **組合模式 (Composite)**：`ShopUI` 本身同樣繼承自 `UIComponent`，但在 `App` 執行期的架構中，它並非獨立註冊於 `App` 的頂層 UI 向量中，而是由 `DialogueUI` 以 `std::unique_ptr` 獨佔持有。這使 `ShopUI` 成為 `DialogueUI` 的**私有內部零件**，由其扮演外殼（Facade）統一對外管理。
 - **委派模式 (Delegation)**：當進入商店狀態，`DialogueUI` 將控制權委派給內部的 `ShopUI` 處理按鍵與渲染。
 - **擁有權語意精準 (Ownership Semantics)**：頂層 UI（由 `App` 管理）使用 `shared_ptr`，因為 `App` 同時以向量迴圈與具名成員兩種方式存取；而內部子元件（如 `ShopUI`）使用 `unique_ptr`，明確表達「只有一個擁有者」的獨佔語意，避免不必要的參考計數開銷。
 
@@ -316,25 +332,88 @@ sequenceDiagram
 > 如果有互動物件本體及玩家以外的「第三者」需要介入（例如需要開啟 UI 介面、切換場景），就會在中央管理器 `App` 設置一條線（Callback）接收請求去調用該第三者；如果不需要的話（例如 **門 Door**），透過 `Reaction` 裡接收到玩家本身的數據直接修改就好。這種「需要什麼權限，才給什麼按鈕」的設計，確保了不需要聯外溝通的輕量級實體能保持絕對單純。
 
 ###### 職責分離圖解：集中化請求與隨插即用
-下圖展示了這套系統如何讓多個層級（包含上述提到的 UI 組合）透過「黑盒子」協同運作，而不需要互相 `#include` 參考代碼：
+為了由淺入深地說明，下文分別以 **「怪物戰鬥觸發」**與 **「商店交易流程」**兩個具體實例，展示這套系統如何讓多個層級透過「黑盒子」協同運作，而不需要互相 `#include` 參考代碼：
+
+##### 1. 入門示例：怪物戰鬥觸發（單一 UI 互動與狀態切換）
+這是最直觀的互動流程。當玩家撞到怪物時，不需經過任何複雜的子選單委派，直接由 `App` 控制中心切換遊戲狀態並啟動 `BattleUI`：
 
 ```mermaid
 graph TD
     subgraph "中央邏輯 (Core)"
-    App[App 控制中心] -- 封裝執行邏輯 --> Box["【黑盒子】<br/>(Lambda)"]
+    App[App 控制中心] -- "Step 1: 封裝戰鬥與狀態控制" --> Box["【黑盒子】<br/>(std::function / Lambda)"]
     end
 
     subgraph "地圖物件 (World)"
-    Obj[NPC / Shop 物件] -- 持有並傳交 --> Box
+    Obj[Enemy 怪物物件] -- "Step 3: 碰撞 Reaction() 呼叫回調" --> Box
     end
 
     subgraph "UI 層級 (Display)"
-    UI[DialogueUI 外殼] -- 委派請求 --> SU[ShopUI 內核]
-    SU -- 點擊觸發【請求】 --> Box
+    UI[BattleUI 戰鬥介面] -- "Step 4: 戰鬥結束觸發結算回調" --> Box
     end
 
-    Box -- 回傳【執行】結果 --> Effect[修改玩家屬性 / 切換遊戲模式]
+    Box -- "Step 5: 執行結果" --> Effect[怪物死亡刪除 / 玩家獲得獎勵 / 切換回遊玩狀態]
+
+    App -.->|Step 2: 工廠注入回調| Obj
 ```
+
+###### 戰鬥流程時序說明：
+* **Step 1 (封裝)**：`App`（中央邏輯）在初始化時，將「切換為 `BATTLE` 狀態、啟動戰鬥畫面、勝負結算與恢復狀態」等核心邏輯封裝進 `startBattle` Lambda（黑盒子）中。
+* **Step 2 (注入)**：地圖載入時，`App` 透過 `EntityFactory` 將此戰鬥回調注入生成出來的 `Enemy` 物件。
+* **Step 3 (發起)**：當玩家在遊戲中碰撞到怪物，觸發 `Enemy::Reaction()`。怪物直接執行持有的戰鬥回調，發出戰鬥請求。
+* **Step 4 (執行)**：`App` 收到請求後將遊戲狀態設為 `BATTLE`，並啟動 `BattleUI`。玩家與怪物在 `BattleUI` 中進行回合制決鬥。
+* **Step 5 (生效)**：戰鬥結束，`BattleUI` 觸發結算。若玩家勝利，將呼叫 `Enemy::OnDefeated()` 來發放金幣與經驗，並調用 `TriggerReplacement(0)` 將該格怪物替換為空地，最後 `App` 將遊戲狀態切換回 `PLAYING` 恢復正常遊玩。
+
+---
+
+##### 2. 進階示例：商店交易流程（包含子 UI 組合與委派）
+這是最複雜的互動流程。除了 Core、World、Display 三個層級的協同外，還涉及了 `DialogueUI` 與其子元件 `ShopUI` 之間的組合與委派關係：
+
+```mermaid
+graph TD
+    subgraph "中央邏輯 (Core)"
+    App[App 控制中心] -- "Step 1: 封裝交易與狀態控制" --> Box["【黑盒子】<br/>(std::function / Lambda)"]
+    end
+
+    subgraph "地圖物件 (World)"
+    Obj[Shop 物件] -- "Step 3: 碰撞 Reaction() 呼叫回調" --> Box
+    end
+
+    subgraph "UI 層級 (Display)"
+    UI[DialogueUI 外殼] -- "Step 4: run() 委派鍵盤與顯示" --> SU[ShopUI 內核]
+    SU -- "Step 5: 確認選項觸發 onSelect" --> Box
+    end
+
+    Box -- "Step 6: 修改 Player 數值 / 結束狀態" --> Effect[修改玩家屬性 / 切換遊戲模式]
+
+    App -.->|Step 2: 工廠注入回調| Obj
+```
+
+###### 商店流程時序說明：
+* **Step 1 (封裝)**：`App`（中央邏輯）在初始化時，將「開啟商店、扣除金幣、關閉選單、切換 `GameState`」等核心邏輯封裝進 C++ 的 `std::function` Lambda 中（此即黑盒子）。
+* **Step 2 (注入)**：地圖載入時，`App` 透過 `EntityFactory` 將這些黑盒子 Lambda 注入剛生成的 `Shop` 或 `NPC` 物件中。
+* **Step 3 (發起與載入)**：當玩家碰撞到商店，觸發 `Shop::Reaction()`。該物件直接呼叫被注入的黑盒子 Lambda（App 的 `triggerShop` 回調）。`App` 隨即將 `GameState` 切換為 `SHOP`，並反向呼叫 `shop->Open()`。`Shop` 內核在此時根據當前樓層與自身名稱載入對應的商品 CSV 檔案，並透過一個名為 `ShopUIAdapter` 的適配器介面，把載入好的商品清單、以及購買邏輯回調（`onSelect`）提交給 `DialogueUI`。整個過程中，`Shop` 完全不需要 `#include` 任何 UI 標頭檔。
+* **Step 4 (委派與啟動)**：`DialogueUI` 接收到商品清單後，將對話模式轉為商店模式並繪製外殼（如商家大頭貼與對話框背景）。此時，它在每一幀的邏輯更新 `run()` 迴圈中，會直接將「按鍵監聽（上下移動游標）」與「商品選項渲染」的控制權**委派**給私有子元件 `ShopUI` 處理。
+* **Step 5 (觸發)**：玩家在商店選單中選好商品並按下確認鍵（如 Space/Return），`ShopUI` 立即觸發執行期傳入的 `onSelect` 回調函數。
+* **Step 6 (生效)**：該回調函數（黑盒子）直接作用於 `Player` 實體上（執行 `ApplyEffect` 修改金幣與能力值），並在結束時請求 `App` 恢復 `PLAYING` 狀態，完成一次完整的互動閉環。
+
+###### 架構補充：雙路徑商店計數機制（神像商店 vs. NPC 商店）
+
+本專案中存在兩種外觀相似但觸發路徑完全獨立的商店模型，對應不同的遊戲物件類型：
+
+| | **神像商店（Shop 物件）** | **NPC 商店（對話腳本觸發）** |
+|---|---|---|
+| 觸發實體 | `Shop`（ID 600–699，地圖上固定擺放） | `NPC`（ID 500–599，對話腳本含 `shop` 指令） |
+| 交易計數儲存 | `AppUtil::GlobalObjectRegistry[id].attributes` | `AppUtil::GlobalSettings["scriptName_transactions"]` |
+| 計數清除時機 | 重新開始時 `LoadAllData()` 執行 `GlobalObjectRegistry.clear()` | 重新開始時 `LoadAllData()` 執行 `GlobalSettings.clear()` |
+| 代表範例 | 貪婪之神 (ID 602)、戰鬥之神 (ID 612) | 盜賊 (Floor 2)、商人 (Floor 4、Floor 15) |
+
+兩條路徑服務完全不同的 ID 範圍，同一個交易事件**永遠只會走其中一條路徑**，不存在雙重計數或計數不同步的問題。這是一種**隱性的職責分割**：`Shop` 物件的計數天然歸屬於 Registry（因為它的定義就在 Registry 內），而 NPC 商店的計數則存於 Settings（因為計數是腳本執行期的動態狀態），兩套儲存體的清除各由 `LoadAllData()` 統一負責，Restart 時皆能完整歸零。
+
+> [!NOTE]
+> **設計理由：為何不統一成一條路徑？**
+> 這源自於兩者在**遊戲機制上的根本差異**：
+> 1. **全域共享 vs. 獨立計算**：神像商店的計數綁定在物件 ID 上（例如所有樓層的「貪婪之神」都是 ID 602），因此**同種類的神像在不同樓層會共享並累計交易次數**（價格會全域連動上漲）。而 NPC 商店的計數綁定在腳本名稱（如 `"4_shopkeeper_transactions"`），所以**不同樓層的 NPC 商店次數是分開獨立計算的**。
+> 2. **資料性質歸屬**：神像的計數屬於「物件本體狀態」，存於 Registry 最為合理；NPC 計數則是「腳本執行期的動態進度」，以 Key-Value 存在 Settings 恰好吻合語意。兩者分開儲存，完美實作了這兩種截然不同的計數規則。
 
 #### 二、大地圖與樓層管理技術 (Large Map & Floor Management)
 
@@ -472,7 +551,7 @@ graph TD
 | 1    | 這是範例 |  V  |
 | 2    | 完成專案權限改為 public |  V  |
 | 3    | 具有 debug mode 的功能  | V |
-| 4    | 解決專案上所有 Memory Leak 的問題  |    |
+| 4    | 解決專案上所有 Memory Leak 的問題  | V  |
 | 5    | 報告中沒有任何錯字，以及沒有任何一項遺漏  |    |
 | 6    | 報告至少保持基本的美感，人類可讀  |   |
 
