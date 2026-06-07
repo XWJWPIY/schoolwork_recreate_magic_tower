@@ -132,7 +132,7 @@
 | NPC 對話 | <img src="./FinalProjectImg/NPC.png" width="550">     |
 | 對戰 | <img src="./FinalProjectImg/Battle.png" width="550">     |
 | 對戰獲勝 | <img src="./FinalProjectImg/Battle_win.png" width="550">     |
-| 撿到道具 | <img src="./FinalProjectImg/Get_item.png" width="550">     |
+| 撿到道具 | <img src="./FinalProjectImg/Get_Item.png" width="550">     |
 | 大商店交易 | <img src="./FinalProjectImg/Shop.png" width="550">     |
 | NPC商店購買 | <img src="./FinalProjectImg/NPC_Shop.png" width="550">     |
 | 敵人圖鑑 | <img src="./FinalProjectImg/Enemy_Book.png" width="550">     |
