@@ -26,7 +26,6 @@ void Actor::SetAttr(AppUtil::Effect type, int value) {
     if (type == AppUtil::Effect::HP && m_attributes[type] < 0) {
         m_attributes[type] = 0;
     }
-    OnAttributeChanged(type);
 }
 
 void Actor::ApplyEffect(AppUtil::Effect type, int delta) {
@@ -34,9 +33,4 @@ void Actor::ApplyEffect(AppUtil::Effect type, int delta) {
     if (type == AppUtil::Effect::HP && m_attributes[type] < 0) {
         m_attributes[type] = 0;
     }
-    OnAttributeChanged(type);
-}
-
-void Actor::OnAttributeChanged(AppUtil::Effect type) {
-    // Base implementation does nothing
 }

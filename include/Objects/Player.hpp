@@ -36,7 +36,6 @@ public:
   bool GetIsPoison() const { return m_is_poisoned; }
   void SetIsPoison(bool poisoned) { m_is_poisoned = poisoned; }
 
-  void OnAttributeChanged(AppUtil::Effect type) override;
 
   void ObjectUpdate() override;
 
