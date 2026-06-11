@@ -492,7 +492,7 @@ graph TD
 ##### 3. 基於復刻特性的架構取捨 (Constraint-based Optimizations)
 本專案為忠實復刻原版魔塔，利用了原版遊戲的特性（約束條件）進行了針對性的極簡優化，而非盲目套用大型通用遊戲引擎的厚重模式：
 - **UI 單一互動 (IsIntercepting)**：原版遊戲不允許 UI 疊加，因此我們僅使用一個簡單的布林值 `IsIntercepting()` 迴圈來暫停地圖更新與輸入。這不僅省去了複雜耗能的 Event System 或 Focus Manager，效能也最佳。
-- **玩家中心碰撞判斷**：原版遊戲中怪物與道具皆為靜態（不主動移動），唯一的移動實體只有玩家。因此，我們將碰撞判斷的職責直接賦予 `Player`，讓 `Player` 查詢 `FloorMap` 目標格是否 `IsPassable()`。這種直覺的設計（KISS 原則）降低了系統複雜度，是最符合該遊戲機制的實作。
+- **玩家中心碰撞判斷**：原版遊戲中怪物與道具皆為靜態（不主動移動），唯一的移動實體只有玩家。因此，我們將碰撞判斷的職責直接賦予 `Player`，讓 `Player` 查詢 `FloorMap` 目標格是否 `IsPassable()`。
 
 #### 五、嚴謹的物件導向設計原則 (SOLID & OOP Principles)
 
