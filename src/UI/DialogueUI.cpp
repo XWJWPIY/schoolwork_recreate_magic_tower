@@ -177,8 +177,7 @@ void DialogueUI::HandleInput() {
         return;
     }
 
-    if (Util::Input::IsKeyDown(Util::Keycode::SPACE) || 
-        Util::Input::IsKeyDown(Util::Keycode::RETURN)) {
+    if (Util::Input::IsKeyDown(Util::Keycode::SPACE)) {
         
         if (m_mode == Mode::SCRIPT || m_mode == Mode::NOTICE) {
             AdvanceScript();

@@ -32,8 +32,7 @@ void ItemNoticeUI::run() {
     if (!m_visible) return;
 
     // Handle Closing
-    if (Util::Input::IsKeyDown(Util::Keycode::SPACE) || 
-        Util::Input::IsKeyDown(Util::Keycode::RETURN)) {
+    if (Util::Input::IsKeyDown(Util::Keycode::SPACE)) {
         SetVisible(false);
         return;
     }
