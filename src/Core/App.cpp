@@ -168,6 +168,10 @@ void App::InitializeGame() {
 }
 
 void App::Update() {
+  if (m_status_ui && m_battle_ui) {
+      m_status_ui->SetFrozen(m_game_state == AppUtil::GameState::BATTLE && m_battle_ui->IsFrozen());
+  }
+
   // 0. Unified UI update: run all active UI components
   for (auto& ui : m_ui_components) {
     if (ui->IsActive()) ui->run();

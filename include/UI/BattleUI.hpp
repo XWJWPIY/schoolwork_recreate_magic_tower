@@ -20,6 +20,7 @@ public:
     bool IsActive() const override { return m_visible; }
     void SetVisible(bool visible) override;
     void AddToRoot(Util::Renderer& root) override;
+    bool IsFrozen() const { return m_is_frozen; }
 
 private:
     void RefreshStats();

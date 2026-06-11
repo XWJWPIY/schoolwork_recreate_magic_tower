@@ -182,7 +182,7 @@ void BattleUI::run() {
 
     if (Util::Input::IsKeyDown(Util::Keycode::I)) {
         m_is_frozen = !m_is_frozen;
-        LOG_INFO("Battle Frozen: %s", m_is_frozen ? "TRUE" : "FALSE");
+        LOG_INFO("Battle Frozen: {}", m_is_frozen ? "TRUE" : "FALSE");
     }
 
     if (m_is_frozen) return;

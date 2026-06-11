@@ -26,6 +26,7 @@ public:
     bool IsIntercepting() const override { return false; } // Never blocks movement
 
     void Update(const std::shared_ptr<Player>& player, int floorNum);
+    void SetFrozen(bool frozen) { m_is_frozen = frozen; }
 
 private:
     struct StatEntry {
@@ -54,6 +55,7 @@ private:
     std::shared_ptr<NumericDisplayText> MakeText(float x, float y, const Util::Color& color, unsigned int size);
 
     float m_poison_timer = 0.0f; // 中毒計時器（ms）
+    bool m_is_frozen = false;
 };
 
 #endif // STATUS_UI_HPP

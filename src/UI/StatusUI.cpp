@@ -90,13 +90,15 @@ void StatusUI::run() {
 
     // ── 中毒扣血：每 1000ms 扣 1 滴，最低 1 滴不死 ─────────────────
     if (m_player && m_player->GetIsPoison()) {
-        m_poison_timer += Util::Time::GetDeltaTimeMs();
-        if (m_poison_timer >= 1000.0f) {
-            m_poison_timer -= 1000.0f;
-            int currentHP = m_player->GetAttr(AppUtil::Effect::HP);
-            if (currentHP > 1) {
-                m_player->ApplyEffect(AppUtil::Effect::HP, -1);
-                LOG_INFO("[Poison] HP reduced by 1. Current HP: {}", currentHP - 1);
+        if (!m_is_frozen) {
+            m_poison_timer += Util::Time::GetDeltaTimeMs();
+            if (m_poison_timer >= 1000.0f) {
+                m_poison_timer -= 1000.0f;
+                int currentHP = m_player->GetAttr(AppUtil::Effect::HP);
+                if (currentHP > 1) {
+                    m_player->ApplyEffect(AppUtil::Effect::HP, -1);
+                    LOG_INFO("[Poison] HP reduced by 1. Current HP: {}", currentHP - 1);
+                }
             }
         }
     } else {
