@@ -286,7 +286,7 @@ classDiagram
   * `ShopData` - 商店完整資料，包含標題、圖示、提示詞、交易次數與選項清單
   * `TileAnimationManager` - 全域動畫時鐘，提供統一影格索引供同步動畫物件對齊
 * **命名空間 (`namespace`，全域輔助常數與函式)：**
-  * `AppUtil` - 包含遊戲的狀態列舉（`GameState`）、屬性列舉（`Effect`）、RNG 常值、資源路徑快取與全域計算傷害函式 (`CalculateDamage`) 等
+  * `AppUtil` - 包含遊戲的狀態列舉（`GameState`）、屬性列舉（`Effect`）、RNG 常值、資源路徑快取與全域估計傷害函式 (`CalculateDamage`) 等
   * `AppUtil::Attr` - 儲存 CSV 欄位鍵值的常數字串命名空間
   * `AppUtil::Skin` - 儲存超級模式外觀比例與圖片路徑的命名空間
 
