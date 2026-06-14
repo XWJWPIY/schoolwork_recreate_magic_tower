@@ -94,6 +94,7 @@ struct SubEffect {
 
 // Well-known ID mapping to avoid hardcoded literals
 enum class StairId : int {
+    STATIC_STAIR = 700,
     UP = 701,
     DOWN = 702
 };

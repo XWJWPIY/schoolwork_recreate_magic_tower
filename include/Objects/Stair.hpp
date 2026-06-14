@@ -16,7 +16,7 @@ public:
   ~Stair() override = default;
 
   void Reaction(std::shared_ptr<Player> player) override;
-  bool ShouldSkipWalkAnimation() const override { return true; }
+  bool ShouldSkipWalkAnimation() const override;
   bool IsRelative() const { return m_isRelative; }
   bool InterruptsMovementSync() const override { return !m_isRelative; }
 

@@ -247,7 +247,11 @@ void App::Update() {
           this->m_game_state = AppUtil::GameState::PLAYING;
           int currentStory = m_road_map->GetCurrentStory();
           if (floor != currentStory) {
-            int targetStair = (floor < currentStory) ? 701 : 702;
+            // Prefer directional stairs, fallback to universal anchor (STATIC_STAIR)
+            int targetStair = static_cast<int>(floor < currentStory ? AppUtil::StairId::UP : AppUtil::StairId::DOWN);
+            if (m_things_map->FindFirstObjectPosition(targetStair, floor).x == -1) {
+              targetStair = static_cast<int>(AppUtil::StairId::STATIC_STAIR);
+            }
             TeleportToFloor(floor, targetStair);
           }
         });

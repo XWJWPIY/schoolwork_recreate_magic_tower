@@ -51,7 +51,6 @@ FlyUI::FlyUI() {
 }
 
 void FlyUI::Start(int currentStory, TeleportCallback onTeleport) {
-    m_current_story = currentStory;
     m_preview_floor = currentStory;
     m_on_teleport = std::move(onTeleport);
     SetTargetFloor(m_preview_floor);

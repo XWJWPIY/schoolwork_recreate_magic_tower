@@ -87,6 +87,9 @@ std::shared_ptr<Entity> EntityFactory::CreateShop(int id) {
 }
 
 std::shared_ptr<Entity> EntityFactory::CreateStair(int id) {
+    if (id == static_cast<int>(AppUtil::StairId::STATIC_STAIR)) {
+        return std::make_shared<Stair>(id, nullptr);
+    }
     return std::make_shared<Stair>(
         id, [this](int val, bool rel, int x, int y) {
             if (rel) {
