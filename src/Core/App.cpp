@@ -387,6 +387,7 @@ void App::SetFloor(int nextStory, int x, int y) {
 void App::UpdateHighestFloor() {
     if (!m_player || !m_road_map) return;
     int current = m_road_map->GetCurrentStory();
+    if (current > 20) return; 
     if (current > m_player->GetAttr(AppUtil::Effect::HIGHEST_FLOOR)) {
         m_player->SetAttr(AppUtil::Effect::HIGHEST_FLOOR, current);
         LOG_INFO("App: Highest floor updated to {}", current);
