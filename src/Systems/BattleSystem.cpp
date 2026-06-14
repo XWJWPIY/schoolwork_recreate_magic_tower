@@ -5,6 +5,12 @@
 #include "Util/Logger.hpp"
 #include <algorithm>
 
+namespace {
+    constexpr int INSTANT_KILL_RATE = 10;
+    constexpr int WEAK_RATE = 9;
+    constexpr int POISON_RATE = 9;
+}
+
 BattleSystem::TurnResult BattleSystem::ProcessPlayerTurn(std::shared_ptr<Player> player, std::shared_ptr<Enemy> enemy) {
     TurnResult result;
     if (!player || !enemy) return result;
@@ -69,12 +75,12 @@ BattleSystem::TurnResult BattleSystem::ProcessSingleEnemyHit(
 
     // ── 1. InstantKill 判定 ──────────────────────────────────────────
     int killRoll = AppUtil::GetRandomInt(0, 99);
-    if (isKilling && killRoll < 10) {
+    if (isKilling && killRoll < INSTANT_KILL_RATE) {
         result.totalDamage = player->GetAttr(AppUtil::Effect::HP);
         result.instantKill = true;
         result.isBattleEnd = true;
         player->ApplyEffect(AppUtil::Effect::HP, -result.totalDamage);
-        LOG_INFO("Instant Kill! (Roll: {} < 10)", killRoll);
+        LOG_INFO("Instant Kill! (Roll: {} < {})", killRoll, INSTANT_KILL_RATE);
         return result;
     }
 
@@ -92,22 +98,22 @@ BattleSystem::TurnResult BattleSystem::ProcessSingleEnemyHit(
     player->ApplyEffect(AppUtil::Effect::HP, -result.totalDamage);
     LOG_INFO("Enemy Hit! Damage={} (ignoreDef={})", result.totalDamage, ignoreDef ? 1 : 0);
 
-    // ── 4. 狀態異常判定（各 9% 機率）────────────────────────────────
+    // ── 4. 狀態異常判定 ──────────────────────────────────────────────
     int statusRoll = AppUtil::GetRandomInt(0, 99);
     if (isWeak) {
-        if (statusRoll < 9) {
+        if (statusRoll < WEAK_RATE) {
             result.weakened = true;
             player->SetIsWeak(true);
-            LOG_INFO("Weak Roll: {} / threshold: 9 -> WEAKENED", statusRoll);
+            LOG_INFO("Weak Roll: {} / threshold: {} -> WEAKENED", statusRoll, WEAK_RATE);
         } else {
-            LOG_INFO("Weak Roll: {} / threshold: 9 -> miss", statusRoll);
+            LOG_INFO("Weak Roll: {} / threshold: {} -> miss", statusRoll, WEAK_RATE);
         }
     }
 
     statusRoll = AppUtil::GetRandomInt(0, 99);
-    if (isPoison && statusRoll < 9) {
+    if (isPoison && statusRoll < POISON_RATE) {
         result.poisoned = true;
-        LOG_INFO("Player Poisoned! (Roll: {} < 9)", statusRoll);
+        LOG_INFO("Player Poisoned! (Roll: {} < {})", statusRoll, POISON_RATE);
         player->SetIsPoison(true);
     }
 
