@@ -114,8 +114,8 @@
 
 **神像商店（地圖上固定位置）：**
 - 貪婪之神：
-    - 費用公式：第 N 次購買費用 = 20 + N，超過第 25 次後每次額外再 +4
-- 戰鬥之神：購買防禦力提升（花費經驗值）
+    - 費用公式：以已交易次數 N 計算，購買費用 = 20 + N，超過第 25 次後每次額外再 +4
+- 戰鬥之神：購買等級、攻擊力、防禦力提升（花費經驗值）
 - 同種神像的交易次數全地圖共用（跨樓層）
 
 **NPC 商店（由對話觸發）：**
@@ -188,9 +188,21 @@ classDiagram
     UIComponent <|-- EndSceneUI
     UIComponent <|-- StatusUI
     UIComponent <|-- BackgroundUI
+
+    class App
+    class FloorMap
+    class EntityFactory
+    class CSVLoader
+    class ScriptEngine
+    class DynamicReplacementComponent
+    class BattleSystem
+    class ShopSystem
+    class RegistryLoader
+    class AttributeRegistry
+    class MapParser
 ```
 
-以下的點代表繼承、數字代表詳細解釋
+以下縮排代表繼承
 
 * `Util::GameObject` - PTSD 中的基礎遊戲物件
   * `Entity` - 地圖上所有互動物件的通用基底
@@ -204,24 +216,139 @@ classDiagram
     * `Stair` - 地圖上的樓梯 (負責樓層切換)
     * `Shop` - 地圖上的商店
     * `ActorPart` - 巨型敵人的身體部位
-  * `NumericDisplayText` - 顯示數字與文字的元件 (StatusUI 的子元件)
+  * `NumericDisplayText` - 顯示數字與文字的元件
 * `UIComponent` - 所有使用者介面的通用基底，管理渲染與生命週期
   * `DialogueUI` - 負責對話文本與選項渲染
   * `ShopUI` - 商店的商品選單
-  * `FlyUI` - 樓層跳躍介面
+  * `FlyUI` - 樓層電梯介面
   * `NoticeUI` - 遊戲按鍵提示說明
   * `ItemNoticeUI` - 獲得道具時的提示框
   * `EnemyBookUI` - 怪物圖鑑 (顯示計算後的攻防傷害與預估耗血)
   * `BattleUI` - 戰鬥畫面
   * `EndSceneUI` - 遊戲結局畫面
-  * `StatusUI` - 側邊狀態欄 (顯示血量、鑰匙、攻防)
+  * `StatusUI` - 側邊狀態欄 (顯示血量、鑰匙數量、攻擊力、防禦力等)
   * `BackgroundUI` - 遊戲背景層
+* **不參與繼承的獨立類別 (`class`，擁有或未擁有實例狀態的物件)：**
+  * `App` - 遊戲核心控制器，持有所有子系統與 UI 的入口，負責狀態機調度與遊戲生命週期管理
+  * `FloorMap` - 地圖管理器，以三維向量 `[樓層][Y][X]` 儲存所有 `Entity`，負責延遲載入、樓層切換與物件原地替換
+  * `EntityFactory` - 實體工廠，接收 `App` 封裝的回調函數 (Lambda)，負責根據 ID 實例化各類地圖物件並注入依賴
+  * `CSVLoader` - 通用 CSV 解析器，持有解析後的表頭映射與資料列，提供型別安全的欄位讀取介面
+  * `ScriptEngine` - 對話腳本引擎，持有步驟序列與播放游標，解析 CSV 腳本檔供 `DialogueUI` 逐步推進
+  * `DynamicReplacementComponent` - 動態替換組件，以組合模式掛載於 `Entity` 上，負責在互動結束後將地圖格替換為空地或新生成的物件
+  * `BattleSystem` - 戰鬥演算類別，提供 `ProcessPlayerTurn` / `ProcessEnemyTurn` 等純邏輯靜態方法，將傷害計算與 UI 演出分離
+  * `ShopSystem` - 商店資料類別，負責從 CSV 載入商品清單並處理動態定價 (如貪婪之神的累進費用)
+  * `RegistryLoader` - 全域註冊表載入器類別，負責啟動時從 CSV 批量載入所有物件元資料至 `GlobalObjectRegistry`
+  * `AttributeRegistry` - 屬性註冊器類別，提供屬性名稱與 ID 的雙向對照表，將 CSV 中的字串鍵轉換為系統 Enum `AppUtil::Effect`
+  * `MapParser` - 地圖 CSV 解析工具類別，將原始 CSV 檔轉換為二維整數矩陣供 `FloorMap` 使用
+
+#### 資料結構與命名空間圖 (Structs & Namespaces)
+
+以下為不參與繼承的純資料結構 (`struct`) 與全域命名空間 (`namespace`)：
+
+```mermaid
+classDiagram
+    direction TB
+
+    class ObjectMetadata {
+        <<struct>>
+    }
+    class SubEffect {
+        <<struct>>
+    }
+    class ShopUIAdapter {
+        <<struct>>
+    }
+    class ShopOption {
+        <<struct>>
+    }
+    class ShopData {
+        <<struct>>
+    }
+    class TileAnimationManager {
+        <<struct>>
+    }
+    class AppUtil {
+        <<namespace>>
+    }
+    class AppUtil_Attr["AppUtil::Attr"] {
+        <<namespace>>
+    }
+    class AppUtil_Skin["AppUtil::Skin"] {
+        <<namespace>>
+    }
+```
+
+* **純資料結構 (`struct`，無行為邏輯或僅含輔助方法)：**
+  * `ObjectMetadata` - 物件元資料，儲存從 CSV 解析出的名稱、資料夾路徑、通行性、動畫幀數與自訂屬性字典
+  * `SubEffect` - 效果鍵值對 (type_id + value)，用於描述道具或商品的單一屬性增減
+  * `ShopUIAdapter` - 商店 UI 適配器，宣告於 `Shop.hpp`，作為 `Shop` 與 `DialogueUI` 之間的解耦橋樑
+  * `ShopOption` - 商店選項，包含顯示文字與對應的效果列表
+  * `ShopData` - 商店完整資料，包含標題、圖示、提示詞、交易次數與選項清單
+  * `TileAnimationManager` - 全域動畫時鐘，提供統一影格索引供同步動畫物件對齊
+* **命名空間 (`namespace`，全域輔助常數與函式)：**
+  * `AppUtil` - 包含遊戲的狀態列舉（`GameState`）、屬性列舉（`Effect`）、RNG 常值、資源路徑快取與全域計算傷害函式 (`CalculateDamage`) 等
+  * `AppUtil::Attr` - 儲存 CSV 欄位鍵值的常數字串命名空間
+  * `AppUtil::Skin` - 儲存超級模式外觀比例與圖片路徑的命名空間
 
 ### 程式技術
 
 本專案的核心設計思想是：**地圖物件只負責「發起請求」，由中央控制中心（App）負責「具體處理」。**
 
-#### 一、中央請求與統一調度 (依賴注入完成職責分離)
+#### 一、核心架構與物件設計 (Core Architecture & Object Design)
+
+本遊戲的核心架構由幾個關鍵要素支撐：
+
+##### 1. 控制狀態：使用 Enum 控制當前畫面
+為了管理不同遊戲狀態與畫面的切換，我們宣告了 `AppUtil::GameState` 列舉（包括 `MAIN_MENU`, `PLAYING`, `SHOP`, `BATTLE`, `ENEMY_BOOK` 等共 11 種狀態）。`App` 核心控制器依據此狀態機集中調度輸入處理與渲染管線。
+
+##### 2. 地圖物件分類與統一繼承
+在分析原版魔塔時，我們將地圖上的所有可互動實體歸納為 7 大類（地磚牆壁 `MapBlock`、怪物 `Enemy`、道具 `Item`、NPC `NPC`、門 `Door`、樓梯 `Stair`、商店 `Shop`）外加玩家 `Player`。
+因此，我們建立了統一的基底類別 `Entity`，讓所有子類別繼承。每種不同的物件都會註冊一個唯一的整數 ID，使 `FloorMap` 地圖檔案可以使用純數字矩陣精確表示，並在載入時自動派發相應的子物件。
+
+##### 3. UI 統一生命週期與打包管理
+所有使用者介面皆繼承自 `UIComponent`，由 `App` 控制中心以 `std::vector<std::shared_ptr<UIComponent>>` 進行集中式打包管理。
+在每幀的主迴圈中，系統會遍歷這些 UI 元件並呼叫 `run()`，各 UI 會在自身渲染與輸入中斷完成後，透過 `IsIntercepting()` 判斷是否攔截背景輸入。這使得複雜的畫面狀態切換與覆蓋邏輯（如對話框、提示框、怪物圖鑑等）被安全地隔離與封裝。
+
+##### 4. NPC 對話與特殊事件腳本系統
+NPC 互動與劇情推進是由 `ScriptEngine` 對話腳本引擎負責。腳本以 CSV 格式描述對話語句、立繪圖示及指令。`ScriptEngine` 解析後產生 `ScriptStep` 序列供 `DialogueUI` 執行。這支援了對話、道具獎勵與 NPC 商店等複合劇情事件。
+
+系統根據玩家在地圖上觸發的物件型別，會細分為以下三種核心運作流程，各自調度 `DialogueUI`、`ItemNoticeUI` 與 `ShopUI` 協同處理：
+
+###### a. 純 Item 獲得與提示流程
+* **觸發情境**：玩家撞上地圖上的獨立道具實體（如各色鑰匙、血瓶、寶石、劍盾等）。
+* **運作機制**：
+  1. `Item::Reaction()` 被觸發後，立即從 `GlobalObjectRegistry` 讀取該道具設定，並呼叫 `Player::ApplyEffect()` 將數值加給玩家。
+  2. 同時，將道具名稱或描述文字透過回調傳遞給 `DialogueUI::ShowNotice()`。
+  3. `DialogueUI` 將內部狀態設為 `Mode::NOTICE` 並呼叫 **`ItemNoticeUI` (獨立模態提示框)** 顯示。
+  4. `ItemNoticeUI` 渲染專用提示框與閃爍的 `-Space-` 字樣，並在 `run()` 中攔截背景輸入，直到玩家按下空白鍵確認後關閉，隨後地圖格執行 `TriggerReplacement(0)` 原地替換為空地。
+
+###### b. 純 Shop 神像交易流程
+* **觸發情境**：玩家撞上地圖上的固定神像商店。
+* **運作機制**：
+  1. `Shop::Reaction()` 觸發並調用 `Shop::Open()`，透過 `ShopSystem` 讀取對應神像的 CSV 商品與計價資料（支援累進漲價）。
+  2. 透過 `ShopUIAdapter` 適配器回調啟動 `DialogueUI::StartShop()`。
+  3. `DialogueUI` 先以 `SCRIPT` 模式播放該商店的引導台詞。
+  4. 台詞播放完畢後進入 `SELECTION` 模式，將商品清單與按鍵監聽**委派**給私有子元件 **`ShopUI` (商店選單 UI)**。
+  5. 玩家在 `ShopUI` 內操作上下鍵移動白色游標並按空白鍵確認時，會執行購入回調並累積交易次數，此計數會回寫至 `GlobalObjectRegistry` 做存檔持久化。
+
+###### c. Dialogue 系列 複合式 NPC 腳本流程
+* **觸發情境**：玩家碰撞到地圖上的 NPC 或踩上劇情格。
+* **運作機制**：
+  1. `NPC::Reaction()` 觸發並直接調用 `DialogueUI::StartScript()` 載入指定的故事對話 `.csv` 檔。
+  2. **`DialogueUI` (對話與核心控制 UI)** 進入 `Mode::SCRIPT`，渲染對話框、姓名與頭像，並在 `run()` 中監聽空白鍵以逐頁推進台詞。
+  3. 腳本引擎在此流程中會根據 CSV 命令觸發多種複合子事件：
+     - `item` 指令：暫時將畫面控制權移交給 `ItemNoticeUI` 彈出獲得獎勵提示，並在後台呼叫 `Player::ApplyEffect()` 增加物品。
+     - `switch` 指令：動態改變 NPC 的狀態。
+     - `shop` 指令：原地彈出 NPC 專屬商店選單，交易次數記錄於 `GlobalSettings`，與神像商店的註冊表計數做出職責劃分。
+     - `hide` 指令：隱藏 NPC。
+
+##### 5. 檔案讀取職責分工優化
+專案優化了檔案載入邏輯：`MapParser` 專職解析地圖結構 CSV，轉換為二維整數矩陣以建構 `FloorMap`；而通用 `CSVLoader` 則搭配 `RegistryLoader` 負責載入屬性名稱對照表（`AttributeRegistry`）、全域物件屬性元數據、商店設定與系統設定，達到資料與程式碼的完全解耦。
+
+##### 6. 巨型怪物主體追蹤與原地取代技術
+針對佔用多格的地圖物件，系統透過 `ActorPart` 對其肢體進行關聯性追蹤。當主體與肢體互動結束或怪物被擊殺後，會藉由 `DynamicReplacementComponent` 觸發「原地取代」回調：一般情況下是在該格位置替換為 `0`（空地磚 `Road`）；而在特定生物被擊敗後，系統會在原地生成新怪物。
+
+#### 二、中央請求與統一調度 (依賴注入完成職責分離)
 
 ##### 1. 核心機制：黑盒子 (std::function & Lambda)
 我們利用 C++ 的 `std::function` 作為容器，將邏輯封裝在「黑盒子」中。
@@ -301,7 +428,7 @@ graph TD
     DialogueUI -->|unique_ptr 獨佔持有| ShopUI
 ```
 
-- **組合模式 (Composite)**：`ShopUI` 本身同樣繼承自 `UIComponent`，但在 `App` 執行期的架構中，它並非獨立註冊於 `App` 的頂層 UI 向量中，而是由 `DialogueUI` 以 `std::unique_ptr` 獨佔持有。這使 `ShopUI` 成為 `DialogueUI` 的**私有內部零件**，由其扮演外殼（Facade）統一對外管理。
+- **組合模式 (Composite)**：`ShopUI` 本身同樣繼承自 `UIComponent`，但在 `App` 架構中，它並非獨立註冊於 `App` 的頂層 UI 向量中，而是由 `DialogueUI` 以 `std::unique_ptr` 獨佔持有。這使 `ShopUI` 成為 `DialogueUI` 的**私有內部零件**，由後者扮演外殼，統一管理。
 - **委派模式 (Delegation)**：當進入商店狀態，`DialogueUI` 將控制權委派給內部的 `ShopUI` 處理按鍵與渲染。
 - **擁有權語意精準 (Ownership Semantics)**：頂層 UI（由 `App` 管理）使用 `shared_ptr`，因為 `App` 同時以向量迴圈與具名成員兩種方式存取；而內部子元件（如 `ShopUI`）使用 `unique_ptr`，明確表達「只有一個擁有者」的獨佔語意，避免不必要的參考計數開銷。
 
@@ -419,7 +546,7 @@ graph TD
 | 觸發實體 | `Shop`（ID 600–699，地圖上固定擺放） | `NPC`（ID 500–599，對話腳本含 `shop` 指令） |
 | 交易計數儲存 | `AppUtil::GlobalObjectRegistry[id].attributes` | `AppUtil::GlobalSettings["scriptName_transactions"]` |
 | 計數清除時機 | 重新開始時 `LoadAllData()` 執行 `GlobalObjectRegistry.clear()` | 重新開始時 `LoadAllData()` 執行 `GlobalSettings.clear()` |
-| 代表範例 | 貪婪之神 (ID 602)、戰鬥之神 (ID 612) | 盜賊 (Floor 2)、商人 (Floor 4、Floor 15) |
+| 代表範例 | 貪婪之神 (ID 602)、戰鬥之神 (ID 612) | 商人 (Floor 4、Floor 15) |
 
 兩條路徑服務完全不同的 ID 範圍，同一個交易事件**永遠只會走其中一條路徑**，不存在雙重計數或計數不同步的問題。這是一種**隱性的職責分割**：`Shop` 物件的計數天然歸屬於 Registry（因為它的定義就在 Registry 內），而 NPC 商店的計數則存於 Settings（因為計數是腳本執行期的動態狀態），兩套儲存體的清除各由 `LoadAllData()` 統一負責，Restart 時皆能完整歸零。
 
@@ -429,7 +556,7 @@ graph TD
 > 1. **全域共享 vs. 獨立計算**：神像商店的計數綁定在物件 ID 上（例如所有樓層的「貪婪之神」都是 ID 602），因此**同種類的神像在不同樓層會共享並累計交易次數**（價格會全域連動上漲）。而 NPC 商店的計數綁定在腳本名稱（如 `"4_shopkeeper_transactions"`），所以**不同樓層的 NPC 商店次數是分開獨立計算的**。
 > 2. **資料性質歸屬**：神像的計數屬於「物件本體狀態」，存於 Registry 最為合理；NPC 計數則是「腳本執行期的動態進度」，以 Key-Value 存在 Settings 恰好吻合語意。兩者分開儲存，完美實作了這兩種截然不同的計數規則。
 
-#### 二、大地圖與樓層管理技術 (Large Map & Floor Management)
+#### 三、大地圖與樓層管理技術 (Large Map & Floor Management)
 
 本專案採用了高效的空間索引與按需加載技術，確保在擁有數十層樓的情況下仍能保持低記憶體消耗與流暢體驗。
 
@@ -444,7 +571,7 @@ graph TD
 - **狀態緩存**：一旦樓層被載入，其物件狀態就會保留在記憶體中，直到遊戲重啟。
 
 ##### 3. 快速切換：層級可見度控制
-樓層切換（上樓/下樓）並非銷毀舊物件並重建新物件，而是透過 **「可見度撥動 (Visibility Toggle)」**：
+樓層切換（上樓/下樓）並非銷毀舊物件並重建新物件，而是透過 **「可見度撥動」**：
 - **切換邏輯**：將當前樓層所有 `Entity` 的 `SetVisible` 設為 `false`，並將目標樓層設為 `true`。
 - **好處**：瞬時完成切換，無須負擔繁重的 `Renderer` 資源重新分配。
 
@@ -453,7 +580,7 @@ graph TD
 - **指標覆寫 (Pointer Overwrite)**：當物件生命週期結束時（例如 `Door` 的開門動畫播完），會呼叫 `TriggerReplacement(0)`（0 代表空地磚 `Road`）。系統會直接在 3D 矩陣中定位該物件的座標 `[story][y][x]`，並將該位置的 `shared_ptr<Entity>` **重新指向** 一個全新的 `Road` 實體。
 - **無縫記憶體回收**：得益於 `shared_ptr` 的特性，當原本的怪物或門被新的空地磚覆寫後，其參考計數 (Reference Count) 會歸零並自動觸發解構子 (Destructor) 釋放記憶體。這確保了地圖矩陣永遠保持最輕量、最乾淨的狀態，不會殘留任何「幽靈物件」。
 
-#### 三、動畫同步與獨立運作技術 (Animation System)
+#### 四、動畫同步與獨立運作技術
 
 魔塔專案中存在兩種截然不同的動畫運作邏輯，分別解決「場景整齊感」與「個體互動反饋」的需求。
 
@@ -475,14 +602,14 @@ graph TD
     - **高響應性**：確保操作回饋與玩家輸入同步。
     - **流程控制**：利用動畫播放時間作為邏輯延遲，實現更自然的物件互動（例如慢慢開啟後才允許通過）。
 
-#### 四、系統健壯性與資料驅動架構 (System Robustness & Data-Driven Architecture)
+#### 五、系統健壯性與資料驅動架構
 
 在整體的專案健康度評估中，本架構具備極高的穩定性與擴充性，這歸功於現代 C++ 特性與資料驅動的設計理念。
 
 ##### 1. 記憶體管理與安全性 (Memory Management)
-專案全面棄用傳統的 `new`/`delete`，改以 RAII (Resource Acquisition Is Initialization) 慣例為基礎的智慧指標系統：
-- **資源生命週期管理**：`App` 透過 `std::vector<std::shared_ptr<UIComponent>>` 統一管理 UI；`FloorMap` 透過三維陣列統一管理 `std::shared_ptr<Entity>`。當樓層切換或 UI 關閉時，不需手動釋放資源，有效杜絕 Memory Leak (記憶體洩漏)。
-- **安全的自我參照**：核心基底 `Entity` 繼承了 `std::enable_shared_from_this<Entity>`。這保證了在互動回呼中（例如 NPC 將自身傳遞給對話系統），不會產生雙重釋放或懸空指標。
+專案全面棄用傳統的 `new`/`delete`，改以 RAII (Resource Acquisition Is Initialization) 原則為基礎的智慧指標系統：
+- **資源生命週期管理**：`App` 透過 `std::vector<std::shared_ptr<UIComponent>>` 管理 UI；`FloorMap` 透過三維陣列統一管理 `std::shared_ptr<Entity>`。當樓層切換或 UI 關閉時，不需手動釋放資源，有效杜絕 Memory Leak (記憶體洩漏)。
+- **安全的自我參照**：核心基底 `Entity` 繼承了 `std::enable_shared_from_this<Entity>`。這保證了在互動回調中（例如 NPC 將自身傳遞給對話系統），不會產生雙重釋放或懸空指標。
 
 ##### 2. 高度資料驅動 (Data-Driven Design)
 為了與程式邏輯解耦，遊戲內的內容物盡可能外包給資料檔案：
@@ -494,7 +621,7 @@ graph TD
 - **UI 單一互動 (IsIntercepting)**：原版遊戲不允許 UI 疊加，因此我們僅使用一個簡單的布林值 `IsIntercepting()` 迴圈來暫停地圖更新與輸入。這不僅省去了複雜耗能的 Event System 或 Focus Manager，效能也最佳。
 - **玩家中心碰撞判斷**：原版遊戲中怪物與道具皆為靜態（不主動移動），唯一的移動實體只有玩家。因此，我們將碰撞判斷的職責直接賦予 `Player`，讓 `Player` 查詢 `FloorMap` 目標格是否 `IsPassable()`。
 
-#### 五、嚴謹的物件導向設計原則 (SOLID & OOP Principles)
+#### 六、嚴謹的物件導向設計原則 (OOP Principles)
 
 本專案不僅是一個遊戲實作，更是物件導向設計核心精神的具體展現，以下列出幾個最具代表性的實踐面向：
 
@@ -504,7 +631,7 @@ graph TD
 
 ##### 2. 漸進式繼承與職責拆分 (Inheritance Hierarchy)
 - **設計亮點**：遵守「單一職責原則」，不讓基礎類別過度膨脹。
-- **運作方式**：我們設計了 `Entity` 作為最底層（只管座標與動畫），並從中分支出 `Actor` 這個中間層（專門管理攻防數值）。因此，`Door` 或 `Stair` 繼承 `Entity`，保持極度輕量；而 `Player` 與 `Enemy` 則繼承 `Actor`，自動擁有了數值管理的能力。這確保了子類別只繼承他們真正需要的屬性。
+- **運作方式**：我們設計了 `Entity` 作為基底類別，只管座標與動畫；並從中分支出 `Actor` 這個中間層，專門管理攻防數值。因此，`Door` 或 `Stair` 繼承 `Entity`，保持極度輕量；而 `Player` 與 `Enemy` 則繼承 `Actor`，自動擁有了數值管理的能力。這確保了子類別只繼承他們真正需要的屬性。
 
 ##### 3. 高度封裝與屬性字典 (Data Encapsulation)
 - **設計亮點**：棄用傳統的 `public int hp, atk, def;` 暴露變數。
@@ -570,7 +697,7 @@ graph TD
 
 ### 心得
 
-在參與本次 OOP 物件導向程式設計實習之前，我的寫程式習慣多半偏向解決當前作業的「一次性代碼」，缺乏對軟體工程長遠發展的思量。然而這一次，是我首次嘗試以系統化的軟體架構來撰寫程式，開發一個極度注重物件間互動機制、統一資料管理、高擴充性與高維護性的中大型專案。在設計地圖物件與實體時，我耗費了許多心力反覆琢磨，只為了在「降低類似物件屬性的重複性」與「避免繼承體系過於冗長與冗贅」之間取得最佳的平衡。這讓我深刻體會到，好的物件導向設計不僅是語法上的多型或封裝，更是如何透過解耦來畫分職責，讓系統的每一個微小分子都能自給自足，同時又能在大架構下協同運作。
+在參與本次 OOP 物件導向程式設計實習之前，我的寫程式習慣多半偏向解決當前作業的「一次性代碼」，缺乏對軟體工程長遠發展的思量。然而這一次，是我首次嘗試以系統化的軟體架構來撰寫程式，開發一個極度注重物件間互動機制、統一資料管理、高擴充性與高維護性的中大型專案。在設計地圖物件與實體時，我耗費了許多心力反覆琢磨，只為了在「降低類似物件屬性的重複性」與「避免繼承體系過於冗長」之間取得最佳的平衡。這讓我深刻體會到，好的物件導向設計不僅是語法上的多型或封裝，更是如何透過解耦來畫分職責，讓系統的每一個微小分子都能自給自足，同時又能在大架構下協同運作。
 
 與此同時，今年 AI Agent 的迅速崛起與茁壯，也為我的開發流程帶來了全新的變革。我以此專案的 OOP 架構作為核心規範，進行了當前流行的「Vibe Coding」練習。在這次人機協作的實踐中，我深刻體悟到，若想在程式碼編寫中真正「駕馭 AI」而非被其反噬，核心關鍵在於開發者必須具備敏銳的檢查能力。程式碼的每一段邏輯都必須經過嚴格審查，且每當完成一個階段性的小功能就必須立刻進行測試，以防錯誤如滾雪球般累積，導致後期定位 Bug 的難度呈指數型上升。此外，在每個開發進度告一段落時，我也會主動與 AI 探討潛在的架構漏洞，並針對為了應急而寫的「暫時性代碼」進行即時的討論與重構。這種「小步快跑、即時重構」的雙向協作，不僅讓專案的代碼品質始終保持在極高水準，也大幅提升了程式碼未來的可讀性與維護性，是我在此次實習中獲得最寶貴的成長。
 
