@@ -8,7 +8,8 @@ FloorMap::FloorMap(ObjectFactory factory, float centerX, float centerY,
                    const glm::vec2 &baseSize)
     : m_factory(factory), m_center_x(centerX), m_center_y(centerY),
       m_scale_x(scaleX), m_scale_y(scaleY), m_z_index(zIndex),
-      m_floor_loaded(AppUtil::TOTAL_STORY, false) {
+      m_floor_loaded(AppUtil::TOTAL_STORY, false),
+      m_floor_anchors(AppUtil::TOTAL_STORY) {
 
   glm::vec2 currentBaseSize = baseSize;
 
@@ -281,3 +282,23 @@ void FloorMap::AddToRenderer() {
     }
   }
 }
+
+void FloorMap::RecordFloorAnchor(int story, bool fromBelow, int x, int y) {
+  if (story < 0 || story >= AppUtil::TOTAL_STORY) return;
+  if (fromBelow) {
+    m_floor_anchors[story].from_below = {x, y};
+  } else {
+    m_floor_anchors[story].from_above = {x, y};
+  }
+  LOG_INFO("FloorMap Anchor[{}] {} = ({}, {})", story, fromBelow ? "from_below" : "from_above", x, y);
+}
+
+FloorMap::FloorAnchor FloorMap::GetFloorAnchor(int story) const {
+  if (story < 0 || story >= AppUtil::TOTAL_STORY) return {};
+  return m_floor_anchors[story];
+}
+
+void FloorMap::ClearAnchors() {
+  std::fill(m_floor_anchors.begin(), m_floor_anchors.end(), FloorAnchor{});
+}
+

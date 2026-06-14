@@ -80,4 +80,5 @@ private:
   std::unique_ptr<EntityFactory> m_entity_factory;
 };
 
+
 #endif

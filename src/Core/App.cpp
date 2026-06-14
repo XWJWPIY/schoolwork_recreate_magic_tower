@@ -246,12 +246,26 @@ void App::Update() {
         m_fly_ui->Start(m_road_map->GetCurrentStory(), [this](int floor, int) {
           this->m_game_state = AppUtil::GameState::PLAYING;
           int currentStory = m_road_map->GetCurrentStory();
-          if (floor != currentStory) {
-            // Prefer directional stairs, fallback to universal anchor (STATIC_STAIR)
-            int targetStair = static_cast<int>(floor < currentStory ? AppUtil::StairId::UP : AppUtil::StairId::DOWN);
-            if (m_things_map->FindFirstObjectPosition(targetStair, floor).x == -1) {
+          if (floor == currentStory) return;
+
+          bool goingDown = floor < currentStory;
+          auto anchorObj = m_road_map->GetFloorAnchor(floor);
+          glm::ivec2 anchor = goingDown ? anchorObj.from_above : anchorObj.from_below;
+
+          if (anchor.x != -1) {
+            // 有錨點 → 直接傳到記錄位置
+            m_road_map->SwitchStory(floor);
+            m_things_map->SwitchStory(floor);
+            m_player->SetGridPosition(anchor.x, anchor.y);
+            m_player->ResetStateAfterFloorChange();
+            m_player->SyncPosition(m_road_map);
+            UpdateHighestFloor();
+          } else {
+            // 未造訪 → 找方向性樓梯
+            int targetStair = static_cast<int>(
+                goingDown ? AppUtil::StairId::UP : AppUtil::StairId::DOWN);
+            if (m_things_map->FindFirstObjectPosition(targetStair, floor).x == -1)
               targetStair = static_cast<int>(AppUtil::StairId::STATIC_STAIR);
-            }
             TeleportToFloor(floor, targetStair);
           }
         });
@@ -361,6 +375,7 @@ void App::ChangeFloor(int delta) {
 
 void App::SetFloor(int nextStory, int x, int y) {
   if (nextStory >= 0 && nextStory < AppUtil::TOTAL_STORY) {
+    int prevStory = m_road_map->GetCurrentStory();
     m_road_map->SwitchStory(nextStory);
     m_things_map->SwitchStory(nextStory);
     LOG_INFO("App: Switched to story {}", nextStory);
@@ -375,6 +390,7 @@ void App::SetFloor(int nextStory, int x, int y) {
       }
       m_player->SyncPosition(m_road_map);
     }
+
 
     LOG_INFO("App: Final Player Position: Floor {}, Grid({}, {})",
              m_road_map->GetCurrentStory(), m_player->GetGridX(),
@@ -396,6 +412,7 @@ void App::UpdateHighestFloor() {
 
 void App::TeleportToFloor(int targetStory, int targetStairId) {
   if (targetStory >= 0 && targetStory < AppUtil::TOTAL_STORY) {
+    int prevStory = m_road_map->GetCurrentStory();
     m_road_map->SwitchStory(targetStory);
     m_things_map->SwitchStory(targetStory);
 
@@ -406,11 +423,16 @@ void App::TeleportToFloor(int targetStory, int targetStairId) {
       }
       m_player->ResetStateAfterFloorChange();
       m_player->SyncPosition(m_road_map);
+      bool fromBelow = targetStory > prevStory;
+      m_road_map->RecordFloorAnchor(targetStory, fromBelow, m_player->GetGridX(), m_player->GetGridY());
     }
+
     LOG_INFO("Teleported to story {} at stair {}", targetStory, targetStairId);
     UpdateHighestFloor();
   }
 }
+
+
 
 void App::ShowItemNotice(const std::string& text) {
   if (m_item_notice_ui) {

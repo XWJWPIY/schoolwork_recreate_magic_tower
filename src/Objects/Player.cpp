@@ -79,8 +79,18 @@ void Player::Move(int dx, int dy, std::shared_ptr<FloorMap> roadmap,
       if (entity && entity->GetVisible()) {
         if (entity->CanReact()) {
           if (entity->CheckCondition(std::static_pointer_cast<Player>(shared_from_this()))) {
+            int oldStory = roadmap->GetCurrentStory();
             entity->Reaction(std::static_pointer_cast<Player>(shared_from_this()));
             
+            int newStory = roadmap->GetCurrentStory();
+            if (newStory != oldStory && !entity->InterruptsMovementSync()) {
+                bool goingUp = newStory > oldStory;
+                // 1. 紀錄新樓層的抵達錨點
+                roadmap->RecordFloorAnchor(newStory, goingUp, next_x, next_y);
+                // 2. 紀錄舊樓層的出發錨點（反向錨點）
+                roadmap->RecordFloorAnchor(oldStory, !goingUp, next_x, next_y);
+            }
+
             if (entity->InterruptsMovementSync()) {
                 LOG_INFO("Player Move: Movement sync interrupted by entity.");
                 return;

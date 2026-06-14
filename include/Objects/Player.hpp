@@ -26,7 +26,7 @@ public:
 
   void Reaction(std::shared_ptr<Player> player) override;
 
-    void ResetStateAfterFloorChange();
+  void ResetStateAfterFloorChange();
   void SetDirection(PlayerDirection dir);
   void SetIsAnimating(bool animate) { m_is_animating = animate; }
   bool HasFly() const { return GetAttr(AppUtil::Effect::FLY) > 0; }

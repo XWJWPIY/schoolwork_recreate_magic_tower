@@ -54,6 +54,15 @@ public:
   void AddToRenderer();
 
   glm::vec2 GetGridAbsolutePosition(int x, int y) const;
+  
+  struct FloorAnchor {
+    glm::ivec2 from_above = {-1, -1};
+    glm::ivec2 from_below = {-1, -1};
+  };
+  void RecordFloorAnchor(int story, bool fromBelow, int x, int y);
+  FloorAnchor GetFloorAnchor(int story) const;
+  void ClearAnchors();
+
 
 private:
   Util::Renderer *m_root = nullptr;
@@ -75,6 +84,8 @@ private:
 
   std::string m_path_prefix;
   std::vector<bool> m_floor_loaded;
+  std::vector<FloorAnchor> m_floor_anchors;
 };
+
 
 #endif // FLOOR_MAP_HPP
