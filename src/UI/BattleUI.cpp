@@ -152,7 +152,11 @@ void BattleUI::Start(std::shared_ptr<Player> player, std::shared_ptr<Enemy> enem
 
 void BattleUI::SetAnimation(bool isPlayerTurn, int damage) {
     m_floating_text->SetVisible(true);
-    m_floating_text->SetPrefix("-" + std::to_string(damage));
+    if (damage == 0) {
+        m_floating_text->SetPrefix("MISS");
+    } else {
+        m_floating_text->SetPrefix("-" + std::to_string(damage));
+    }
     m_floating_text->UpdateDisplayText();
     
     // If it's Player's turn, damage displays on Enemy, else on Player
@@ -221,9 +225,9 @@ void BattleUI::run() {
             auto result = BattleSystem::ProcessPlayerTurn(m_player, m_enemy);
             
             SetAnimation(true, result.totalDamage);
+            RefreshStats();
 
             if (result.isBattleEnd) {
-                RefreshStats(); // Ensure the HP: 0 is reflected in UI
                 m_state = State::REWARD;
                 m_reward_bg->SetVisible(true);
                 m_reward_text1->SetPrefix(AppUtil::GetGlobalString("battle_win", "Victory!")); 
@@ -235,7 +239,7 @@ void BattleUI::run() {
                 m_reward_hint->SetPrefix(AppUtil::GetGlobalString("battle_reward_hint", "-SPACE-"));
                 m_reward_hint->UpdateDisplayText();
                 m_reward_hint->SetVisible(true);
-                m_floating_text->SetVisible(false);
+
             } else {
                 // 玩家攻擊結束，初始化敵人本輪的多段計數器
                 auto atkIt = AppUtil::GlobalObjectRegistry.find(m_enemy->GetObjectId());
@@ -253,7 +257,6 @@ void BattleUI::run() {
 
             if (result.isBattleEnd) {
                 RefreshStats(); // Show HP: 0 before transitioning
-                m_floating_text->SetVisible(false);
                 m_state = State::DEFEAT;
                 m_defeat_timer = 0.0f;
                 LOG_INFO("Battle: Player defeated, entering delay...");
