@@ -239,6 +239,7 @@ void BattleUI::run() {
                 m_reward_hint->SetPrefix(AppUtil::GetGlobalString("battle_reward_hint", "-SPACE-"));
                 m_reward_hint->UpdateDisplayText();
                 m_reward_hint->SetVisible(true);
+                m_hint_text->SetVisible(false);
 
             } else {
                 // 玩家攻擊結束，初始化敵人本輪的多段計數器
@@ -259,6 +260,7 @@ void BattleUI::run() {
                 RefreshStats(); // Show HP: 0 before transitioning
                 m_state = State::DEFEAT;
                 m_defeat_timer = 0.0f;
+                m_hint_text->SetVisible(false);
                 LOG_INFO("Battle: Player defeated, entering delay...");
                 return;
             }
