@@ -208,7 +208,7 @@ void RegistryLoader::LoadObjectCSV(const std::string& path, const std::string& d
         
         // Store EVERY column into the raw attributes map
         for (auto const& [colName, colIdx] : loader.GetHeaderMap()) {
-            meta.attributes[AttributeRegistry::GetId(colName)] = loader.GetString(i, colName);
+            meta.SetAttribute(AttributeRegistry::GetId(colName), loader.GetString(i, colName));
         }
 
         GlobalObjectRegistry[id] = std::move(meta);
@@ -217,10 +217,23 @@ void RegistryLoader::LoadObjectCSV(const std::string& path, const std::string& d
 
 // --- ObjectMetadata Helpers ---
 
+void ObjectMetadata::SetAttribute(int attrId, const std::string& value) {
+    attributes[attrId] = value;
+    if (!value.empty()) {
+        try {
+            int_attributes[attrId] = std::stoi(value);
+        } catch (...) {
+            int_attributes.erase(attrId);
+        }
+    } else {
+        int_attributes.erase(attrId);
+    }
+}
+
 int ObjectMetadata::GetInt(const std::string& key, int def) const {
-    auto it = attributes.find(AttributeRegistry::GetId(key));
-    if (it == attributes.end() || it->second.empty()) return def;
-    try { return std::stoi(it->second); } catch (...) { return def; }
+    auto it = int_attributes.find(AttributeRegistry::GetId(key));
+    if (it != int_attributes.end()) return it->second;
+    return def;
 }
 
 std::string ObjectMetadata::GetString(const std::string& key, const std::string& def) const {
@@ -437,7 +450,7 @@ MapParser::ParseCsvToStrings(const std::string &filepath) {
 bool CSVLoader::Load(const std::string& path) {
     m_data.clear();
     m_headerMap.clear();
-    m_attributeCols.clear();
+    m_attributeIdCols.clear();
 
     std::ifstream file(path);
     if (!file.is_open()) {
@@ -462,7 +475,7 @@ bool CSVLoader::Load(const std::string& path) {
                 m_headerMap[headerStr] = colIdx;
                 LOG_INFO("CSVLoader: Header -> '{}' at index {}", headerStr, colIdx);
                 if (AttributeRegistry::IsAttribute(headerStr)) {
-                    m_attributeCols.push_back(colIdx);
+                    m_attributeIdCols.push_back({colIdx, AttributeRegistry::GetId(headerStr)});
                 }
             }
             colIdx++;
@@ -476,7 +489,7 @@ bool CSVLoader::Load(const std::string& path) {
         processHeader(std::string_view(line.data() + start, line.size() - start));
     }
 
-    LOG_INFO("CSVLoader: Parsing file {} (found {} columns, {} attributes)", path, m_headerMap.size(), m_attributeCols.size());
+    LOG_INFO("CSVLoader: Parsing file {} (found {} columns, {} attributes)", path, m_headerMap.size(), m_attributeIdCols.size());
 
     while (std::getline(file, line)) {
         if (line.empty()) continue;
@@ -545,24 +558,16 @@ std::vector<SubEffect> CSVLoader::GetRowEffects(size_t rowIndex) const {
     if (rowIndex >= m_data.size()) return effects;
     const auto& row = m_data[rowIndex];
 
-    for (int colIdx : m_attributeCols) {
+    for (const auto& pair : m_attributeIdCols) {
+        int colIdx = pair.first;
+        int attrId = pair.second;
         if (colIdx < (int)row.size() && !row[colIdx].empty()) {
-            int val = 0;
-            try { val = std::stoi(row[colIdx]); } catch (...) { continue; }
-            if (val != 0) {
-                // Determine column name from index by searching m_headerMap
-                std::string colName;
-                for (const auto& pair : m_headerMap) {
-                    if (pair.second == colIdx) {
-                        colName = pair.first;
-                        break;
-                    }
+            try {
+                int val = std::stoi(row[colIdx]);
+                if (val != 0) {
+                    effects.push_back({attrId, val});
                 }
-                
-                if (!colName.empty()) {
-                    effects.push_back({AttributeRegistry::GetId(colName), val});
-                }
-            }
+            } catch (...) {}
         }
     }
     return effects;

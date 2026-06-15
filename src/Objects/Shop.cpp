@@ -53,7 +53,7 @@ void Shop::Open(std::shared_ptr<Player> player, const ShopUIAdapter& adapter, in
             ExecutePurchase(opt, *player);
             auto registry_it = AppUtil::GlobalObjectRegistry.find(m_object_id);
             if (registry_it != AppUtil::GlobalObjectRegistry.end()) {
-                registry_it->second.attributes[AppUtil::AttributeRegistry::GetId(AppUtil::Attr::TRANSACTIONS)] = std::to_string(m_transaction_count);
+                registry_it->second.SetAttribute(AppUtil::AttributeRegistry::GetId(AppUtil::Attr::TRANSACTIONS), std::to_string(m_transaction_count));
             }
             if (m_session_data.max_transactions != -1 && m_transaction_count >= m_session_data.max_transactions) {
                 Close();

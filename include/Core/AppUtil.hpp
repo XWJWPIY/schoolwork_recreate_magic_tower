@@ -116,10 +116,14 @@ struct ObjectMetadata {
 
     // All raw data from CSV row Map<AttrID, ValueString>
     std::unordered_map<int, std::string> attributes;
+    std::unordered_map<int, int> int_attributes; // Cached pre-parsed integer values
 
     ObjectMetadata() : is_passable(true), frames(1) {}
     ObjectMetadata(const std::string& n, const std::string& f, bool p, int fr = 1)
         : name(n), folder(f), is_passable(p), frames(fr) {}
+
+    // Synchronized setter for attributes and int_attributes cache
+    void SetAttribute(int attrId, const std::string& value);
 
     // Helpers to extract data based on column name (via AttributeRegistry)
     int GetInt(const std::string& key, int def = 0) const;
@@ -153,7 +157,7 @@ public:
 private:
     std::unordered_map<std::string, int> m_headerMap;
     std::vector<std::vector<std::string>> m_data;
-    std::vector<int> m_attributeCols; // Indices of columns that are attributes
+    std::vector<std::pair<int, int>> m_attributeIdCols; // Pair of (colIdx, attrId)
 };
 
 class RegistryLoader {
