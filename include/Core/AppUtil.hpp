@@ -135,6 +135,7 @@ std::string GetGlobalString(const std::string& key, const std::string& defaultVa
 // RNG Utilities
 int GetRandomInt(int min, int max);
 bool CheckProbability(int percentage);
+bool CheckProbability(const std::string& who, const std::string& what, int percentage);
 
 class CSVLoader {
 public:

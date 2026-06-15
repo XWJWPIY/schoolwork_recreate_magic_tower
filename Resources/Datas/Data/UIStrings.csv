@@ -9,7 +9,16 @@ label_atk_time,多段:
 label_damage,傷害: 
 label_exp,EXP: 
 label_gold,GOLD: 
-label_none,無
+label_none,沒有
+label_special_kill,必殺攻擊
+label_special_weak,衰弱
+label_special_poison,中毒
+label_special_ignore_def,無視防禦
+label_special_double_atk,二段攻擊
+label_special_triple_atk,三段攻擊
+label_special_multi_atk,段攻擊
+label_special_high_eva,高迴避
+label_special_rebirth,擊殺後再生
 hint_press_d,Press D
 msg_no_enemy,No Enemies in Registry.
 battle_enemy_hp,體力:   
@@ -26,15 +35,6 @@ battle_retreat,退出(Q)
 battle_win,戰鬥勝利！
 battle_exp,獲得經驗: 
 battle_coin,  獲得金幣: 
-battle_evaded,迴避！
-battle_instant_kill,必殺攻擊！
-battle_weakened,受到衰弱攻擊！
-battle_poisoned,受到中毒攻擊！
-battle_special_kill,必殺攻擊
-battle_special_weak,衰弱
-battle_special_poison,中毒
-battle_evaded_enemy,敵人迴避！
-battle_hero_hits,勇者攻擊！
 battle_reward_hint,- SPACE -
 status_normal,正常
 status_super,超級

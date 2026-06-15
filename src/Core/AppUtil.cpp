@@ -63,11 +63,26 @@ void AttributeRegistry::Initialize() {
 
 bool AttributeRegistry::IsAttribute(const std::string& name) {
     // Explicitly ignore structural fields
-    if (name == Attr::ID || name == Attr::PATH || name == Attr::FOLDER || 
-        name == Attr::PASSABLE || name == Attr::ANIMATION || name == Attr::TITLE || 
-        name == Attr::ICON || name == Attr::DIALOG || name == Attr::IS_PASSIVE || 
-        name == Attr::FLOOR_DELTA || name == Attr::RELATION || name == Attr::TRANSACTIONS) {
-        return false;
+    static const std::unordered_map<std::string, bool> structuralFields = {
+        {Attr::ID, false},
+        {Attr::PATH, false},
+        {Attr::FOLDER, false},
+        {Attr::PASSABLE, false},
+        {Attr::ANIMATION, false},
+        {Attr::TITLE, false},
+        {Attr::ICON, false},
+        {Attr::DIALOG, false},
+        {Attr::IS_PASSIVE, false},
+        {Attr::FLOOR_DELTA, false},
+        {Attr::RELATION, false},
+        {Attr::TRANSACTIONS, false},
+        {"Width", false},
+        {"Height", false},
+        {"Reward_Map", false}
+    };
+    auto it = structuralFields.find(name);
+    if (it != structuralFields.end()) {
+        return it->second;
     }
     // Anything else in a CSV row that isn't structural is treated as a potential attribute
     return true;
@@ -117,6 +132,18 @@ bool CheckProbability(int percentage) {
     return GetRandomInt(0, 99) < percentage;
 }
 
+bool CheckProbability(const std::string& who, const std::string& what, int percentage) {
+    if (percentage <= 0) return false;
+    if (percentage >= 100) {
+        LOG_INFO("[{}] {} check: Skip (Rate 100%) -> SUCCESS", who, what);
+        return true;
+    }
+    int roll = GetRandomInt(0, 99);
+    bool success = (roll < percentage);
+    LOG_INFO("[{}] {} check: Roll={} (Needed < {}) -> {}", who, what, roll, percentage, success ? "SUCCESS" : "FAILED");
+    return success;
+}
+
 void RegistryLoader::LoadAllData() {
     LOG_INFO("RegistryLoader: Initializing Attribute Registry...");
     AttributeRegistry::Initialize();
@@ -140,6 +167,21 @@ void RegistryLoader::LoadAllData() {
     LoadObjectCSV(GetStaticResourcePath("Datas/Data/Enemy.csv"), "Enemy", false);
 
     LOG_INFO("RegistryLoader: Total {} object types in registry.", GlobalObjectRegistry.size());
+
+    // Debug Dump: Print all loaded objects and their key-value pairs
+    LOG_INFO("====== DEBUG DUMP: CSV Loaded Objects ======");
+    for (auto const& [id, meta] : GlobalObjectRegistry) {
+        if (id == 0) continue; // Skip default road
+        std::string attrStr;
+        for (auto const& [attrId, val] : meta.attributes) {
+            std::string attrName = AttributeRegistry::GetName(attrId);
+            attrStr += attrName + "=" + val + " | ";
+        }
+        LOG_INFO("ID {}: Title={}, Path={}, Folder={}, Passable={}, Attributes: [ {} ]", 
+                 id, meta.GetString(Attr::TITLE, "N/A"), meta.name, meta.folder, 
+                 meta.is_passable ? "true" : "false", attrStr);
+    }
+    LOG_INFO("============================================");
 }
 
 void RegistryLoader::LoadObjectCSV(const std::string& path, const std::string& defaultFolder, bool defaultPassable) {

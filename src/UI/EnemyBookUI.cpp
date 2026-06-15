@@ -114,14 +114,51 @@ void EnemyBookUI::EnemyEntry::AddToRoot(Util::Renderer& root) {
 }
 
 void EnemyBookUI::EnemyEntry::Update(const AppUtil::ObjectMetadata& meta, Player* player) {
-    icon->SetDrawable(std::make_shared<Util::Image>(AppUtil::GetFullResourcePath(meta.GetInt("Icon_ID", meta.GetInt(AppUtil::Attr::ID)))));
+    int iconId = meta.GetInt("Icon_ID", 0);
+    if (iconId <= 0) iconId = meta.GetInt(AppUtil::Attr::ID);
+    icon->SetDrawable(std::make_shared<Util::Image>(AppUtil::GetFullResourcePath(iconId)));
     
     name->SetPrefix(AppUtil::GetGlobalString("label_name", "Name: "));
     name->SetSuffix(meta.GetString(AppUtil::Attr::TITLE));
     name->SetShowNumber(false);
 
     special->SetPrefix(AppUtil::GetGlobalString("label_special", "Spec: "));
-    special->SetSuffix(meta.GetString("Special", AppUtil::GetGlobalString("label_none", "None")));
+    
+    std::vector<std::string> specs;
+    int weakRate = meta.GetInt("Weak", 0);
+    int poisonRate = meta.GetInt("Poison", 0);
+    int killRate = meta.GetInt("Killing_ATK", 0);
+    int ignoreDef = meta.GetInt("Ignore_DEF", 0);
+    int atkTime = meta.GetInt("ATK_Time", 1);
+    int nextEnemy = meta.GetInt("Next_Enemy", 0);
+
+    if (weakRate > 0) specs.push_back(AppUtil::GetGlobalString("label_special_weak", "Weak") + " (" + std::to_string(weakRate) + "%)");
+    if (poisonRate > 0) specs.push_back(AppUtil::GetGlobalString("label_special_poison", "Poison") + " (" + std::to_string(poisonRate) + "%)");
+    if (killRate > 0) specs.push_back(AppUtil::GetGlobalString("label_special_kill", "Critical") + " (" + std::to_string(killRate) + "%)");
+    if (ignoreDef > 0) specs.push_back(AppUtil::GetGlobalString("label_special_ignore_def", "Ignore DEF"));
+    if (atkTime == 2) specs.push_back(AppUtil::GetGlobalString("label_special_double_atk", "Double ATK"));
+    if (atkTime == 3) specs.push_back(AppUtil::GetGlobalString("label_special_triple_atk", "Triple ATK"));
+    if (atkTime > 3) specs.push_back(std::to_string(atkTime) + AppUtil::GetGlobalString("label_special_multi_atk", " Hits"));
+
+    int agi = meta.GetInt(AppUtil::Attr::AGILITY, 0);
+    if (agi >= 30) specs.push_back(AppUtil::GetGlobalString("label_special_high_eva", "High Eva"));
+
+    if (nextEnemy > 0) {
+        auto nextIt = AppUtil::GlobalObjectRegistry.find(nextEnemy);
+        std::string enemyName = (nextIt != AppUtil::GlobalObjectRegistry.end()) ? nextIt->second.GetString(AppUtil::Attr::TITLE) : "";
+        specs.push_back(AppUtil::GetGlobalString("label_special_rebirth", "Rebirth") + (enemyName.empty() ? "" : enemyName));
+    }
+
+    std::string specText;
+    if (specs.empty()) {
+        specText = AppUtil::GetGlobalString("label_none", "None");
+    } else {
+        for (size_t i = 0; i < specs.size(); ++i) {
+            if (i > 0) specText += " / ";
+            specText += specs[i];
+        }
+    }
+    special->SetSuffix(specText);
     special->SetShowNumber(false);
 
     // Set numbers from metadata for direct-read stats

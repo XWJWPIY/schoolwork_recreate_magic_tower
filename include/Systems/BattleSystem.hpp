@@ -34,11 +34,7 @@ public:
      */
     static TurnResult ProcessSingleEnemyHit(std::shared_ptr<Player> player, std::shared_ptr<Enemy> enemy);
 
-    /**
-     * @brief (Wrapper) Calls ProcessSingleEnemyHit ATK_Time times and aggregates results.
-     *        Kept for backward compatibility. BattleUI uses ProcessSingleEnemyHit directly.
-     */
-    static TurnResult ProcessEnemyTurn(std::shared_ptr<Player> player, std::shared_ptr<Enemy> enemy);
+
 };
 
 #endif // BATTLESYSTEM_HPP

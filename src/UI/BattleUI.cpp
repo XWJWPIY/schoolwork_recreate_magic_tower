@@ -128,7 +128,9 @@ void BattleUI::Start(std::shared_ptr<Player> player, std::shared_ptr<Enemy> enem
         const auto& meta = metaIt->second;
         m_enemy_name->SetPrefix(meta.GetString(AppUtil::Attr::TITLE));
         m_enemy_name->UpdateDisplayText();
-        m_enemy_avatar->SetDrawable(std::make_shared<Util::Image>(AppUtil::GetFullResourcePath(meta.GetInt("Icon_ID", enemy->GetObjectId()))));
+        int iconId = meta.GetInt("Icon_ID", 0);
+        if (iconId <= 0) iconId = enemy->GetObjectId();
+        m_enemy_avatar->SetDrawable(std::make_shared<Util::Image>(AppUtil::GetFullResourcePath(iconId)));
     }
 
     if (m_player->IsSuperMode()) {

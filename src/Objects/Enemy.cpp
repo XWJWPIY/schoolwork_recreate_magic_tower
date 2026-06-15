@@ -27,8 +27,8 @@ void Enemy::OnDefeated(std::shared_ptr<Player> player) {
       player->ApplyEffect(AppUtil::Effect::COIN, meta.GetInt(AppUtil::Attr::COIN));
   }
 
-  int w = meta.GetInt("Boss_Width", 1);
-  int h = meta.GetInt("Boss_Height", 1);
+  int w = meta.GetInt("Width", 1);
+  int h = meta.GetInt("Height", 1);
   int nextEnemyId = meta.GetInt("Next_Enemy", 0);
   
   if (w > 1 || h > 1) {
@@ -47,7 +47,7 @@ void Enemy::OnDefeated(std::shared_ptr<Player> player) {
 
   // Handle Reward Layer
   std::string rewardMap = meta.GetString("Reward_Map");
-  if (!rewardMap.empty()) {
+  if (!rewardMap.empty() && rewardMap != "0") {
       LOG_INFO("Enemy: Triggering reward map: {}", rewardMap);
       if (m_load_reward_layer_cb) {
           m_load_reward_layer_cb(rewardMap);
