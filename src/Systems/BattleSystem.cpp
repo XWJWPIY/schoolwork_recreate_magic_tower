@@ -65,20 +65,20 @@ BattleSystem::TurnResult BattleSystem::ProcessSingleEnemyHit(
     int eDmgBase = ignoreDef ? eAtk : (eAtk - pDef);
     if (eDmgBase < 1) eDmgBase = 1;
 
-    // ── 1. InstantKill 判定 ──────────────────────────────────────────
+    // ── 1. 玩家閃避判定（AGI 值 = 閃避機率 %）──────────────────────
+    if (AppUtil::CheckProbability("Enemy's Turn", "Evasion", pAGI)) {
+        result.evading     = true;
+        result.totalDamage = 0;
+        return result; // 閃避成功：跳過後續所有判定、不扣血、不觸發狀態異常
+    }
+
+    // ── 2. InstantKill 判定 ──────────────────────────────────────────
     if (AppUtil::CheckProbability("Enemy's Turn", "Critical", killRate)) {
         result.totalDamage = player->GetAttr(AppUtil::Effect::HP);
         result.instantKill = true;
         result.isBattleEnd = true;
         player->ApplyEffect(AppUtil::Effect::HP, -result.totalDamage);
         return result;
-    }
-
-    // ── 2. 玩家閃避判定（AGI 值 = 閃避機率 %）──────────────────────
-    if (AppUtil::CheckProbability("Enemy's Turn", "Evasion", pAGI)) {
-        result.evading     = true;
-        result.totalDamage = 0;
-        return result; // 閃避成功：不扣血、不觸發狀態異常
     }
 
     // ── 3. 命中：計算傷害並立即扣血 ─────────────────────────────────
